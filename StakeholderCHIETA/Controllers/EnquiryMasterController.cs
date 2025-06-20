@@ -1,7 +1,7 @@
 ﻿/*using Microsoft.AspNetCore.Mvc;
 using StakeholderCHIETA.Models;
 
-namespace StakeholderCHIETA.Controllers
+/*namespace StakeholderCHIETA.Controllers
 {
     public class EnquiryMasterController : Controller
     {
