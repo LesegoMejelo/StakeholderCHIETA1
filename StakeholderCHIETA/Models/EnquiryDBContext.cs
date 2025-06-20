@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿
+using Microsoft.EntityFrameworkCore;
 using System;
 
 namespace StakeholderCHIETA.Models
@@ -9,5 +10,6 @@ namespace StakeholderCHIETA.Models
         {
 
         }
+        public DbSet<Enquiries> Enquiry {  get; set; } 
     }
 }
