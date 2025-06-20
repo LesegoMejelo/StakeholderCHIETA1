@@ -1,11 +1,9 @@
-﻿using StakeholderCHIETA.Models;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-
+﻿using Microsoft.AspNetCore.Mvc;
+using StakeholderCHIETA.Models;
 
 namespace StakeholderCHIETA.Controllers
 {
-    public class EnquiryMasterController
+    public class EnquiryMasterController : Controller
     {
         private readonly EnquiryDBContext _dbContext;
 
@@ -13,19 +11,30 @@ namespace StakeholderCHIETA.Controllers
         {
             _dbContext = dbContext;
         }
+
         [HttpGet]
-       public IActionResult Create()
+        public IActionResult Create()
         {
             return View();
         }
+
         [HttpPost]
         public IActionResult Create(Enquiries model)
         {
-            if (modelState.IsValid) {
+            if (ModelState.IsValid)
+            {
                 model.Status = EnquiryStatus.Pending;
                 _dbContext.Enquiry.Add(model);
                 _dbContext.SaveChanges();
-                return RedirectToAction("Success"); 
+                return RedirectToAction("Success");
+            }
+
+            return View(model);
+        }
+
+        public IActionResult Success()
+        {
+            return View();
         }
     }
 }
