@@ -19,6 +19,13 @@ namespace StakeholderCHIETA.Controllers
             return View();
         }
         [HttpPost]
-        public IActionResult Create
+        public IActionResult Create(Enquiries model)
+        {
+            if (modelState.IsValid) {
+                model.Status = EnquiryStatus.Pending;
+                _dbContext.Enquiry.Add(model);
+                _dbContext.SaveChanges();
+                return RedirectToAction("Success"); 
+        }
     }
 }
