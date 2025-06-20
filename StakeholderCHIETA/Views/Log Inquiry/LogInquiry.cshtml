@@ -1,0 +1,45 @@
+﻿
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/Content/Style.css" />
+}
+
+<div class="navbar">
+    <img src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png">
+</div>
+
+<div class="container">
+    <div class="title"> Log an Inquiry</div>
+    <div class="dropdown">
+        <select>
+
+            <option value=""> Feedback Follow-Up</option>
+            <option value=""> Training Availability</option>
+            <option value=""> Accreditation and Compliance</option>
+            <option value=""> Funding and Grants</option>
+            <option value=""> Boardroom/ facility use</option>
+            <option value=""> Other</option>
+        </select>
+    </div>
+    <div class="Comment-section">
+        <label for="issue"> Describe Issue:</label>
+        <textarea id="issue" placeholder="Type your issue here..."></textarea>
+        <button id="submitBtn" type="button">Submit</button>
+        <div id="confirmationMessage" class="cloud-message">
+            Your inquiry has been submitted. Please expect to hear from us within the next 3 business days.
+        </div>
+
+    </div>
+    </div>
+
+    @section Scripts {
+        
+    <script>
+                        document.getElementById("submitBtn").addEventListener("click", function () {
+          document.getElementById("confirmationMessage").style.display = "block";
+        });
+
+    </script>
+    }
