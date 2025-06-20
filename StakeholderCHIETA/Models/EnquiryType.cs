@@ -3,13 +3,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StakeholderCHIETA.Models
 {
-    public class Advisor: User
+    public class EnquiryType
     {
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public string employeeId { get; set; }
-        [Required]
-        public string department {  get; set; }
-        public EmployeeRole Role { get; set; }
-
+        public int EnquiryId { get; set; }
+        public string typeName { get; set; }
     }
 }
