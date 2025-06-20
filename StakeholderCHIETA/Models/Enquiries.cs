@@ -14,7 +14,7 @@ namespace StakeholderCHIETA.Models
         public DateTime dateSubmitted { get; set; }
         public EnquiryType type { get; set; }
         public string description { get; set; }
-        public EnquiryStatus.Status Status { get; set; }
+        public EnquiryStatus Status { get; set; }
 
     }
 }

@@ -23,7 +23,7 @@ namespace StakeholderCHIETA.Controllers
         {
             if (ModelState.IsValid)
             {
-                model.Status = EnquiryStatus.Pending;
+                model.Status = Status.Pending;
                 _dbContext.Enquiry.Add(model);
                 _dbContext.SaveChanges();
                 return RedirectToAction("Success");
