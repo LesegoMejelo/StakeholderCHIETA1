@@ -7,7 +7,7 @@ namespace StakeholderCHIETA.Controllers
 {
     public class EnquiryMasterController
     {
-        /*private readonly EnquiryDBContext _dbContext;
+        private readonly EnquiryDBContext _dbContext;
 
         public EnquiryMasterController(EnquiryDBContext dbContext)
         {
@@ -19,6 +19,6 @@ namespace StakeholderCHIETA.Controllers
             return View();
         }
         [HttpPost]
-        public IActionResult Create*/
+        public IActionResult Create
     }
 }
