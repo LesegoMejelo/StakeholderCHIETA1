@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿/*using Microsoft.AspNetCore.Mvc;
 using StakeholderCHIETA.Models;
 
 namespace StakeholderCHIETA.Controllers
@@ -24,7 +24,7 @@ namespace StakeholderCHIETA.Controllers
             if (ModelState.IsValid)
             {
                 // Fix: Create a new EnquiryStatus object and assign it to the model's Status property
-                model.Status = new EnquiryStatus
+                model.Status = 5new EnquiryStatus
                 {
                     StatusId = (int)Status.Pending,
                     status = Status.Pending.ToString()
@@ -43,3 +43,4 @@ namespace StakeholderCHIETA.Controllers
         }
     }
 }
+*/
