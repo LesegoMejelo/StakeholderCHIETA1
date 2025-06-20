@@ -13,7 +13,8 @@ namespace StakeholderCHIETA.Models
     {
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int StatusId { get; set; }
-        [Required]
+        
         public string status {  get; set; }
+        public ICollection<Enquiries> Enquiry { get; set; }
     }
 }

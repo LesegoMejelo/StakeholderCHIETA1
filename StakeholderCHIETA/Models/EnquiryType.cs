@@ -6,7 +6,7 @@ namespace StakeholderCHIETA.Models
     public class EnquiryType
     {
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int EnquiryId { get; set; }
+        public int TypeId { get; set; }
         public string typeName { get; set; }
     }
 }

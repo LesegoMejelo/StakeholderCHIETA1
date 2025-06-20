@@ -8,12 +8,13 @@ namespace StakeholderCHIETA.Models
     {
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int EnquiryId { get; set; }
-        public string FullName { get; set; }
-        public string Email { get; set; }
-        public DateTime InquiryDate { get; set; }
-        public EnquiryType TypeId { get; set; }
-        public string Description { get; set; }
-        public EnquiryStatus Status { get; set; }
+        public string firstName { get; set; }
+        public string surname { get; set; }
+        public string email { get; set; }
+        public DateTime dateSubmitted { get; set; }
+        public EnquiryType type { get; set; }
+        public string description { get; set; }
+        public EnquiryStatus status { get; set; }
 
     }
 }
