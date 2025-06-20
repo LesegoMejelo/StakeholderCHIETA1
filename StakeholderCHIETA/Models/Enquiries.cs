@@ -3,18 +3,33 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StakeholderCHIETA.Models
 {
+
+    public enum enquiryType
+    {
+        feedbackFolllowUp,
+        trainingAvailability,
+        accreditationAndCompliance,
+        fundingAndGrants,
+        boardroomFacilityUse,
+    }
+
+    
+
+
     [Table("Enquiry")]
+
+  
     public class Enquiries
     {
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int EnquiryId { get; set; }
+        public int enquiryId { get; set; }
         public string firstName { get; set; }
-        public string surname { get; set; }
+        public string lastName { get; set; }
         public string email { get; set; }
         public DateTime dateSubmitted { get; set; }
-        public EnquiryType type { get; set; }
+        public enquiryType type { get; set; }
         public string description { get; set; }
-        public EnquiryStatus Status { get; set; }
+        public EnquiryStatus status { get; set; }
 
     }
 }
