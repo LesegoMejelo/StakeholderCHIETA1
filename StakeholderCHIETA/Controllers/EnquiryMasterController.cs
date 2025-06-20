@@ -23,7 +23,12 @@ namespace StakeholderCHIETA.Controllers
         {
             if (ModelState.IsValid)
             {
-                model.Status = Status.Pending;
+                // Fix: Create a new EnquiryStatus object and assign it to the model's Status property
+                model.Status = new EnquiryStatus
+                {
+                    StatusId = (int)Status.Pending,
+                    status = Status.Pending.ToString()
+                };
                 _dbContext.Enquiry.Add(model);
                 _dbContext.SaveChanges();
                 return RedirectToAction("Success");

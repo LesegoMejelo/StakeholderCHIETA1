@@ -11,7 +11,7 @@ namespace StakeholderCHIETA.Models
 
         }
         public DbSet<Enquiries> Enquiry {  get; set; } 
-        public DbSet<EnquiryType> EnquiryType { get; set; }
+     
         public DbSet<EnquiryStatus> EnquiryStatuses { get; set; }
         public DbSet <Stakeholder> Stakeholders { get; set; }
        
