@@ -1,0 +1,91 @@
+﻿body {
+    font-family: Arial, sans-serif;
+    background-color: #f6f0f5;
+    margin: 0;
+    padding: 0;
+}
+
+.header {
+    background-color: #3d2255;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+}
+
+    .header img {
+        height: 40px;
+    }
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+h1 {
+    text-align: center;
+    color: #3d2255;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+select, textarea, input[type="text"], input[type="date"] {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+textarea {
+    height: 100px;
+    resize: none;
+    border: 2px solid orange;
+    background-color: #fff5f8;
+}
+
+.date-time-wrapper {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.date-container, .time-container {
+    flex: 1;
+    background-color: #f0eaf1;
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px dashed #a678b1;
+}
+
+    .date-container label,
+    .time-container label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+    }
+
+.confirm-button {
+    display: block;
+    margin: 30px auto 0;
+    background-color: white;
+    color: orange;
+    border: 2px solid orange;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+    .confirm-button:hover {
+        background-color: orange;
+        color: white;
+    }
