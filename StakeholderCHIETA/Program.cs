@@ -1,21 +1,23 @@
-using StakeholderCHIETA.Models;
+﻿using StakeholderCHIETA.Models;
 using Microsoft.EntityFrameworkCore;
 using Google.Cloud.Firestore;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
-using Microsoft.AspNetCore.Builder.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ?? Get path from environment variable
-var serviceAccountPath = @"C:\Users\mbowa\Downloads\adminsdk.json";
+// 🔹 Get path from environment variable instead of hardcoding
+var serviceAccountPath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
 
-if (!File.Exists(serviceAccountPath))
+if (string.IsNullOrEmpty(serviceAccountPath) || !File.Exists(serviceAccountPath))
 {
-    throw new FileNotFoundException($"Firebase service account key file not found at: {serviceAccountPath}");
+    throw new FileNotFoundException(
+        "Firebase service account key file not found. " +
+        "Set the GOOGLE_APPLICATION_CREDENTIALS environment variable to a valid path."
+    );
 }
 
-// ?? Initialize Firebase
+// 🔹 Initialize Firebase
 FirebaseApp.Create(new AppOptions()
 {
     Credential = GoogleCredential.FromFile(serviceAccountPath)
@@ -27,12 +29,10 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<EnquiryDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("EnquiryConnection")));
 
-// ?? Register FirestoreDb for Dependency Injection
+// 🔹 Register FirestoreDb for Dependency Injection
 builder.Services.AddSingleton(provider =>
 {
-    string path = @"C:\Users\27658\source\repos\StakeholderApp\adminsdk.json"; // Full path to your key file
-    Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", path);
-    return FirestoreDb.Create("stakeholder-app-57ed0");
+    return FirestoreDb.Create("stakeholder-app-57ed0"); // project ID only
 });
 
 var app = builder.Build();
