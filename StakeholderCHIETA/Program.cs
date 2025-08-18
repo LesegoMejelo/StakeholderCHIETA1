@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Builder.Extensions;
 var builder = WebApplication.CreateBuilder(args);
 
 // ?? Get path from environment variable
-var serviceAccountPath = @"C:\Users\27658\source\repos\StakeholderApp\adminsdk.json";
+var serviceAccountPath = @"C:\Users\mbowa\Downloads\adminsdk.json";
 
 if (!File.Exists(serviceAccountPath))
 {
