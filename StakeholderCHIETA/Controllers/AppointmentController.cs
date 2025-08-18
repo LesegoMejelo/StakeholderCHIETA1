@@ -26,10 +26,18 @@ namespace StakeholderApp.Controllers
 
         // Handle booking submission
         [HttpPost]
-        public async Task<IActionResult> Book(Appointment appointment)
+       
+        public async Task<IActionResult> Book(Appointment appointment, string Time)
         {
             appointment.AppointmentId = Guid.NewGuid().ToString();
             appointment.Status = "Pending";
+
+            // Combine Date + Time into one DateTime
+            if (!string.IsNullOrEmpty(Time))
+            {
+                var parsedTime = TimeSpan.Parse(Time);
+                appointment.Date = appointment.Date.Date + parsedTime;
+            }
 
             var docRef = _firestoreDb.Collection("appointments").Document(appointment.AppointmentId);
             await docRef.SetAsync(appointment);
@@ -37,6 +45,7 @@ namespace StakeholderApp.Controllers
             ViewBag.Message = "Appointment request sent!";
             return View();
         }
+
 
         // Advisor dashboard (view all appointments)
         [HttpGet]
