@@ -8,13 +8,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CHIETA Dashboard</title>
-    <link rel="stylesheet" href="~/Content/StakeholderLanding.css" />
+    <link rel="stylesheet" href="~/Content/StakeholderLanding.css" asp-append-version="true" />
 </head>
 <body>
 
     <!-- Top Bar with Logo -->
     <div class="topbar">
-        <img src="Logo.png" alt="CHIETA Logo" />
+        <img src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA Logo" />
     </div>
 
     <!-- Welcome Section -->
@@ -41,7 +41,7 @@
         <div class="cards">
             <div class="card">
                 <div class="card-top">
-                    <img src="appointment.jpg">
+                   <img src="~/content/Images/AppointmentBooking.jpg">
                 </div>
                 <div class="card-content">
                     <a asp-controller="Appointment" asp-action="Book">
@@ -56,7 +56,7 @@
 
             <div class="card">
                 <div class="card-top">
-                    <img src="question-mark.png">
+                    <img src="~/content/Images/InquiryBook.jpg">
                 </div>
                 <div class="card-content">
                     <a asp-controller="Inquiry" asp-action="Inquiry"> <h3>Log An Inquiry</h3> </a>
@@ -68,7 +68,7 @@
 
             <div class="card">
                 <div class="card-top">
-                    <img src="wwwroot/content/pexels-cytonn-955395.jpg">
+                    <img src="~/content/Images/InquiryTracking.jpg">
                 </div>
                 <div class="card-content">
                     <a asp-controller="Inquiry" asp-action="Tracking"> <h3>Track an Inquiry</h3> </a>
