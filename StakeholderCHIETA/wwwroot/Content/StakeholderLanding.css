@@ -151,6 +151,26 @@
     color: #444;
     line-height: 1.4;
   }
+
+  .blob{
+    position:absolute; z-index:-1; opacity:.9;
+    pointer-events:none;
+  }
+  .blob-right{
+    width:240px; height:240px; border-radius:50%;
+    background:var(--beige-200);
+    right:-70px; top:100px;
+  }
+  .blob-left{
+    width:230px; height:230px; border-radius:50%;
+    background:transparent; border:3px solid #4b2e6f;
+    left:-60px; top:420px;
+  }
+  .blob-right-bottom{
+    width:260px; height:260px; border-radius:50%;
+    background:transparent; border:3px solid var(--gold-700);
+    right:-80px; bottom:-60px;
+  }
   
   
   /* Footer */
