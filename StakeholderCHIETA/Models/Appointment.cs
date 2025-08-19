@@ -11,6 +11,7 @@ namespace StakeholderCHIETA.Models
 
         [FirestoreProperty]
         public string ClientId { get; set; }
+        public string ClientName { get; set; }
 
         [FirestoreProperty]
         public string Advisor { get; set; }
