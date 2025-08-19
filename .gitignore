@@ -362,7 +362,26 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+<<<<<<< HEAD
+#Local configs
+StakeholderCHIETA/Properties/launchSettings.json
+adminsdk.json
+
+
+
+
+
+
+
+
+
+
+
+
+=======
 # Local configs
 StakeholderCHIETA/Properties/launchSettings.json
 adminsdk.json
+>>>>>>> 554d18437b503ad3a42369bbb12c0a3e47b41058
+/StakeholderCHIETA/Properties/launchSettings.json
 /StakeholderCHIETA/Properties/launchSettings.json
