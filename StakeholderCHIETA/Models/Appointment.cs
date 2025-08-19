@@ -13,13 +13,16 @@ namespace StakeholderCHIETA.Models
         public string ClientId { get; set; }
 
         [FirestoreProperty]
-        public string AdvisorId { get; set; }
+        public string Advisor { get; set; }
 
         [FirestoreProperty]
         public DateTime Date { get; set; }
 
         [FirestoreProperty]
-        public string Purpose { get; set; }
+        public string Time { get; set; }
+
+        [FirestoreProperty]
+        public string Reason { get; set; }
 
         [FirestoreProperty]
         public string Status { get; set; } = "Pending";
