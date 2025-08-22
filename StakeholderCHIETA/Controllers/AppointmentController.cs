@@ -1,69 +1,46 @@
 ﻿using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
-using StakeholderCHIETA.Models;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
-
-
-namespace StakeholderApp.Controllers
+namespace Staekholder_CHIETA_X.Controllers
 {
     public class AppointmentController : Controller
     {
-        private readonly FirestoreDb _firestoreDb;
+        private readonly FirestoreDb _db;
 
-        public AppointmentController(FirestoreDb firestoreDb)
+        public AppointmentController(FirestoreDb db)
         {
-            _firestoreDb = firestoreDb;
+            _db = db;
         }
 
-        // Show booking form
-        [HttpGet]
+        [HttpPost]
+        [Route("api/appointment")]
+        public async Task<IActionResult> Post(
+            [FromForm] string advisor,
+            [FromForm] string reason,
+            [FromForm] string date,
+            [FromForm] string time)
+        {
+            var docRef = await _db.Collection("appointments").AddAsync(new
+            {
+                advisorId = advisor,
+                reason = reason,
+                date = date,
+                time = time,
+                status = "Pending",
+                createdAt = Timestamp.GetCurrentTimestamp()
+            });
+
+            return Ok(new { id = docRef.Id, message = "Appointment booked" });
+        }
+
+        public IActionResult Index()
+        {
+            return View();
+        }
+
         public IActionResult Book()
         {
-            return View();
-        }
-
-        // Handle booking submission
-        [HttpPost]
-       
-        public async Task<IActionResult> Book(Appointment appointment, string Time)
-        {
-            appointment.AppointmentId = Guid.NewGuid().ToString();
-            appointment.Status = "Pending";
-
-            // Combine Date + Time into one DateTime
-            if (!string.IsNullOrEmpty(Time))
-            {
-                var parsedTime = TimeSpan.Parse(Time);
-                appointment.Date = appointment.Date.Date + parsedTime;
-            }
-
-            var docRef = _firestoreDb.Collection("appointments").Document(appointment.AppointmentId);
-            await docRef.SetAsync(appointment);
-
-            ViewBag.Message = "Appointment request sent!";
-            return View();
-        }
-
-
-        // Advisor dashboard (view all appointments)
-        [HttpGet]
-        public async Task<IActionResult> Dashboard()
-        {
-            var snapshot = await _firestoreDb.Collection("appointments").GetSnapshotAsync();
-            var appointments = snapshot.Documents.Select(d => d.ConvertTo<StakeholderCHIETA.Models.Appointment>()).ToList();
-            return View(appointments);
-        }
-
-        // Advisor accepts/rejects
-        [HttpPost]
-        public async Task<IActionResult> UpdateStatus(string appointmentId, string status)
-        {
-            var docRef = _firestoreDb.Collection("appointments").Document(appointmentId);
-            await docRef.UpdateAsync("Status", status);
-
-            return RedirectToAction("Dashboard");
+            return View("~/Views/Appointment/Book.cshtml");
         }
     }
 }
