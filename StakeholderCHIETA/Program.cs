@@ -6,7 +6,7 @@ using Google.Apis.Auth.OAuth2;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔹 Get path from environment variable instead of hardcoding
+// this retrieves the path to the firebase service account key file from an environment variable
 var serviceAccountPath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
 
 if (string.IsNullOrEmpty(serviceAccountPath) || !File.Exists(serviceAccountPath))
@@ -17,22 +17,23 @@ if (string.IsNullOrEmpty(serviceAccountPath) || !File.Exists(serviceAccountPath)
     );
 }
 
-// 🔹 Initialize Firebase
+// initialiazes the firebasee sdk for the app, uses service account credentials to authenticate with firebase services
 FirebaseApp.Create(new AppOptions()
 {
     Credential = GoogleCredential.FromFile(serviceAccountPath)
 });
 
-// Add services to the container
+// This line adds support for the Model-View-Controller (MVC) pattern, allowing the application to handle web requests and render views.
 builder.Services.AddControllersWithViews();
 
+// regiters a database context for sql (not necessary anymore due to nosql database)
 builder.Services.AddDbContext<EnquiryDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("EnquiryConnection")));
 
-// 🔹 Register FirestoreDb for Dependency Injection
+//Register FirestoreDb for Dependency Injection, instance of firestore database will be created and shared throughout the app
 builder.Services.AddSingleton(provider =>
 {
-    return FirestoreDb.Create("stakeholder-app-57ed0"); // project ID only
+    return FirestoreDb.Create("stakeholder-app-57ed0"); // creates main client object used to interact with the firestore database
 });
 
 var app = builder.Build();
