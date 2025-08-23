@@ -1,5 +1,6 @@
 ﻿using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Razor.Compilation;
 
 namespace Staekholder_CHIETA_X.Controllers
 {
@@ -35,12 +36,12 @@ namespace Staekholder_CHIETA_X.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            return View("~/Views/Appointment/Book.cshtml");
         }
 
         public IActionResult Book()
         {
-            return View("~/Views/Appointment/Book.cshtml");
+            return View();
         }
     }
 }
