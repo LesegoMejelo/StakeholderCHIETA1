@@ -6,16 +6,18 @@ namespace Staekholder_CHIETA_X.Controllers
 {
     public class HomeController : Controller
     {
-         public IActionResult Index()
+       /* public IActionResult Home()
         {
-            return View();
+            return View("~/Views/Home/Home.cshtml");
         }
-
-        public IActionResult Home()
+       */
+        public IActionResult Index()
         {
             return View("~/Views/Home/Home.cshtml");
         }
 
        
+
+
     }
-}
+}
