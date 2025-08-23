@@ -1,3 +1,7 @@
+
+
+
+ORIGINAL CSS
 * {
     box-sizing: border-box;
   }
@@ -19,7 +23,7 @@
   }
   
   
-  /* Header */
+  Header 
   .topbar {
     background-color: #311547;
     padding: 1em;
@@ -32,7 +36,8 @@
     height: 50px;
   }
   
-  /* Welcome Section */
+
+  Welcome Section 
   .welcome-section {
     text-align: center;
     padding: 4em 1em;
@@ -67,7 +72,10 @@
     cursor: pointer;
     transition: 0.3s ease;
   }
-  
+      
+
+  buttons
+
   .btn-primary {
     background-color: #3d0d3c;
     color: white;
@@ -84,6 +92,7 @@
   .btn-secondary:hover {
     opacity: 0.9;
   }
+      
   
   
   .divider {
@@ -92,7 +101,8 @@
     width: 80%;
   }
   
-  /* Action Section */
+
+  Action Section 
   .action-section {
     text-align: center;
     padding: 1em;
@@ -108,6 +118,47 @@
     max-width: 700px;
     margin: 0 auto 2.5em;
   }
+      
+
+ Updated Cards code
+
+.cards {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+      
+.card {
+    width: 300px; /* all cards same width */
+  
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-top img {
+    width: 100%;
+    height: 180px; /* lock image height */
+  
+    object-fit: cover; /* crop instead of squashing */
+  
+    display: block;
+}
+
+.card-content {
+    padding: 15px;
+    text-align: center;
+}
+
+    .card-content h3 {
+        margin: 10px 0;
+    }
+
   
   .cards {
     display: flex;
@@ -127,10 +178,12 @@
     flex-direction: column;
   }
   
+  
   .card-top {
     height: 100px;
     background-color: #e8ecf2;
   }
+  
   
   .card-content {
     padding: 1em;
@@ -173,7 +226,8 @@
   }
   
   
-  /* Footer */
+  
+   Footer 
   .footer {
     background-color: #311547;
     color: white;
@@ -200,4 +254,5 @@
     }
   
   }
+      
   

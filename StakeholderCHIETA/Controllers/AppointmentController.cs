@@ -1,5 +1,6 @@
 ﻿using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Razor.Compilation;
 
 namespace Staekholder_CHIETA_X.Controllers
 {
@@ -38,12 +39,12 @@ namespace Staekholder_CHIETA_X.Controllers
 
         public IActionResult Index() //responsible for showing the web pages to the user
         {
-            return View();
+            return View("~/Views/Appointment/Book.cshtml");
         }
 
         public IActionResult Book() //responsible for showing the web pages to the user, the ACTUAL appointment booking page
         {
-            return View("~/Views/Appointment/Book.cshtml");
+            return View();
         }
     }
 }

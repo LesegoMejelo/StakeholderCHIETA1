@@ -11,11 +11,11 @@
 
     <link rel="stylesheet" href="~/Content/AppointmentBooking.css" asp-append-version="true" />
 
-   
+
 </head>
 <body>
     <div class="header">
-        <img src="~/Content/StakeholderLandingImages/Logo.png" alt="CHIETA Logo" />
+        <img src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="Chieta Logo">
     </div>
 
     <div class="container">
@@ -52,7 +52,7 @@
     </div>
 
     <script>
-        document.getElementById('confirm-btn').addEventListener('click', function() {
+        document.getElementById('confirm-btn').addEventListener('click', async function() {
             const advisor = document.getElementById('advisor').value;
             const reason = document.getElementById('reason').value;
             const date = document.getElementById('date').value;
@@ -61,6 +61,34 @@
             if (!advisor || !reason || !date || !time) {
                 alert('Please fill in all fields');
                 return;
+            }
+            try {
+                const response = await fetch("/api/appointment", {
+                    method: "POST",
+                            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                            body: new URLSearchParams({
+                                  Advisor: advisor,
+                                  Reason: reason,
+                                  Date: date,
+                                  Time: time
+                            })
+                    
+                });
+
+                const result = await response.json();
+                console.log("Server response:", result);
+
+                document.getElementById("confirmationMessage").style.display = "block";
+
+                // Clear the form
+                document.getElementById("advisor").value = "";
+                document.getElementById("reason").value = "";
+                document.getElementById("date").value = "";
+                document.getElementById("time").value = "";
+
+            } catch (error) {
+                console.error("Submission failed:", error);
+                alert("Something went wrong. Please try again.");
             }
 
             alert(`Appointment confirmed!\nAdvisor: ${advisor}\nReason: ${reason}\nDate: ${date}\nTime: ${time}`);

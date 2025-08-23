@@ -1,7 +1,7 @@
 ﻿using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using System.Collections.Generic;
+/*using System.Collections.Generic;
 
 namespace StakeholderCHIETA.Controllers
 {
@@ -20,4 +20,4 @@ namespace StakeholderCHIETA.Controllers
 
         }
     }
-}
+}*/

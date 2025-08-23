@@ -3,10 +3,56 @@
 }
 
 <h2>Login</h2>
-<form method="post" action="/Auth/SignIn">
-    <input type="email" name="email" placeholder="Email" required />
+
+<form id="loginForm">
+    <input type="email" id="email" placeholder="Email" required />
     <br />
-    <input type="password" name="password" placeholder="Password" required />
+    <input type="password" id="password" placeholder="Password" required />
     <br />
     <button type="submit">Login</button>
 </form>
+
+<!-- Firebase JS SDK -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js";
+
+    // Your Firebase config
+    const firebaseConfig = {
+            apiKey: "AIzaSyDP43thmAHRibCEbFcBZx2vpA2mEPDByz8",
+        authDomain: "stakeholder-app-57ed0.firebaseapp.com",
+        projectId: "stakeholder-app-57ed0",
+        storageBucket: "stakeholder-app-57ed0.appspot.com",
+        messagingSenderId: "988521434771",
+        appId: "1:988521434771:web:d189e963a8c41909a2c766"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Handle login
+    const loginForm = document.getElementById("loginForm");
+    loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+            // Sign in with Firebase Auth
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+            // Get ID token
+            const token = await userCredential.user.getIdToken();
+
+            // Store token locally (to send to backend)
+            localStorage.setItem("firebaseToken", token);
+
+            // Optionally redirect to dashboard
+            window.location.href = "/Dashboard";
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+</script>

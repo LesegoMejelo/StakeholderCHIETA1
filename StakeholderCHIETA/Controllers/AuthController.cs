@@ -74,9 +74,9 @@ namespace Staekholder_CHIETA_X.Controllers
             return View(); // This returns a view named Login.cshtml
         }
 
-        // Post method for handling login
-        [HttpPost("login")]
-        public IActionResult Login([FromForm] string idToken)
+        // POST: /Auth/Login
+        [HttpPost]
+        public IActionResult Login(string idToken)
         {
             // Here you'll verify Firebase ID token and create a session
             HttpContext.Session.SetString("UserId", idToken);
@@ -90,5 +90,7 @@ namespace Staekholder_CHIETA_X.Controllers
             HttpContext.Session.Clear();
             return RedirectToAction("Login");
         }
+        
+
     }
 }
