@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace StakeholderCHIETA
+namespace StakeholderCHIETA.Filters
 {
     public class AuthorizeAdminAttribute : TypeFilterAttribute
     {
@@ -34,11 +34,12 @@ namespace StakeholderCHIETA
             }
             var idToken = header.Substring("Bearer ".Length);
 
+            string uid = "";
             try
             {
                 //verify token with firebase admin sdk
                 FirebaseToken decodedToken = await _auth.VerifyIdTokenAsync(idToken);
-                string uid = decodedToken.Uid;
+                uid = decodedToken.Uid;
 
                 //check if user is an admin in firestore
                 var adminDocRef = _firestoreDb.Collection("Admin").Document(uid);

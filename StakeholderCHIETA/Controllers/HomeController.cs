@@ -13,11 +13,11 @@ namespace Staekholder_CHIETA_X.Controllers
        */
         public IActionResult Index()
         {
-            return View("~/Views/Home/Home.cshtml");
+            return View("~/Views/StakeholderViews/Home/Home.cshtml");
         }
 
        
 
 
     }
-}
+}

@@ -1,68 +1,9 @@
-﻿/* using StakeholderCHIETA.Models;
+﻿using StakeholderCHIETA.Models;
 using Microsoft.EntityFrameworkCore;
 using Google.Cloud.Firestore;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
-
-var builder = WebApplication.CreateBuilder(args);
-
-// this retrieves the path to the firebase service account key file from an environment variable
-var serviceAccountPath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
-
-if (string.IsNullOrEmpty(serviceAccountPath) || !File.Exists(serviceAccountPath))
-{
-    throw new FileNotFoundException(
-        "Firebase service account key file not found. " +
-        "Set the GOOGLE_APPLICATION_CREDENTIALS environment variable to a valid path."
-    );
-}
-
-// initialiazes the firebasee sdk for the app, uses service account credentials to authenticate with firebase services
-FirebaseApp.Create(new AppOptions()
-{
-    Credential = GoogleCredential.FromFile(serviceAccountPath)
-});
-
-// This line adds support for the Model-View-Controller (MVC) pattern, allowing the application to handle web requests and render views.
-builder.Services.AddControllersWithViews();
-
-// regiters a database context for sql (not necessary anymore due to nosql database)
-builder.Services.AddDbContext<EnquiryDBContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("EnquiryConnection")));
-
-//Register FirestoreDb for Dependency Injection, instance of firestore database will be created and shared throughout the app
-builder.Services.AddSingleton(provider =>
-{
-    return FirestoreDb.Create("stakeholder-app-57ed0"); // creates main client object used to interact with the firestore database
-});
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-}
-
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-
-app.UseRouting();
-
-app.UseAuthorization();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Home}/{id?}"
-);
-
-app.Run();*/
-using StakeholderCHIETA.Models;
-using Microsoft.EntityFrameworkCore;
-using Google.Cloud.Firestore;
-using FirebaseAdmin;
-using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -86,16 +27,6 @@ FirebaseApp.Create(new AppOptions()
 // Add services to the container
 builder.Services.AddControllersWithViews();
 
-
-
-
-// Initialize Firebase
-/*FirebaseApp.Create(new AppOptions()
-{
-    Credential = GoogleCredential.FromFile("adminsdk.json")
-});*/
-
-
 builder.Services.AddDbContext<EnquiryDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("EnquiryConnection")));
 
@@ -113,6 +44,8 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+
+builder.Services.AddDefaultIdentity<IdentityAdmin>
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
