@@ -1,0 +1,35 @@
+﻿using Google.Cloud.Firestore;
+using Microsoft.AspNetCore.Mvc;
+using StakeholderCHIETA.Filters;
+
+namespace StakeholderCHIETA.Controllers
+{
+    [AuthorizeRole("Stakeholder")]
+    public class StakholderController : Controller
+    {
+        public IActionResult Index()
+        {
+            return View(); // Corresponds to Index.cshtml
+        }
+
+        public IActionResult Home()
+        {
+            return View("~/Views/StakeholderViews/Home/Home.cshtml"); // Corresponds to Home.cshtml
+        }
+
+        public IActionResult Inquiry()
+        {
+            return View(); // Corresponds to Inquiry.cshtml
+        }
+
+        public IActionResult LogInquiry()
+        {
+            return View("~/Views/Inquiry/Inquiry.cshtml"); // Corresponds to LogInquiry.cshtml
+        }
+
+        public IActionResult Appointment()
+        {
+            return View("~/Views/Appointment/Book.cshtml"); // Corresponds to Appointment.cshtml
+        }
+    }
+}
