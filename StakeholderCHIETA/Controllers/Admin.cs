@@ -6,9 +6,14 @@ namespace StakeholderCHIETA.Controllers
     [AuthorizeRole("Admin")]
     public class Admin : Controller
     {
-        public IActionResult Home()
+        public IActionResult Login()
         {
-            return View("~/Views/AdminViews/Home/Index.cshtml");
+            return View("~/Views/Auth/Login.cshtml");
+        }
+
+        public IActionResult Registration()
+        {
+            return View("~/Views/AdminViews/Registration.cshtml");
         }
     }
 }

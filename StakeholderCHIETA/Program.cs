@@ -4,6 +4,7 @@ using Google.Cloud.Firestore;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Identity;
+using FirebaseAdmin.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,7 @@ builder.Services.AddSingleton(provider =>
     return FirestoreDb.Create("stakeholder-app-57ed0"); // project ID only
 });
 
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
@@ -56,7 +58,7 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}"
+    pattern: "{controller=Admin}/{action=Login}/{id?}"
 );
 
 app.Run();
