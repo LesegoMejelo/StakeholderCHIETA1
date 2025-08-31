@@ -19,10 +19,10 @@
     <div class="welcome-section">
         <div class="circle-bg"></div>
 
-        <h1>Welcome Sipho from Sasol</h1>
+        <h1>Welcome @ViewBag.UserName</h1>
         <p>This is your personalised landing page, equipt for your every need</p>
         <div class="welcome-buttons">
-            <button class="btn-primary">Log out of profile</button>
+            <a asp-action="Logout" asp-controller="Auth" class="btn-primary">Log out of profile</a>
             <button class="btn-secondary">Change Profile Settings</button>
         </div>
     </div>
