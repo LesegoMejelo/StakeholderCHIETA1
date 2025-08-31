@@ -45,7 +45,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-builder.Services.AddDefaultIdentity<IdentityAdmin>
+//builder.Services.AddDefaultIdentity<IdentityAdmin>
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
