@@ -1,8 +1,6 @@
-﻿// AdvisorController.cs
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims; // Import this namespace
-using StakeholderCHIETA.Filters;
+using System.Security.Claims;
 
 namespace StakeholderCHIETA.Controllers
 {
@@ -11,15 +9,31 @@ namespace StakeholderCHIETA.Controllers
     {
         public IActionResult Home()
         {
-            // Retrieve user claims from the authenticated principal
             var userName = User.FindFirst(ClaimTypes.Name)?.Value;
             var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
 
-            // Use ViewBag to pass data to the view
             ViewBag.UserName = userName;
-            ViewBag.UserEmail = userEmail;           
+            ViewBag.UserEmail = userEmail;
 
             return View("~/Views/AdvisorViews/Home/EmployeeLanding.cshtml");
+        }
+
+        // Inquiry Tracker Page
+        public IActionResult InquiryTracker()
+        {
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value;
+            ViewBag.UserName = userName;
+
+            return View("~/Views/EmployeeViews/InquiryTracker.cshtml");
+        }
+
+        // Appointment Tracker Page
+        public IActionResult AppointmentTracker()
+        {
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value;
+            ViewBag.UserName = userName;
+
+            return View("~/Views/EmployeeViews/AppointmentTracker.cshtml");
         }
     }
 }
