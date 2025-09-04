@@ -1,0 +1,200 @@
+﻿
+@{
+    Layout = null;
+}
+
+
+<!--- Updated Code 1 -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CHIETA Dashboard</title>
+    <link rel="stylesheet" href="~/Content/StakeholderLanding.css" />
+
+</head>
+<body>
+    
+    <!-- Top Bar with Logo -->
+    <div class="topbar">
+        <img src="~/content/StakeholderLandingImages/Logo.png" alt="Chieta Logo" />
+    </div>
+    
+
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <div class="circle-bg"></div>
+
+        <h1>Welcome @User.Identity.Name</h1>
+        <p>This is your personalised landing page, equipt for your every need</p>
+        <div class="welcome-buttons">
+            <button class="btn-primary">Log out of profile</button>
+            <button class="btn-secondary">Change Profile Settings</button>
+        </div>
+    </div> 
+    
+
+    <div class="divider"></div>
+    
+
+    <!-- Action Cards Section  -->
+    <div class="action-section">
+        <h2>Select your desired action</h2>
+        <p>
+            You can choose from the following depending on what you want to do. Each action allows you to interact with your advisor in an easier manner and you can see the progress of each
+        </p> 
+        
+       <!-- Cards-->
+        <div class="cards"> 
+            <div class="card">
+                <div class="card-top">
+                    <img src= "~/Content/StakeholderLandingImages/appointment.jpg">
+                </div>
+                <!--Links to Appointment Page-->
+                <div class="card-content">
+                    <a asp-controller="Appointment" asp-action="Book">
+                        <h3>Book an Appointment</h3>
+                    </a>
+                    <p>
+                        You can make an appointment with your Skills Advisor while communicating the any specific information.
+                        From the booking, a confirmation will be sent along with an invite, depending on specifics.
+                    </p>
+                </div>
+            </div>
+            
+            
+                <div class="card">
+                <div class="card-top">
+                    <img src="~/Content/StakeholderLandingImages/question-mark.png" />
+                </div>
+               
+  
+              
+              <div class="card-content">
+                    <!--Links to Log an Inquiry Page-->
+                    <a asp-controller="Stakeholder" asp-action="LogInquiry"> <h3>Log An Inquiry</h3> </a>
+                    <p>
+                        If you have any questions regarding your advisory, you can log an inquiry with your advisor.
+                    </p>
+                </div>
+            </div>
+
+           
+                <div class="card">
+                <div class="card-top">
+                    <img src="~/Content/StakeholderLandingImages/TrackingImage.png"/>
+                </div>
+                
+
+                <div class="card-content">
+                    <!--Links to Track an Inquiry page-->
+                    <a asp-controller="Inquiry" asp-action="Tracking"> <h3>Track an Inquiry</h3> </a>
+                    <p>
+                        You can track all the inquiries logged and see the progress of each one.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Decorative Circles -->
+        <div class="circle-purple"></div>
+        <div class="circle-beige"></div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <div class="gold-box"></div>
+    </div>
+
+</body>
+</html>
+
+
+<!-- First draft of code
+
+DOCTYPE html
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CHIETA Dashboard</title>
+    <link rel="stylesheet" href="Content/StakeholderLanding.css" />
+</head>
+<body>
+
+     Top Bar with Logo 
+    <div class="topbar">
+        <img src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png">
+    </div>
+
+     Welcome Section 
+    <div class="welcome-section">
+        <div class="circle-bg"></div>
+
+        <h1>Welcome Sipho from Sasol</h1>
+        <p>This is your personalised landing page, equipt for your every need</p>
+        <div class="welcome-buttons">
+            <button class="btn-primary">Log out of profile</button>
+            <button class="btn-secondary">Change Profile Settings</button>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+   Action Cards Section 
+    <div class="action-section">
+        <h2>Select your desired action</h2>
+        <p>
+            You can choose from the following depending on what you want to do. Each action allows you to interact with your advisor in an easier manner and you can see the progress of each
+        </p>
+
+        <div class="cards">
+            <div class="card">
+                <div class="card-top">
+                    <img src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA Logo">
+                </div>
+                <div class="card-content">
+                    <h3>Book an Appointment</h3>
+                    <p>
+                        You can make an appointment with your Skills Advisor while communicating the any specific information.
+                        From the booking, a confirmation will be sent along with an invite, depending on specifics.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-top"></div>
+                <div class="card-content">
+                  <h3> <a href="/Inquiry/Inquiry"> Log An Inquiry </a></h3>
+                    <p>
+                        If you have any questions regarding your advisory, you can log an inquiry with your advisor.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-top"></div>
+                <div class="card-content">
+                    <h3>Track an Inquiry</h3>
+                    <p>
+                        You can track all the inquiries logged and see the progress of each one.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        Decorative Circles 
+        <div class="circle-purple"></div>
+        <div class="circle-beige"></div>
+    </div>
+
+    Footer 
+    <div class="footer">
+        <div class="gold-box"></div>
+    </div>
+
+</body>
+</html> 
+ -->

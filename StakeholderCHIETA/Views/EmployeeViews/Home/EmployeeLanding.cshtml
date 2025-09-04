@@ -22,17 +22,11 @@
                     </button>
 
                     <div class="menu-popover" id="settings-menu" role="menu" hidden>
-                        <a role="menuitem" href="profile.html">Profile</a>
-                        <a role="menuitem" href="notifications.html">Notifications</a>
+                        <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
+                        <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
                         <div class="menu-sep" role="separator"></div>
-                        <!-- <div class="menu-group" role="group" aria-label="Preferences">
-                          <label class="menu-check">
-                            <input id="pref-dark" type="checkbox" />
-                            <span>Dark mode</span>
-                          </label>
-                        </div> -->
                         <div class="menu-sep" role="separator"></div>
-                        <a role="menuitem" href="logout.html" class="danger">Sign out</a>
+                        <a role="menuitem" href="@Url.Action("Logout", "Account")" class="danger">Sign out</a>
                     </div>
                 </div>
             </nav>
@@ -47,16 +41,16 @@
 
         <!-- Welcome -->
         <section class="welcome">
-            <h1>Welcome Sipho from Sasol</h1>
+            <h1>Welcome @User.Identity.Name</h1>
             <p class="tagline">This is your personalised landing page, equipt for your every need</p>
 
             <div class="summary-grid">
-                <a id="link-appointments" class="summary-card" href="appointment-list.html">
+                <a id="link-appointments" class="summary-card" href="@Url.Action("List", "Appointment")">
                     <h3>Upcoming Appointments</h3>
                     <ul id="upcoming-list" class="mini-list"><li class="muted">Loading..</li></ul>
                 </a>
 
-                <a id="link-inquiries" class="summary-card" href="inquiry-list.html">
+                <a id="link-inquiries" class="summary-card" href="@Url.Action("List", "Inquiry")">
                     <h3>Recent Inquiries</h3>
                     <ul id="inquiries-list" class="mini-list"><li class="muted">Loading…</li></ul>
                 </a>
@@ -75,23 +69,23 @@
             <div class="actions-grid">
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a href="appointment-booking.html">Book an Appointment</a></h3>
+                    <h3><a href="@Url.Action("Booking", "Appointment")">Book an Appointment</a></h3>
                     <p>You can make an appointment with your Skills Advisor while communicating any specific information. From the booking, a confirmation will be sent along with an invite, depending on specifics.</p>
-                    <button class="btn" data-nav="appointment-booking.html">Go</button>
+                    <button class="btn" data-nav="@Url.Action("Booking", "Appointment")">Go</button>
                 </div>
 
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a href="inquiry-create.html">Log An Inquiry</a></h3>
+                    <h3><a href="@Url.Action("Create", "Inquiry")">Log An Inquiry</a></h3>
                     <p>If you have any questions regarding your advisory, you can log an inquiry with your advisor.</p>
-                    <button class="btn" data-nav="inquiry-create.html">Go</button>
+                    <button class="btn" data-nav="@Url.Action("Create", "Inquiry")">Go</button>
                 </div>
 
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a href="inquiry-track.html">Track an Inquiry</a></h3>
+                    <h3><a href="@Url.Action("Track", "Inquiry")">Track an Inquiry</a></h3>
                     <p>You can track all the inquiries logged and see the progress of each one.</p>
-                    <button class="btn" data-nav="inquiry-track.html">Go</button>
+                    <button class="btn" data-nav="@Url.Action("Track", "Inquiry")">Go</button>
                 </div>
             </div>
         </section>
