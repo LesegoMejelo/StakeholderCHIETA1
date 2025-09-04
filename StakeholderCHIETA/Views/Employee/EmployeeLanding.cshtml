@@ -69,7 +69,7 @@
             <div class="actions-grid">
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a href="~/Views/EmployeeViews/AppointmentTracker.cshtml">Check your appointments</a></h3>
+                    <h3><a href="@Url.Action("Booking", "Appointment")">Check your appointments</a></h3>
                     <p>You can check all the appointments made with you. Each appointment will have the option to accept or decline.</p>
                     <button class="btn" data-nav="@Url.Action("Booking", "Appointment")">Go</button>
                 </div>
