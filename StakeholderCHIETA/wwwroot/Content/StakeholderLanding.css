@@ -5,20 +5,23 @@ ORIGINAL CSS
 * {
     box-sizing: border-box;
   }
-  
-  body {
+
+body {
     margin: 0;
     font-family: 'Segoe UI', sans-serif;
     background-color: #fff;
-  }
+    background-image: url('StakeholderLandingImages/Background4.png');
+}
 
   body {
     margin: 0;
     font-family: 'Segoe UI', sans-serif;
-    background-image: url('backgroundPicture.jpeg');
+    background-image: url('StakeholderLandingImages/Background3.png');
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
+    background-size: cover;
+    min-height: 100vh;
     color: #000;
   }
   
@@ -33,7 +36,8 @@ ORIGINAL CSS
   }
   
   .topbar img {
-    height: 50px;
+    height: 300px;
+    width: 200px;
   }
   
 
@@ -44,17 +48,19 @@ ORIGINAL CSS
     position: relative;
     overflow: hidden;
   }
-  
-  .welcome-section h1 {
+
+.welcome-section h1 {
     font-size: 2em;
     font-weight: bold;
     margin-bottom: 0.5em;
-  }
-  
-  .welcome-section p {
+    text-align: center;
+}
+
+.welcome-section p {
     font-style: italic;
     margin-bottom: 2em;
-  }
+    text-align: center;
+}
   
   .welcome-buttons {
     display: flex;
@@ -107,11 +113,12 @@ ORIGINAL CSS
     text-align: center;
     padding: 1em;
   }
-  
-  .action-section h2 {
+
+.action-section h2 {
     font-size: 1.5em;
     margin-bottom: 0.5em;
-  }
+    text-align: center;
+}
   
   .action-section p {
     font-size: 1em;
@@ -227,7 +234,7 @@ ORIGINAL CSS
   
   
   
-   Footer 
+   /*Footer 
   .footer {
     background-color: #311547;
     color: white;
@@ -242,6 +249,8 @@ ORIGINAL CSS
     max-width: 600px;
     margin: 2em auto 0;
   }
+      */
+
   
   @media (max-width: 768px) {
     .cards {

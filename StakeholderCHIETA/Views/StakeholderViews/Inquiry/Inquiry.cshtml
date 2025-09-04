@@ -1,0 +1,91 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Inquiry Page</title>
+    <link rel="stylesheet" href="~/Content/Style.css" asp-append-version="true" />
+</head>
+<body>
+
+    <!-- Navbar -->
+    <header class="navbar">
+        <img src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png"
+             alt="CHIETA Logo" />
+    </header>
+
+    <!-- Main Content -->
+    <div class="inquiry-form">
+        <h1>Log an Inquiry</h1>
+
+        <!-- Inquiry Type -->
+        <label for="inquiryType">Select Inquiry Type:</label>
+        <select id="inquiryType">
+            <option value="">-- Choose an option --</option>
+            <option value="Feedback Follow-Up">Feedback Follow-Up</option>
+            <option value="Training Availability">Training Availability</option>
+            <option value="Accreditation and Compliance">Accreditation and Compliance</option>
+            <option value="Funding and Grants">Funding and Grants</option>
+            <option value="Boardroom/Facility Use">Boardroom/Facility Use</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <!-- Issue Description -->
+        <label for="issue">Describe Issue:</label>
+        <textarea id="issue" placeholder="Type your issue here..."></textarea>
+
+        <!-- Submit Button -->
+        <button id="submitBtn" type="button">Submit</button>
+
+        <!-- Confirmation Message -->
+        <p id="confirmationMessage" class="confirmation" style="display: none;">
+            Your inquiry has been submitted. Please expect to hear from us within the next 3 business days.
+        </p>
+    </div>
+
+    <script>
+        document.getElementById("submitBtn").addEventListener("click", async function () {
+            const message = document.getElementById("issue").value.trim();
+            const inquiryType = document.getElementById("inquiryType").value;
+
+            // Basic validation
+            if (!message || !inquiryType) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            try {
+                const response = await fetch("/api/inquiry", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: new URLSearchParams({
+                        name: "Anonymous", // Name removed for now
+                        message: message,
+                        inquiryType: inquiryType
+                    })
+                });
+
+                const result = await response.json();
+                console.log("Server response:", result);
+
+                // Show confirmation
+                document.getElementById("confirmationMessage").style.display = "block";
+
+                // Clear form
+                document.getElementById("issue").value = "";
+                document.getElementById("inquiryType").value = "";
+
+            } catch (error) {
+                console.error("Submission failed:", error);
+                alert("Something went wrong. Please try again.");
+            }
+        });
+    </script>
+</body>
+</html>
+
