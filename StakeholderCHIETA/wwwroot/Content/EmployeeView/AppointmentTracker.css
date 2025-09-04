@@ -1,0 +1,342 @@
+﻿/* =========  Theme  ========= */
+:root {
+    --purple-900: #3b2458;
+    --purple-700: #4b2e6f;
+    --purple-100: #f7effa;
+    --pink-50: #fff3f5;
+    --beige-200: #f0dcb8;
+    --gold-600: #c8922b;
+    --gold-700: #b88421;
+    --ink: #231f2a;
+    --muted: #6b6574;
+    --panel: #ffffff;
+    --bg: #f3f3f5;
+    --shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+
+/* =========  Base  ========= */
+* {
+    box-sizing: border-box
+}
+
+html, body {
+    height: 100%
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    color: var(--ink);
+    background: var(--bg);
+}
+
+.container {
+    width: min(1100px, 92vw);
+    margin: 0 auto;
+}
+
+.page {
+    position: relative;
+    padding: 32px 0 80px
+}
+
+/* =========  Topbar  ========= */
+.topbar {
+    background: var(--purple-900);
+    color: #fff;
+    box-shadow: var(--shadow);
+}
+
+.topbar-inner {
+    display: flex;
+    align-items: center;
+    height: 82px
+}
+
+.logo {
+    height: 42px;
+    width: auto;
+    filter: drop-shadow(0 1px 0 rgba(0,0,0,.25));
+}
+
+/* =========  Titles  ========= */
+.page-title {
+    text-align: center;
+    color: var(--purple-900);
+    font-weight: 800;
+    letter-spacing: .3px;
+    margin: 32px 0 24px;
+}
+
+.section-title {
+    margin: 10px 0 12px;
+    color: #2d2540;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+/* =========  Panels  ========= */
+.panel {
+    background: var(--panel);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 20px 22px 26px;
+    margin: 22px 0 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* =========  Requests Table  ========= */
+.table-wrap {
+    overflow: auto
+}
+
+.requests-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #e6e0ee;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+    .requests-table thead th {
+        background: var(--gold-600);
+        color: #fff;
+        text-align: left;
+        padding: 12px 14px;
+        font-weight: 700;
+        letter-spacing: .4px;
+        border-right: 1px solid rgba(255,255,255,.2);
+    }
+
+        .requests-table thead th:last-child {
+            border-right: 0
+        }
+
+    .requests-table tbody td {
+        padding: 12px 14px;
+        border-top: 1px solid #eee8f3;
+    }
+
+    .requests-table tbody tr:nth-child(odd) td {
+        background: #fbf9ff;
+    }
+
+.cell-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn {
+    appearance: none;
+    border: 0;
+    border-radius: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 1px 0 rgba(0,0,0,.05);
+}
+
+.btn-accept {
+    background: #f0f7f0;
+    color: #196a2c;
+    border: 1px solid #cfe8d1
+}
+
+.btn-decline {
+    background: #fff2f2;
+    color: #7b1a1a;
+    border: 1px solid #f0c7c7
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+    .badge.accepted {
+        background: #e6f6ea;
+        color: #1f6f39;
+        border: 1px solid #cdebd4
+    }
+
+    .badge.declined {
+        background: #ffe8e8;
+        color: #8b1f1f;
+        border: 1px solid #f3c8c8
+    }
+
+/* =========  Calendar  ========= */
+.calendar {
+    background: #fff
+}
+
+.cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--purple-900);
+    color: #fff;
+    border-radius: 10px 10px 0 0;
+    padding: 12px 14px;
+}
+
+.cal-title {
+    font-weight: 700;
+    letter-spacing: .4px
+}
+
+.cal-nav {
+    background: transparent;
+    color: #fff;
+    border: 0;
+    font-size: 22px;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+}
+
+    .cal-nav:hover {
+        background: rgba(255,255,255,.1)
+    }
+
+.cal-grid {
+    border: 1px solid #e6e0ee;
+    border-top: 0;
+    border-radius: 0 0 10px 10px;
+    overflow: hidden;
+}
+
+.cal-dow {
+    background: var(--purple-700);
+    color: #fff;
+    padding: 8px 0;
+    text-align: center;
+    font-size: .9rem;
+    font-weight: 600;
+}
+
+.cal-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #fff7f9;
+}
+
+.cal-cell {
+    height: 96px;
+    padding: 8px;
+    border: 1px solid #f0e6f6;
+    border-top: 0;
+    border-left: 0;
+    position: relative;
+    background: #fff7f9;
+}
+
+    .cal-cell:nth-child(7n) {
+        border-right: 0
+    }
+
+    .cal-cell:nth-last-child(-n+7) {
+        border-bottom: 0
+    }
+
+    .cal-cell .date {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        font-size: .9rem;
+        color: #5a4c6b;
+        font-weight: 600;
+    }
+
+    .cal-cell.muted {
+        opacity: .5;
+        background: #fff
+    }
+
+    .cal-cell .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--purple-900);
+        position: absolute;
+        left: 10px;
+        top: 10px;
+    }
+
+/* =========  Decorative blobs  ========= */
+.blob {
+    position: absolute;
+    z-index: -1;
+    opacity: .9;
+    pointer-events: none;
+}
+
+.blob-right {
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: var(--beige-200);
+    right: -70px;
+    top: 100px;
+}
+
+.blob-left {
+    width: 230px;
+    height: 230px;
+    border-radius: 50%;
+    background: transparent;
+    border: 3px solid #4b2e6f;
+    left: -60px;
+    top: 420px;
+}
+
+.blob-right-bottom {
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: transparent;
+    border: 3px solid var(--gold-700);
+    right: -80px;
+    bottom: -60px;
+}
+
+/* =========  Footer  ========= */
+.footer {
+    height: 40px;
+    position: relative
+}
+
+.gold-box {
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    bottom: 16px;
+    width: 120px;
+    height: 10px;
+    background: var(--gold-600);
+    border-radius: 3px;
+}
+
+/* =========  Responsive  ========= */
+@media (max-width: 720px) {
+    .cal-cell {
+        height: 78px
+    }
+
+    .requests-table thead {
+        position: sticky;
+        top: 0;
+        z-index: 1
+    }
+
+    .section-title {
+        font-size: 1rem
+    }
+}

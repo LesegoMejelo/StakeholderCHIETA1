@@ -1,68 +1,12 @@
-﻿/* using StakeholderCHIETA.Models;
-using Microsoft.EntityFrameworkCore;
-using Google.Cloud.Firestore;
-using FirebaseAdmin;
-using Google.Apis.Auth.OAuth2;
-
-var builder = WebApplication.CreateBuilder(args);
-
-// this retrieves the path to the firebase service account key file from an environment variable
-var serviceAccountPath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
-
-if (string.IsNullOrEmpty(serviceAccountPath) || !File.Exists(serviceAccountPath))
-{
-    throw new FileNotFoundException(
-        "Firebase service account key file not found. " +
-        "Set the GOOGLE_APPLICATION_CREDENTIALS environment variable to a valid path."
-    );
-}
-
-// initialiazes the firebasee sdk for the app, uses service account credentials to authenticate with firebase services
-FirebaseApp.Create(new AppOptions()
-{
-    Credential = GoogleCredential.FromFile(serviceAccountPath)
-});
-
-// This line adds support for the Model-View-Controller (MVC) pattern, allowing the application to handle web requests and render views.
-builder.Services.AddControllersWithViews();
-
-// regiters a database context for sql (not necessary anymore due to nosql database)
-builder.Services.AddDbContext<EnquiryDBContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("EnquiryConnection")));
-
-//Register FirestoreDb for Dependency Injection, instance of firestore database will be created and shared throughout the app
-builder.Services.AddSingleton(provider =>
-{
-    return FirestoreDb.Create("stakeholder-app-57ed0"); // creates main client object used to interact with the firestore database
-});
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-}
-
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-
-app.UseRouting();
-
-app.UseAuthorization();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Home}/{id?}"
-);
-
-app.Run();*/
+﻿
 using StakeholderCHIETA.Models;
 using Microsoft.EntityFrameworkCore;
 using Google.Cloud.Firestore;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Identity;
+using FirebaseAdmin.Auth;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,53 +21,60 @@ if (string.IsNullOrEmpty(serviceAccountPath) || !File.Exists(serviceAccountPath)
     );
 }
 
-// 🔹 Initialize Firebase
-FirebaseApp.Create(new AppOptions()
+// 🔹 Initialize Firebase (only once, reuse if already created)
+FirebaseApp app;
+if (FirebaseApp.DefaultInstance == null)
 {
-    Credential = GoogleCredential.FromFile(serviceAccountPath)
-});
-
-// Add services to the container
-builder.Services.AddControllersWithViews();
-
-
-
-
-// Initialize Firebase
-/*FirebaseApp.Create(new AppOptions()
+    app = FirebaseApp.Create(new AppOptions()
+    {
+        Credential = GoogleCredential.FromFile(serviceAccountPath)
+    });
+}
+else
 {
-    Credential = GoogleCredential.FromFile("adminsdk.json")
-});*/
-
-
-builder.Services.AddDbContext<EnquiryDBContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("EnquiryConnection")));
+    app = FirebaseApp.DefaultInstance;
+}
 
 // 🔹 Register FirestoreDb for Dependency Injection
 builder.Services.AddSingleton(provider =>
 {
-    return FirestoreDb.Create("stakeholder-app-57ed0"); // project ID only
+    return FirestoreDb.Create("stakeholder-app-57ed0"); // your project ID
 });
 
-var app = builder.Build();
+// Register FirebaseAuth for Dependency Injection
+builder.Services.AddSingleton(FirebaseAuth.GetAuth(app));
+
+// Add services to the container
+builder.Services.AddControllersWithViews();
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Auth/Login";
+        options.AccessDeniedPath = "/Auth/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+    });
+
+var appInstance = builder.Build();
 
 // Configure the HTTP request pipeline
-if (!app.Environment.IsDevelopment())
+if (!appInstance.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    appInstance.UseExceptionHandler("/Home/Error");
+    appInstance.UseHsts();
 }
 
-app.UseHttpsRedirection();
-app.UseStaticFiles();
+appInstance.UseHttpsRedirection();
+appInstance.UseStaticFiles();
 
-app.UseRouting();
+appInstance.UseRouting();
 
-app.UseAuthorization();
+appInstance.UseAuthentication();
+appInstance.UseAuthorization();
 
-app.MapControllerRoute(
+appInstance.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}"
+    pattern: "{controller=Auth}/{action=Login}/{id?}"
 );
 
-app.Run();
+appInstance.Run();

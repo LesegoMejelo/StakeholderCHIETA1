@@ -22,8 +22,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Views\AdvisorViews\Home\" />
-  </ItemGroup>
-
 </Project>

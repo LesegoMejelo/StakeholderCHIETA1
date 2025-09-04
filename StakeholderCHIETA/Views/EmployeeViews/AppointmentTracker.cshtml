@@ -1,0 +1,82 @@
+﻿@{
+    Layout = null;
+}
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Appointment Tracking Page</title>
+    <link rel="stylesheet" href="~/Content/EmployeeView/AppointmentTracker.css" />
+</head>
+<body>
+    <!-- Top Bar -->
+    <header class="topbar">
+        <div class="topbar-inner container">
+            <img class="logo" src="assets/chieta-logo.png" alt="CHIETA logo" />
+        </div>
+    </header>
+
+    <main class="container page">
+        <!-- Decorative shapes -->
+        <div class="blob blob-right"></div>
+        <div class="blob blob-left"></div>
+        <div class="blob blob-right-bottom"></div>
+
+        <h1 class="page-title">Track your appointments</h1>
+
+        <!-- Appointment Requests -->
+        <section aria-labelledby="req-title" class="panel">
+            <h2 id="req-title" class="section-title">Appointment requests</h2>
+
+            <div class="table-wrap">
+                <table class="requests-table" aria-describedby="req-title">
+                    <thead>
+                        <tr>
+                            <th scope="col">DATE</th>
+                            <th scope="col">TIME</th>
+                            <th scope="col">REASON</th>
+                            <th scope="col">ACCEPT</th>
+                            <th scope="col">DECLINE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requests-body">
+                        <!-- Rows injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Appointments Calendar -->
+        <section aria-labelledby="cal-title" class="panel">
+            <h2 id="cal-title" class="section-title">Appointments</h2>
+
+            <div class="calendar">
+                <div class="cal-header">
+                    <button class="cal-nav" id="prev-month" aria-label="Previous month">‹</button>
+                    <div class="cal-title" id="cal-title">August 2025</div>
+                    <button class="cal-nav" id="next-month" aria-label="Next month">›</button>
+                </div>
+
+                <div class="cal-grid" role="grid" aria-labelledby="cal-title">
+                    <div class="cal-dow" role="columnheader" aria-label="Sunday">Su</div>
+                    <div class="cal-dow" role="columnheader" aria-label="Monday">Mo</div>
+                    <div class="cal-dow" role="columnheader" aria-label="Tuesday">Tu</div>
+                    <div class="cal-dow" role="columnheader" aria-label="Wednesday">We</div>
+                    <div class="cal-dow" role="columnheader" aria-label="Thursday">Th</div>
+                    <div class="cal-dow" role="columnheader" aria-label="Friday">Fr</div>
+                    <div class="cal-dow" role="columnheader" aria-label="Saturday">Sa</div>
+
+                    <!-- Days injected by JS -->
+                    <div id="cal-days" class="cal-days" role="rowgroup"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="gold-box"></div>
+    </footer>
+
+    <script src="~/Content/EmployeeView/js/AppointmentTracker.js"></script>
+</body>
+</html>
