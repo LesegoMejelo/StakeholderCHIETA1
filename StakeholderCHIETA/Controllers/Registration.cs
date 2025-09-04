@@ -1,4 +1,4 @@
-﻿using FirebaseAdmin.Auth;
+﻿/*using FirebaseAdmin.Auth;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -59,5 +59,5 @@ namespace StakeholderCHIETA.Controllers
             }
         }
     }
-}
+}*/
 

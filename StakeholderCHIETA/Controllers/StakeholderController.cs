@@ -1,11 +1,12 @@
 ﻿using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using StakeholderCHIETA.Filters;
+using Microsoft.AspNetCore.Authorization;
 
 namespace StakeholderCHIETA.Controllers
 {
-    [AuthorizeRole("Stakeholder")]
-    public class StakholderController : Controller
+    [Authorize(Roles = "Client")]
+    public class StakeholderController : Controller
     {
         public IActionResult Index()
         {

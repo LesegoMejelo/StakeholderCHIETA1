@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using StakeholderCHIETA.Filters;
+using Microsoft.AspNetCore.Authorization;
 
 namespace StakeholderCHIETA.Controllers
 {
-    [AuthorizeRole("Admin")]
-    public class Admin : Controller
+    
+    /*public class Admin : Controller
     {
         public IActionResult Login()
         {
@@ -15,5 +16,5 @@ namespace StakeholderCHIETA.Controllers
         {
             return View("~/Views/AdminViews/Registration.cshtml");
         }
-    }
+    }*/
 }

@@ -19,7 +19,7 @@
     <div class="welcome-section">
         <div class="circle-bg"></div>
 
-        <h1>Welcome @ViewBag.UserName</h1>
+        <h1>Welcome @User.Identity.Name</h1>
         <p>This is your personalised landing page, equipt for your every need</p>
         <div class="welcome-buttons">
             <a asp-action="Logout" asp-controller="Auth" class="btn-primary">Log out of profile</a>

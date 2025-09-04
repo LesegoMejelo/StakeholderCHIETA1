@@ -1,5 +1,4 @@
-﻿/*
-using FirebaseAdmin.Auth;
+﻿using FirebaseAdmin.Auth;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -8,123 +7,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace Staekholder_CHIETA_X.Controllers
-{
-    [Route("api/[controller]")]
-    [ApiController]
-    public class AuthController : Controller
-    {
-        private readonly FirebaseAuth _auth;
-        private readonly FirestoreDb _firestoreDb;
-
-        public AuthController(FirebaseAuth auth, FirestoreDb firestoreDb)
-        {
-            _auth = auth;
-            _firestoreDb = firestoreDb;
-        }
-
-        // Admin registers new users
-        [HttpPost("register")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> RegisterUser([FromForm] string email, [FromForm] string password, [FromForm] string name, [FromForm] string role)
-        {
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(name) || string.IsNullOrEmpty(role))
-                return BadRequest(new { message = "All fields are required." });
-
-            try
-            {
-                var userArgs = new UserRecordArgs
-                {
-                    Email = email,
-                    Password = password,
-                    DisplayName = name
-                };
-                UserRecord userRecord = await _auth.CreateUserAsync(userArgs);
-
-                var usersRef = _firestoreDb.Collection("Users");
-                await usersRef.Document(userRecord.Uid).SetAsync(new
-                {
-                    name,
-                    email,
-                    role,
-                    createdAt = FieldValue.ServerTimestamp
-                });
-
-                return Ok(new { message = "User registered successfully!", uid = userRecord.Uid });
-            }
-            catch (FirebaseAuthException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        // GET login page
-        [HttpGet("login")]
-        public IActionResult Login() => View();
-
-        // POST login
-        [HttpPost("login")]
-        public async Task<IActionResult> Login(string idToken)
-        {
-            try
-            {
-                var decodedToken = await _auth.VerifyIdTokenAsync(idToken);
-                var firebaseUid = decodedToken.Uid;
-
-                var userDoc = await _firestoreDb.Collection("Users").Document(firebaseUid).GetSnapshotAsync();
-                if (!userDoc.Exists) return Unauthorized();
-
-                var role = userDoc.GetValue<string>("role");
-                var email = userDoc.GetValue<string>("email");
-                var name = userDoc.GetValue<string>("name");
-
-                // Create ClaimsPrincipal
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.NameIdentifier, firebaseUid),
-                    new Claim(ClaimTypes.Name, name),
-                    new Claim(ClaimTypes.Email, email),
-                    new Claim(ClaimTypes.Role, role)
-                };
-
-                var identity = new ClaimsIdentity(claims, "Firebase");
-                var principal = new ClaimsPrincipal(identity);
-                await HttpContext.SignInAsync(principal);
-
-                // Redirect based on role
-                return role switch
-                {
-                    "Client" => RedirectToAction("Home", "Client"),
-                    "Advisor" => RedirectToAction("Home", "Employee"),
-                    "Admin" => RedirectToAction("Home", "Admin"),
-                    _ => Forbid()
-                };
-            }
-            catch
-            {
-                return Unauthorized();
-            }
-        }
-
-        [HttpGet("logout")]
-        public IActionResult Logout()
-        {
-            HttpContext.SignOutAsync();
-            return RedirectToAction("Login");
-        }
-    }
-}
-*/
-using FirebaseAdmin.Auth;
-using Google.Cloud.Firestore;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Security.Claims;
-using System.Threading.Tasks;
-
-namespace Staekholder_CHIETA_X.Controllers
+namespace StakeholderCHIETA.Controllers
 {
     public class AuthController : Controller
     {
@@ -150,12 +33,20 @@ namespace Staekholder_CHIETA_X.Controllers
                 var decodedToken = await _auth.VerifyIdTokenAsync(idToken);
                 var firebaseUid = decodedToken.Uid;
 
-                var userDoc = await _firestoreDb.Collection("Users").Document(firebaseUid).GetSnapshotAsync();
-                if (!userDoc.Exists) return Unauthorized();
+                if (string.IsNullOrEmpty(idToken))
+                {
+                    return BadRequest(new { message = "No token received by server." });
+                }
 
-                var role = userDoc.GetValue<string>("role");
+                var userDoc = await _firestoreDb.Collection("Users").Document(firebaseUid).GetSnapshotAsync();
+                if (!userDoc.Exists)
+                {
+                    return Unauthorized(new { message = "User not found in database." });
+                }
+
+                var role = userDoc.GetValue<string>("Role");
                 var email = userDoc.GetValue<string>("email");
-                var name = userDoc.GetValue<string>("name");
+                var name = userDoc.GetValue<string>("Name");
 
                 // Create ClaimsPrincipal
                 var claims = new List<Claim>
@@ -171,17 +62,23 @@ namespace Staekholder_CHIETA_X.Controllers
                 await HttpContext.SignInAsync(principal);
 
                 // Redirect based on role
-                return role switch
+                return Ok(new
                 {
-                    "Client" => RedirectToAction("Home", "Client"),
-                    "Advisor" => RedirectToAction("Home", "Employee"),
-                    "Admin" => RedirectToAction("Home", "Admin"),
-                    _ => Forbid()
-                };
+                    role,
+                    redirectUrl = role switch
+                    {
+                        "Client" => Url.Action("Home", "Stakeholder"),
+                        "Advisor" => Url.Action("Home", "Advisor"),
+                        "Admin" => Url.Action("Home", "Admin"),
+                        _ => Url.Action("Login", "Auth")
+                    }
+                });
+
             }
-            catch
+            catch (Exception ex)
             {
-                return Unauthorized();
+                // Returns a JSON object with an error message on failure
+                return Unauthorized(new { message = $"Authentication failed: {ex.Message}" });
             }
         }
 
@@ -195,13 +92,13 @@ namespace Staekholder_CHIETA_X.Controllers
 
             try
             {
-                var userArgs = new UserRecordArgs
+                var userRecordArgs = new UserRecordArgs
                 {
                     Email = email,
                     Password = password,
                     DisplayName = name
                 };
-                UserRecord userRecord = await _auth.CreateUserAsync(userArgs);
+                UserRecord userRecord = await _auth.CreateUserAsync(userRecordArgs);
 
                 var usersRef = _firestoreDb.Collection("Users");
                 await usersRef.Document(userRecord.Uid).SetAsync(new
@@ -222,9 +119,9 @@ namespace Staekholder_CHIETA_X.Controllers
 
         // GET: /Auth/Logout
         [HttpGet]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            HttpContext.SignOutAsync();
+            await HttpContext.SignOutAsync();
             return RedirectToAction("Login");
         }
     }

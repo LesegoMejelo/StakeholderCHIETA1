@@ -1,4 +1,6 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Html
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
     ViewBag.Title = "Login";
 }
 
@@ -12,14 +14,13 @@
     <button type="submit">Login</button>
 </form>
 
-<!-- Firebase JS SDK -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js";
 
-    // Your Firebase config
+    // Firebase config
     const firebaseConfig = {
-            apiKey: "AIzaSyDP43thmAHRibCEbFcBZx2vpA2mEPDByz8",
+        apiKey: "AIzaSyDP43thmAHRibCEbFcBZx2vpA2mEPDByz8",
         authDomain: "stakeholder-app-57ed0.firebaseapp.com",
         projectId: "stakeholder-app-57ed0",
         storageBucket: "stakeholder-app-57ed0.appspot.com",
@@ -27,11 +28,9 @@
         appId: "1:988521434771:web:d189e963a8c41909a2c766"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // Handle login
     const loginForm = document.getElementById("loginForm");
     loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -40,17 +39,27 @@
         const password = document.getElementById("password").value;
 
         try {
-            // Sign in with Firebase Auth
+            // Firebase sign-in
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-
-            // Get ID token
             const token = await userCredential.user.getIdToken();
 
-            // Store token locally (to send to backend)
-            localStorage.setItem("firebaseToken", token);
+            // Send token to backend
+            const params = new URLSearchParams();
+            params.append("idToken", token);
 
-            // Optionally redirect to dashboard
-            window.location.href = "/Dashboard";
+            const response = await fetch("/Auth/Login", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: params
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                window.location.href = data.redirectUrl; // role-based redirect
+            } else {
+                const errorText = await response.text();
+                alert("Login failed. " + errorText);
+            }
         } catch (error) {
             alert(error.message);
         }

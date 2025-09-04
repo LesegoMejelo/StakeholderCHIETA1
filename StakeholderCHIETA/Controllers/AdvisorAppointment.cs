@@ -1,28 +1,29 @@
 ﻿using Google.Cloud.Firestore;
+using Microsoft.AspNetCore.Authorization; 
 using Microsoft.AspNetCore.Mvc;
 using StakeholderCHIETA.Models;
 using System.Linq;
 using System.Threading.Tasks;
+using StakeholderCHIETA.Filters;
 
 namespace StakeholderCHIETA.Controllers
 {
+    // Apply authorization to the entire controller
+    [Authorize(Roles = "Advisor, Admin")]
     public class AdvisorAppointmentController : Controller
     {
         private readonly FirestoreDb _firestoreDb;
 
-        // ✅ Constructor name must match the class name
         public AdvisorAppointmentController(FirestoreDb firestoreDb)
         {
             _firestoreDb = firestoreDb;
         }
 
-        // Default view
         public IActionResult Index()
         {
             return View();
         }
 
-        // ✅ View all appointments
         [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
@@ -34,7 +35,6 @@ namespace StakeholderCHIETA.Controllers
             return View(appointments);
         }
 
-        // ✅ Accept or Reject appointment
         [HttpPost]
         public async Task<IActionResult> UpdateStatus(string appointmentId, string status)
         {

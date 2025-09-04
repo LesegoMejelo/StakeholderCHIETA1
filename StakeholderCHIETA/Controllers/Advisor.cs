@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims; // Import this namespace
+using StakeholderCHIETA.Filters;
 
 namespace StakeholderCHIETA.Controllers
 {
@@ -18,7 +19,7 @@ namespace StakeholderCHIETA.Controllers
             ViewBag.UserName = userName;
             ViewBag.UserEmail = userEmail;           
 
-            return View("~/Views/EmployeeViews/Home/EmployeeLanding.cshtml");
+            return View("~/Views/AdvisorViews/Home/EmployeeLanding.cshtml");
         }
     }
 }
