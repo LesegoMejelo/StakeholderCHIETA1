@@ -1,0 +1,99 @@
+﻿@{
+    Layout = null;
+}
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inquiry Updates</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/Content/EmployeeView/InquiryTracker.css" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo" />
+
+            <!-- Settings in header -->
+            <nav class="header-actions">
+                <div class="menu" id="settings">
+                    <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span class="hide-sm">Settings</span>
+                    </button>
+
+                    <div class="menu-popover" id="settings-menu" role="menu" hidden>
+                        <a role="menuitem" href="profile.html">Profile</a>
+                        <a role="menuitem" href="notifications.html">Notifications</a>
+                        <div class="menu-sep" role="separator"></div>
+                        <!-- <div class="menu-group" role="group" aria-label="Preferences">
+                          <label class="menu-check">
+                            <input id="pref-dark" type="checkbox" />
+                            <span>Dark mode</span>
+                          </label>
+                        </div> -->
+                        <div class="menu-sep" role="separator"></div>
+                        <a role="menuitem" href="logout.html" class="danger">Sign out</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page">
+        <div class="container card">
+
+            <!-- Decorative circles -->
+            <div class="shape shape--tl" aria-hidden="true"></div>
+            <div class="shape shape--tr" aria-hidden="true"></div>
+            <div class="shape shape--bl" aria-hidden="true"></div>
+            <div class="shape shape--mr" aria-hidden="true"></div>
+
+            <h1 class="page-title">Inquiry Updates</h1>
+
+            <form id="searchForm" class="search">
+                <label class="label" for="refNumber">Reference Number:</label>
+                <div class="search-row">
+                    <input id="refNumber"
+                           name="refNumber"
+                           class="input"
+                           type="text"
+                           placeholder="Please type your reference number here"
+                           required
+                           aria-describedby="refHelp" />
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+                <p id="refHelp" class="help">Enter your unique inquiry reference (e.g., CHI-2025-00123).</p>
+            </form>
+
+            <section class="details" aria-live="polite">
+                <h2 class="section-title">Inquiry Details</h2>
+
+                <fieldset class="status-group">
+                    <legend class="label">Inquiry Status</legend>
+                    <label class="radio">
+                        <input type="radio" name="status" value="in-progress" id="statusInProgress" />
+                        <span>In Progress</span>
+                    </label>
+                    <label class="radio">
+                        <input type="radio" name="status" value="completed" id="statusCompleted" />
+                        <span>Completed</span>
+                    </label>
+                </fieldset>
+
+                <div class="desc-group">
+                    <label class="label" for="statusDesc">Status Description:</label>
+                    <textarea id="statusDesc" class="textarea" rows="8" placeholder="Status notes will appear here…" readonly></textarea>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-secondary" id="doneBtn" type="button">Done</button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="~/Content/EmployeeView/js/InquiryTracker.js"></script>
+</body>
+</html>
