@@ -3,6 +3,7 @@ using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -26,34 +27,50 @@ namespace StakeholderCHIETA.Controllers
 
         // POST: /Auth/Login
         [HttpPost]
-        public async Task<IActionResult> Login(string idToken)
+        public async Task<IActionResult> Login([FromForm] string idToken)
         {
             try
             {
                 var decodedToken = await _auth.VerifyIdTokenAsync(idToken);
                 var firebaseUid = decodedToken.Uid;
 
-                if (string.IsNullOrEmpty(idToken))
+                // Get docs from both collections
+                var userDocTask = _firestoreDb.Collection("Users").Document(firebaseUid).GetSnapshotAsync();
+                var adminDocTask = _firestoreDb.Collection("Admin").Document(firebaseUid).GetSnapshotAsync();
+
+                await Task.WhenAll(userDocTask, adminDocTask);
+
+                var userDoc = userDocTask.Result;
+                var adminDoc = adminDocTask.Result;
+
+                if (!userDoc.Exists && !adminDoc.Exists)
                 {
-                    return BadRequest(new { message = "No token received by server." });
+                    return Unauthorized(new
+                    {
+                        success = false,
+                        message = "User not found in Users or Admin collections.",
+                        uid = firebaseUid
+                    });
                 }
 
-                var userDoc = await _firestoreDb.Collection("Users").Document(firebaseUid).GetSnapshotAsync();
-                if (!userDoc.Exists)
-                {
-                    return Unauthorized(new { message = "User not found in database." });
-                }
+                // Prefer Admin if exists
+                var doc = adminDoc.Exists ? adminDoc : userDoc;
 
-                var role = userDoc.GetValue<string>("Role");
-                var email = userDoc.GetValue<string>("email");
-                var name = userDoc.GetValue<string>("Name");
+                // Extract fields safely
+                string role = doc.ContainsField("Role") ? doc.GetValue<string>("Role") : "";
+                string email = doc.ContainsField("email") ? doc.GetValue<string>("email") : "";
+                string name = doc.ContainsField("Name") ? doc.GetValue<string>("Name") : "";
 
-                // Create ClaimsPrincipal
+                // Normalize role (first letter uppercase, rest lowercase)
+                role = string.IsNullOrEmpty(role) ? "" : char.ToUpper(role[0]) + role.Substring(1).ToLower();
+
+                Console.WriteLine($"Login attempt - UID: {firebaseUid}, Role: {role}, Email: {email}");
+
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, firebaseUid),
-                    new Claim(ClaimTypes.Name, name),
-                    new Claim(ClaimTypes.Email, email),
+                    new Claim(ClaimTypes.Name, name ?? ""),
+                    new Claim(ClaimTypes.Email, email ?? ""),
                     new Claim(ClaimTypes.Role, role)
                 };
 
@@ -61,53 +78,65 @@ namespace StakeholderCHIETA.Controllers
                 var principal = new ClaimsPrincipal(identity);
                 await HttpContext.SignInAsync(principal);
 
-                // Redirect based on role
-                return Ok(new
+                // Role-based redirect
+                string? redirectUrl = role.ToLower() switch
                 {
-                    role,
-                    redirectUrl = role switch
-                    {
-                        "Client" => Url.Action("Home", "Stakeholder"),
-                        "Advisor" => Url.Action("Home", "Advisor"),
-                        "Admin" => Url.Action("Home", "Admin"),
-                        _ => Url.Action("Login", "Auth")
-                    }
-                });
+                    "client" => Url.Action("Home", "Stakeholder"),
+                    "advisor" => Url.Action("Home", "Advisor"),
+                    "admin" => Url.Action("Index", "Registration"),
+                    _ => Url.Action("Login", "Auth")
+                };
 
+                return Ok(new { success = true, role, redirectUrl });
             }
             catch (Exception ex)
             {
-                // Returns a JSON object with an error message on failure
-                return Unauthorized(new { message = $"Authentication failed: {ex.Message}" });
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = $"Authentication failed: {ex.Message}",
+                    stackTrace = ex.StackTrace
+                });
             }
         }
+
 
         // POST: /Auth/Register (only Admins)
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> RegisterUser([FromForm] string email, [FromForm] string password, [FromForm] string name, [FromForm] string role)
+        public async Task<IActionResult> RegisterUser([FromForm] string email, [FromForm] string password, [FromForm] string Name, [FromForm] string Role)
         {
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(name) || string.IsNullOrEmpty(role))
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(Name) || string.IsNullOrEmpty(Role))
                 return BadRequest(new { message = "All fields are required." });
 
             try
             {
+                // Normalize role
+                Role = char.ToUpper(Role[0]) + Role.Substring(1).ToLower();
+
+                // Create Firebase user
                 var userRecordArgs = new UserRecordArgs
                 {
                     Email = email,
                     Password = password,
-                    DisplayName = name
+                    DisplayName = Name
                 };
                 UserRecord userRecord = await _auth.CreateUserAsync(userRecordArgs);
 
+                // Save Firestore user
                 var usersRef = _firestoreDb.Collection("Users");
-                await usersRef.Document(userRecord.Uid).SetAsync(new
+
+                var userData = new Dictionary<string, object>
                 {
-                    name,
-                    email,
-                    role,
-                    createdAt = FieldValue.ServerTimestamp
-                });
+                    { "Name", Name ?? "" },
+                    { "Role", Role },
+                    { "email", email },
+                    { "password", password }, // ⚠️ consider removing
+                    { "isActive", true },
+                    { "createdAt", Timestamp.GetCurrentTimestamp() }
+                };
+
+                await usersRef.Document(userRecord.Uid).SetAsync(userData);
 
                 return Ok(new { message = "User registered successfully!", uid = userRecord.Uid });
             }
