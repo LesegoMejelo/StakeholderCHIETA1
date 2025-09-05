@@ -18,11 +18,11 @@ namespace Staekholder_CHIETA_X.Controllers
 
         //asynchronous method that handles the post request, returns IActionResult which is an interface that reps the result of an action method
         //its the main function for creating an appointment, it saves the information put on the website and takes it to firestore
-        public async Task<IActionResult> Post(   
+        public async Task<IActionResult> Post(
             [FromForm] string advisor,
             [FromForm] string reason,
             [FromForm] string date,
-            [FromForm] string time)    
+            [FromForm] string time)
         {
             var docRef = await _db.Collection("appointments").AddAsync(new
             {
@@ -39,12 +39,9 @@ namespace Staekholder_CHIETA_X.Controllers
 
         public IActionResult Index() //responsible for showing the web pages to the user
         {
-            return View("~/Views/Appointment/Book.cshtml");
+            return View("~/Views/StakeholderViews/Appointment/Appointment.cshtml");
         }
 
-        public IActionResult Book() //responsible for showing the web pages to the user, the ACTUAL appointment booking page
-        {
-            return View();
-        }
     }
 }
+      
