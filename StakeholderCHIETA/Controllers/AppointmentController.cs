@@ -1,4 +1,4 @@
-﻿using Google.Cloud.Firestore;
+﻿/*using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Razor.Compilation;
 
@@ -46,5 +46,192 @@ namespace Staekholder_CHIETA_X.Controllers
         {
             return View();
         }
+    }
+}
+*/
+using Google.Cloud.Firestore;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Razor.Compilation;
+using StakeholderCHIETA.Models;
+using StakeholderCHIETA.Services;
+using System.Security.Claims;
+
+namespace Staekholder_CHIETA_X.Controllers
+{
+    public class AppointmentController : Controller
+    {
+        private readonly FirestoreDb _db;  //declaring read-only to hole an instance of firestore database
+        private readonly IAppointmentQRService _qrService; // ADD THIS LINE
+
+        public AppointmentController(FirestoreDb db, IAppointmentQRService qrService)  // ADD qrService parameter
+        {
+            _db = db;
+            _qrService = qrService; // ADD THIS LINE
+        }
+
+        [HttpPost]
+        [Route("api/appointment")]  //attributes that configure the method as a handler for http post requests to the api/appointment url
+        //asynchronous method that handles the post request, returns IActionResult which is an interface that reps the result of an action method
+        //its the main function for creating an appointment, it saves the information put on the website and takes it to firestore
+        public async Task<IActionResult> Post(
+            [FromForm] string advisor,
+            [FromForm] string reason,
+            [FromForm] string date,
+            [FromForm] string time)
+        {
+            try
+            {
+                // Get current user info (you'll need to implement this based on your auth system)
+                var clientId = GetCurrentUserId(); // You'll need to implement this
+                var clientName = GetCurrentUserName(); // You'll need to implement this
+                var userEmail = GetCurrentUserEmail(); // You'll need to implement this
+
+                // Create appointment object for QR service
+                var appointment = new Appointment
+                {
+                    AppointmentId = Guid.NewGuid().ToString(),
+                    ClientId = clientId,
+                    ClientName = clientName,
+                    Advisor = advisor,
+                    Date = DateTime.Parse(date),
+                    Time = time,
+                    Reason = reason,
+                    Status = "Pending"
+                };
+
+                // Save to Firestore (your existing logic with some modifications)
+                var docRef = await _db.Collection("appointments").AddAsync(new
+                {
+                    appointmentId = appointment.AppointmentId, // ADD THIS for consistency
+                    clientId = clientId, // ADD THIS
+                    clientName = clientName, // ADD THIS
+                    advisorId = advisor,
+                    reason = reason,
+                    date = date,
+                    time = time,
+                    status = "Pending",
+                    createdAt = Timestamp.GetCurrentTimestamp()
+                });
+
+                // UPDATE the appointment ID to match Firestore document ID
+                appointment.AppointmentId = docRef.Id;
+
+                // NEW: Send QR code email
+                if (!string.IsNullOrEmpty(userEmail))
+                {
+                    await _qrService.SendAppointmentQREmailAsync(appointment, userEmail);
+                    return Ok(new { id = docRef.Id, message = "Appointment booked and QR code sent to your email!" });
+                }
+                else
+                {
+                    return Ok(new { id = docRef.Id, message = "Appointment booked, but could not send QR code (email not found)" });
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error (add logging if needed)
+                return BadRequest(new { message = "Failed to book appointment", error = ex.Message });
+            }
+        }
+
+        // NEW: QR Code validation endpoint
+        [HttpPost]
+        [Route("api/appointment/validate-qr")]
+        public async Task<IActionResult> ValidateQRCode([FromBody] ValidateQRRequest request)
+        {
+            try
+            {
+                var qrCodeData = System.Text.Json.JsonSerializer.Deserialize<QRCodeData>(request.QRData);
+
+                // Check if expired
+                if (DateTime.UtcNow > qrCodeData.ExpiryTime)
+                {
+                    return Ok(new { IsValid = false, Message = "QR code has expired" });
+                }
+
+                // Get the token service and validate
+                var tokenService = HttpContext.RequestServices.GetRequiredService<ITokenService>() as FirestoreTokenService;
+                var isValid = await tokenService.ValidateTokenAsync(qrCodeData.ValidationToken, qrCodeData.AppointmentId);
+
+                return Ok(new
+                {
+                    IsValid = isValid,
+                    Message = isValid ? "QR code is valid" : "QR code is invalid",
+                    AppointmentId = qrCodeData.AppointmentId,
+                    ClientId = qrCodeData.ClientId,
+                    AppointmentDate = qrCodeData.AppointmentDate.ToString("yyyy-MM-dd"),
+                    AppointmentTime = qrCodeData.AppointmentTime
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { IsValid = false, Message = "Invalid QR code format", Error = ex.Message });
+            }
+        }
+
+        public IActionResult Index() //responsible for showing the web pages to the user
+        {
+            return View("~/Views/Appointment/Book.cshtml");
+        }
+
+        public IActionResult Book() //responsible for showing the web pages to the user, the ACTUAL appointment booking page
+        {
+            return View();
+        }
+
+        // HELPER METHODS - You'll need to implement these based on your authentication system
+        private string GetCurrentUserId()
+        {
+            // Example implementations - adjust based on your auth system:
+
+            // If using Claims-based auth:
+            // return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // If using session:
+            // return HttpContext.Session.GetString("UserId");
+
+            // If using Firebase Auth with custom claims:
+             return User.FindFirst("user_id")?.Value;
+
+            // TEMPORARY - replace with your actual implementation
+            return "temp_user_id";
+        }
+
+        private string GetCurrentUserName()
+        {
+            // Example implementations:
+
+            // If using Claims-based auth:
+            // return User.FindFirst(ClaimTypes.Name)?.Value;
+
+            // If using session:
+             return HttpContext.Session.GetString("UserName");
+
+            // TEMPORARY - replace with your actual implementation
+            return "temp_user_name";
+        }
+
+        private string GetCurrentUserEmail()
+        {
+            // Example implementations:
+
+            // If using Claims-based auth:
+            // return User.FindFirst(ClaimTypes.Email)?.Value;
+
+            // If using session:
+            // return HttpContext.Session.GetString("UserEmail");
+
+            // If using Firebase Auth:
+            return User.FindFirst("email")?.Value;
+
+            // TEMPORARY - replace with your actual implementation
+            return "user@example.com";
+        }
+    }
+
+    // ADD THESE REQUEST MODELS (can go at the bottom of the file or in separate files)
+    public class ValidateQRRequest
+    {
+        public string QRData { get; set; }
     }
 }

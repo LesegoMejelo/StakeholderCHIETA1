@@ -27,6 +27,7 @@ namespace StakeholderCHIETA.Controllers
         public IActionResult Login() => View();
 
         // POST: /Auth/Login
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Login([FromForm] string idToken)
         {

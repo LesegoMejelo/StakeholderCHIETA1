@@ -27,5 +27,13 @@ namespace StakeholderCHIETA.Models
 
         [FirestoreProperty]
         public string Status { get; set; } = "Pending";
+        public object BookedDateTime { get; internal set; }
+        public object Title { get; internal set; }
+        public object Description { get; internal set; }
+        public object Id { get; internal set; }
+        public object UserId { get; internal set; }
     }
+   
+
+
 }
