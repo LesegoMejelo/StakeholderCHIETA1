@@ -22,4 +22,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Views\StakeholderViews\Log Inquiry\" />
+    <Folder Include="Views\StakeholderViews\Log Inquiry_Invalid _ignore_DeleteLater\" />
+  </ItemGroup>
+
 </Project>
