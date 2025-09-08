@@ -1,4 +1,4 @@
-﻿using Google.Cloud.Firestore;
+﻿/*using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Razor.Compilation;
 
@@ -44,4 +44,3 @@ namespace Staekholder_CHIETA_X.Controllers
 
     }
 }
-      

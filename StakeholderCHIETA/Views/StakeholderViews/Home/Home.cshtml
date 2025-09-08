@@ -10,32 +10,42 @@
     <title>Stakeholder Landing Page</title>
     <link rel="stylesheet" href="~/Content/EmployeeView/EmployeeLandingPage.css" />
 </head>
-<body> 
-    <!-- Top Bar -->
-    <header class="topbar">
-        <div class="container topbar-inner">
-            <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo" />
+<body>
+    
+    <!-- Top Bar with Logo -->
+    <div class="topbar">
+        <img src="~/content/StakeholderLandingImages/Logo.png" alt="Chieta Logo" />
+    </div>
+    
 
-            <!-- Settings in header -->
-            <nav class="header-actions">
-                <div class="menu" id="settings">
-                    <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-                        <span class="hide-sm">Settings</span>
-                    </button>
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <div class="circle-bg"></div>
 
-                    <div class="menu-popover" id="settings-menu" role="menu" hidden>
-                        <a role="menuitem" href="profile.html">Profile</a>
-                        <a role="menuitem" href="notifications.html">Notifications</a>
-                        <div class="menu-sep" role="separator"></div>
-                         <div class="menu-group" role="group" aria-label="Preferences">
-                          <label class="menu-check">
-                            <input id="pref-dark" type="checkbox" />
-                            <span>Dark mode</span>
-                          </label>
-                        </div> 
-                        <div class="menu-sep" role="separator"></div>
-                        <a role="menuitem" href="logout.html" class="danger">Sign out</a>
-                    </div>
+        <h1>Welcome @User.Identity.Name</h1>
+        <p>This is your personalised landing page, equipt for your every need</p>
+        <div class="welcome-buttons">
+            <button class="btn-primary">Log out of profile</button>
+            <button class="btn-secondary">Change Profile Settings</button>
+        </div>
+    </div> 
+    
+
+    <div class="divider"></div>
+    
+
+    <!-- Action Cards Section  -->
+    <div class="action-section">
+        <h2>Select your desired action</h2>
+        <p>
+            You can choose from the following depending on what you want to do. Each action allows you to interact with your advisor in an easier manner and you can see the progress of each
+        </p> 
+        
+       <!-- Cards-->
+        <div class="cards"> 
+            <div class="card">
+                <div class="card-top">
+                    <img src= "~/Content/StakeholderLandingImages/appointment.jpg">
                 </div>
             </nav>
         </div>
