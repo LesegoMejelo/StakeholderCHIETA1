@@ -6,6 +6,7 @@ namespace StakeholderCHIETA.Services
     {
         /*Task GenerateAppointmentQrAsync(string appointmentID);
         Task SendAppointmentQREmailAsync(Appointment appointment, string userEmail);
-        bool ValidateQRCode(string qrData);*/ 
+        bool ValidateQRCode(string qrData);*/
+        Task GenerateAppointmentQrAsync(string appointmentID);
     }
 }

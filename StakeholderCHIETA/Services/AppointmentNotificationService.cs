@@ -28,7 +28,7 @@
         var email= await _tokenService.GetUserEmailAsync(userId);
         if (string.IsNullOrEmpty(email))
             throw new Exception("Email not found for user in Firebase");
-        var QRBytes = await _appointmentQRService.GenerateAppointmentQrAsync(appointmentID);
+        var QRBytes = await _appointmentQRService.GenerateAppointmentQrAsync(appointmentID: appointmentID);
 
         string subject = "Your Appointment is Confirmed!";
         string body = $"Hello, your appointment ({appointmentID}) has been confirmed" + 

@@ -17,7 +17,12 @@ namespace StakeholderCHIETA.Services
             return Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
         }
 
-        public async Task StoreTokenAsync(string token, int appointmentId, DateTime expiry)
+        public Task<string?> GetUserEmailAsync(string userId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void StoreToken(string token, int appointmentId, DateTime expiry)
         {
             var cacheKey = $"qr_token_{token}";
             _cache.Set(cacheKey, appointmentId, expiry);
@@ -39,6 +44,11 @@ namespace StakeholderCHIETA.Services
         }
 
         public bool ValidateToken(string validationToken, string appointmentId)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task ITokenService.StoreToken(string token, int appointmentId, DateTime expiry)
         {
             throw new NotImplementedException();
         }
