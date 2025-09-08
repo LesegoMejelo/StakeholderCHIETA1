@@ -1,6 +1,7 @@
 ﻿using FirebaseAdmin.Auth;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -60,6 +61,7 @@ namespace StakeholderCHIETA.Controllers
                 string role = doc.ContainsField("Role") ? doc.GetValue<string>("Role") : "";
                 string email = doc.ContainsField("email") ? doc.GetValue<string>("email") : "";
                 string name = doc.ContainsField("Name") ? doc.GetValue<string>("Name") : "";
+                string password = doc.ContainsField("password") ? doc.GetValue<string>("password") : "";
 
                 // Normalize role (first letter uppercase, rest lowercase)
                 role = string.IsNullOrEmpty(role) ? "" : char.ToUpper(role[0]) + role.Substring(1).ToLower();
@@ -71,7 +73,7 @@ namespace StakeholderCHIETA.Controllers
                     new Claim(ClaimTypes.NameIdentifier, firebaseUid),
                     new Claim(ClaimTypes.Name, name ?? ""),
                     new Claim(ClaimTypes.Email, email ?? ""),
-                    new Claim(ClaimTypes.Role, role)
+                    new Claim(ClaimTypes.Role, role),                   
                 };
 
                 var identity = new ClaimsIdentity(claims, "Firebase");
@@ -99,6 +101,17 @@ namespace StakeholderCHIETA.Controllers
                 });
             }
         }
+
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            // Clears the user’s session/cookies
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            // Redirect back to login page
+            return RedirectToAction("Login", "Auth");
+        }
+
 
 
         // POST: /Auth/Register (only Admins)
@@ -146,12 +159,6 @@ namespace StakeholderCHIETA.Controllers
             }
         }
 
-        // GET: /Auth/Logout
-        [HttpGet]
-        public async Task<IActionResult> Logout()
-        {
-            await HttpContext.SignOutAsync();
-            return RedirectToAction("Login");
-        }
+        
     }
 }
