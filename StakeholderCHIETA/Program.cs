@@ -7,6 +7,7 @@ using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Identity;
 using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using StakeholderCHIETA.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,11 +48,17 @@ builder.Services.AddSingleton(FirebaseAuth.GetAuth(app));
 // Add services to the container
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddScoped<IAppointmentQRService, AppointmentQRService>();
+builder.Services.AddScoped<IQRCodeGenerator, QRCodeService>();
+
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Auth/Login";
-        options.AccessDeniedPath = "/Auth/AccessDenied";
+        options.AccessDeniedPath = "/Auth/Login";
         options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
     });
 

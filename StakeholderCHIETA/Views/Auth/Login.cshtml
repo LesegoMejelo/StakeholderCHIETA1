@@ -57,8 +57,7 @@
                 },
                 body: new URLSearchParams({ idToken: token })
             });
-
-            const data = await response.json();
+                const data = await response.json();
 
             if (response.ok && data.success) {
                 console.log("Backend login successful, redirecting to:", data.redirectUrl);
