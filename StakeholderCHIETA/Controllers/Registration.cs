@@ -33,10 +33,9 @@ namespace StakeholderCHIETA.Controllers
             {
                 var email = Request.Form["email"].ToString();
                 var password = Request.Form["password"].ToString();
-                var role = Request.Form["Role"].ToString();
+                var role = Request.Form["role"].ToString();
                 var displayName = Request.Form["Name"].ToString();
 
-                // Use the injected _auth instead of DefaultInstance
                 var userRecordArgs = new UserRecordArgs()
                 {
                     Email = email,
@@ -56,7 +55,7 @@ namespace StakeholderCHIETA.Controllers
                     { "Name", displayName },
                     { "Role", role },
                     { "email", email },
-                    // Remove password storage - it's a security risk
+                    { "password", password },
                     { "createdAt", Timestamp.GetCurrentTimestamp() },
                     { "isActive", true }
                 };
@@ -64,7 +63,7 @@ namespace StakeholderCHIETA.Controllers
                 await docRef.SetAsync(userData);
 
                 ViewBag.Message = $"✅ {role} user created successfully!";
-                return View("Registration");
+                return View("~/Views/AdminViews/Registration.cshtml");
             }
             catch (Exception ex)
             {
@@ -72,5 +71,6 @@ namespace StakeholderCHIETA.Controllers
                 return View("~/Views/AdminViews/Registration.cshtml");
             }
         }
+
     }
 }
