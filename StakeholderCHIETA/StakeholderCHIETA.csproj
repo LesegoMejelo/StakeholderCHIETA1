@@ -24,4 +24,9 @@
     <PackageReference Include="QRCoder" Version="1.6.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Views\StakeholderViews\Log Inquiry\" />
+    <Folder Include="Views\StakeholderViews\Log Inquiry_Invalid _ignore_DeleteLater\" />
+  </ItemGroup>
+
 </Project>

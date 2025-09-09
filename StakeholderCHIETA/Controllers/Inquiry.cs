@@ -34,10 +34,11 @@ namespace Staekholder_CHIETA_X.Controllers
         {
             return View();
         }
-
+        
         public IActionResult Inquiry()
         {
-            return View("~/Views/Inquiry/Inquiry.cshtml");
+            return View("~/Views/StakeholderViews/Inquiry/Inquiry.cshtml");
+
         }
     }
 }
@@ -167,7 +168,7 @@ namespace Staekholder_CHIETA_X.Controllers
 
         public IActionResult Inquiry()
         {
-            return View("~/Views/Inquiry/Inquiry.cshtml");
+            return View("~/Views/StakeholderViews/Inquiry/Inquiry.cshtml");
         }
 
         public IActionResult Tracking()
