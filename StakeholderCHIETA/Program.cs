@@ -48,7 +48,7 @@ builder.Services.AddSingleton(FirebaseAuth.GetAuth(app));
 // Add services to the container
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddScoped<IAppointmentQRService, AppointmentQRService>();
+/* builder.Services.AddScoped<IAppointmentQRService, AppointmentQRService>();*/
 builder.Services.AddScoped<IQRCodeGenerator, QRCodeService>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
