@@ -1,5 +1,5 @@
-﻿/*
-using Google.Cloud.Firestore;
+﻿
+/*using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Staekholder_CHIETA_X.Controllers
@@ -41,8 +41,8 @@ namespace Staekholder_CHIETA_X.Controllers
 
         }
     }
-}
-*/
+}*/
+
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

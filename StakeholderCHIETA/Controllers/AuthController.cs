@@ -27,7 +27,7 @@ namespace StakeholderCHIETA.Controllers
         public IActionResult Login() => View();
 
         // POST: /Auth/Login
-        [Authorize]
+
         [HttpPost]
         public async Task<IActionResult> Login([FromForm] string idToken)
         {
@@ -74,7 +74,7 @@ namespace StakeholderCHIETA.Controllers
                     new Claim(ClaimTypes.NameIdentifier, firebaseUid),
                     new Claim(ClaimTypes.Name, name ?? ""),
                     new Claim(ClaimTypes.Email, email ?? ""),
-                    new Claim(ClaimTypes.Role, role),                   
+                    new Claim(ClaimTypes.Role, role),
                 };
 
                 var identity = new ClaimsIdentity(claims, "Firebase");
@@ -160,6 +160,6 @@ namespace StakeholderCHIETA.Controllers
             }
         }
 
-        
+
     }
 }

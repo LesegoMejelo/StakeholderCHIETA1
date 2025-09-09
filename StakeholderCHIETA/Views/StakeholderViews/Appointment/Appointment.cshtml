@@ -1,4 +1,6 @@
-﻿@{
+﻿@model List<Staekholder_CHIETA_X.Controllers.AdvisorViewModel>
+
+@{
     Layout = null;
 }
 
@@ -12,27 +14,23 @@
 <body>
     <header class="header" role="banner">
         <a asp-page="/Home.cshtml">
-        <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo"  />
+            <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo" />
         </a>
     </header>
-
-    <!-- Decorative circles  -->
-    <div class="circle circle-large" data-speed="0.8" aria-hidden="true"></div>
-    <div class="circle circle-medium" data-speed="1.2" aria-hidden="true"></div>
-    <div class="circle circle-small" data-speed="1.6" aria-hidden="true"></div>
 
     <main class="container" role="main">
         <h1>Make An Appointment</h1>
 
-        <form id="appointment-form" novalidate>
+        <form id="appointment-form" method="post" action="/api/appointment" novalidate>
             <div class="form-group">
                 <label for="advisor">Name of Advisor</label>
                 <div class="field-wrap">
-                    <select id="advisor" required>
+                    <select id="advisor" name="advisor" required>
                         <option value="">Name of Advisor</option>
-                        <option value="John Smith">John Smith</option>
-                        <option value="Sarah Johnson">Sarah Johnson</option>
-                        <option value="Michael Brown">Michael Brown</option>
+                        @foreach (var advisor in Model)
+                        {
+                            <option value="@advisor.Id">@advisor.Name</option>
+                        }
                     </select>
                 </div>
                 <p class="hint">Choose who you’d like to meet.</p>
@@ -40,7 +38,7 @@
 
             <div class="form-group">
                 <label for="reason">Reason For Appointment:</label>
-                <textarea id="reason" placeholder="Write your reason here..." maxlength="300" required></textarea>
+                <textarea id="reason" name="reason" placeholder="Write your reason here..." maxlength="300" required></textarea>
                 <div class="meta-row">
                     <p class="hint">Keep it brief but clear (max 300 chars).</p>
                     <span id="char-count" class="count">0/300</span>
@@ -50,12 +48,12 @@
             <div class="date-time-wrapper">
                 <div class="date-container">
                     <label for="date">Select date</label>
-                    <input type="date" id="date" required>
+                    <input type="date" id="date" name="date" required>
                 </div>
 
                 <div class="time-container">
                     <label for="time">Enter time</label>
-                    <input type="time" id="time" required>
+                    <input type="time" id="time" name="time" required>
                 </div>
             </div>
 

@@ -1,4 +1,4 @@
-﻿namespace StakeholderCHIETA.Services;
+﻿/*namespace StakeholderCHIETA.Services;
 
     public interface IAppointmentNotificationService
 {
@@ -34,5 +34,5 @@
         string body = $"Hello, your appointment ({appointmentID}) has been confirmed" + 
             $"Please find your QR Code below. Note that this QR Code grants you access into the building";
     }
-    }
+    }*/
 
