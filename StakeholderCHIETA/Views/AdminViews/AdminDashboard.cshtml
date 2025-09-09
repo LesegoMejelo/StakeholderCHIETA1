@@ -1,0 +1,187 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Dashboard — Users & Engagement</title>
+    <link rel="stylesheet" href="~/Content/AdvisorView/AdminDashboard.css" />
+</head>
+<body>
+    <!-- Top Bar -->
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo" />
+
+            <!-- Settings in header -->
+            <nav class="header-actions">
+                <div class="menu" id="settings">
+                    <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span class="hide-sm">Settings</span>
+                    </button>
+
+                    <div class="menu-popover" id="settings-menu" role="menu" hidden>
+                        <a role="menuitem" href="profile.html">Profile</a>
+                        <a role="menuitem" href="notifications.html">Notifications</a>
+                        <div class="menu-sep" role="separator"></div>
+                        <!-- <div class="menu-group" role="group" aria-label="Preferences">
+                          <label class="menu-check">
+                            <input id="pref-dark" type="checkbox" />
+                            <span>Dark mode</span>
+                          </label>
+                        </div> -->
+                        <div class="menu-sep" role="separator"></div>
+                        <a role="menuitem" href="logout.html" class="danger">Sign out</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container page">
+        <!-- Decorative shapes -->
+        <div class="decor blob-right"></div>
+        <div class="decor arc-left"></div>
+        <div class="decor arc-right-bottom"></div>
+
+        <!-- Welcome / Hero -->
+        <section class="hero container">
+            <div class="hero__bg-blob" aria-hidden="true"></div>
+            <div class="hero__content">
+                <h1>Admin Dashboard — <span class="accent">Users & Engagement</span></h1>
+                <p>Analyse users, appointments, and inquiries in one place.</p>
+            </div>
+        </section>
+
+        <!-- KPI Cards (renamed) -->
+        <section class="kpis container">
+            <article class="card kpi">
+                <div class="kpi__label">Total Users</div>
+                <div class="kpi__value" id="kpi-users">—</div>
+                <div class="kpi__delta up" id="kpi-users-delta">+0 this week</div>
+            </article>
+
+            <article class="card kpi">
+                <div class="kpi__label">Active Appointments</div>
+                <div class="kpi__value" id="kpi-appointments">—</div>
+                <div class="kpi__delta up" id="kpi-appointments-delta">+0 today</div>
+            </article>
+
+            <article class="card kpi">
+                <div class="kpi__label">Open Inquiries</div>
+                <div class="kpi__value" id="kpi-inquiries">—</div>
+                <div class="kpi__delta down" id="kpi-inquiries-delta">0 resolved</div>
+            </article>
+
+            <article class="card kpi">
+                <div class="kpi__label">User Growth Rate</div>
+                <div class="kpi__value" id="kpi-growth">—</div>
+                <div class="kpi__delta up" id="kpi-growth-delta">vs last month</div>
+            </article>
+        </section>
+
+        <!-- Charts -->
+        <section class="charts container">
+            <article class="card chart-card">
+                <header class="card__title-row">
+                    <h2>User Engagement Analysis</h2>
+                    <div class="chart-actions">
+                        <select id="rangeSelect" class="select">
+                            <option value="5" selected>Last 5 months</option>
+                            <option value="12">Last 12 months</option>
+                        </select>
+                    </div>
+                </header>
+
+                <canvas id="lineChart" width="980" height="320" aria-label="Engagement chart"></canvas>
+                <footer class="chart-legend">
+                    <span class="dot dot--1"></span>Appointments
+                    <span class="dot dot--2"></span>Inquiries
+                </footer>
+            </article>
+        </section>
+
+        <!-- User Management -->
+        <section class="container">
+            <article class="card">
+                <header class="card__title-row">
+                    <h2>User Management</h2>
+                    <div class="row-actions">
+                        <input id="userSearch" class="input" placeholder="Search users…" />
+                        <button id="addUserBtn" class="cta small">+ Add New User</button>
+                    </div>
+                </header>
+
+                <div class="table-wrap">
+                    <table class="table" aria-label="Users table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-body">
+                            <!-- Filled by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination" id="pager"></div>
+            </article>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container footer__inner">
+                <button class="cta">Primary Action</button>
+            </div>
+        </footer>
+
+        <!-- Modal for Add/Edit User -->
+        <div class="modal" id="userModal" aria-hidden="true" role="dialog">
+            <div class="modal__dialog">
+                <header class="modal__header">
+                    <h3 id="modalTitle">Add User</h3>
+                    <button class="icon-btn dark" id="closeModal" aria-label="Close">✕</button>
+                </header>
+                <form id="userForm" class="form">
+                    <input type="hidden" id="userId" />
+                    <div class="form__row">
+                        <label>Name</label>
+                        <input id="name" class="input" required />
+                    </div>
+                    <div class="form__row">
+                        <label>Email</label>
+                        <input id="email" type="email" class="input" required />
+                    </div>
+                    <div class="form__row">
+                        <label>Role</label>
+                        <select id="role" class="select">
+                            <option>Stakeholder</option>
+                            <option>RSA</option>
+                            <option>Admin</option>
+                        </select>
+                    </div>
+                    <div class="form__row">
+                        <label>Status</label>
+                        <select id="status" class="select">
+                            <option>Active</option>
+                            <option>Suspended</option>
+                        </select>
+                    </div>
+                    <div class="form__actions">
+                        <button type="button" class="btn ghost" id="cancelModal">Cancel</button>
+                        <button type="submit" class="cta small">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script src="~/Content/AdvisorView/js/AdminDashboard.js"></script>
+</body>
+</html>
