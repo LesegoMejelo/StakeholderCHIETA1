@@ -24,10 +24,9 @@ namespace StakeholderCHIETA.Controllers
             var advisorUid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             var snapshot = await _firestoreDb.Collection("appointments")
-                                             .WhereEqualTo("AdvisorId", advisorUid)
-                                             .WhereEqualTo("Status", "Pending")
-                                             .OrderBy("Date")
-                                             .GetSnapshotAsync();
+                                 .WhereEqualTo("AdvisorId", advisorUid)
+                                 .WhereEqualTo("Status", "Pending")
+                                 .GetSnapshotAsync();
 
             var appointments = snapshot.Documents
                 .Select(d => new AppointmentViewModel
@@ -39,6 +38,7 @@ namespace StakeholderCHIETA.Controllers
                     Time = d.GetValue<string>("Time"),
                     Status = d.GetValue<string>("Status")
                 })
+                .OrderBy(a => a.Date) // sort in memory
                 .ToList();
 
             return View("~/Views/EmployeeViews/AppointmentTracker.cshtml", appointments);
