@@ -12,21 +12,21 @@
     <link rel="stylesheet" href="~/Content/StakeholderView/AppointmentBooking.css" />
 </head>
 <body>
-    <header class="header" role="banner">
+    <header class="header">
         <a asp-page="/Home.cshtml">
             <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo" />
         </a>
     </header>
 
-    <main class="container" role="main">
+    <main class="container">
         <h1>Make An Appointment</h1>
 
-        <form id="appointment-form" method="post" action="/api/appointment" novalidate>
+        <form id="appointment-form" novalidate>
             <div class="form-group">
                 <label for="advisor">Name of Advisor</label>
                 <div class="field-wrap">
                     <select id="advisor" name="advisor" required>
-                        <option value="">Name of Advisor</option>
+                        <option value="">Select Advisor</option>
                         @foreach (var advisor in Model)
                         {
                             <option value="@advisor.Id">@advisor.Name</option>
@@ -40,7 +40,7 @@
                 <label for="reason">Reason For Appointment:</label>
                 <textarea id="reason" name="reason" placeholder="Write your reason here..." maxlength="300" required></textarea>
                 <div class="meta-row">
-                    <p class="hint">Keep it brief but clear (max 300 chars).</p>
+                    <p class="hint">Keep it brief (max 300 chars).</p>
                     <span id="char-count" class="count">0/300</span>
                 </div>
             </div>
@@ -50,21 +50,76 @@
                     <label for="date">Select date</label>
                     <input type="date" id="date" name="date" required>
                 </div>
-
                 <div class="time-container">
                     <label for="time">Enter time</label>
                     <input type="time" id="time" name="time" required>
                 </div>
             </div>
 
-            <button class="confirm-button" id="confirm-btn" type="submit" >
+            <button class="confirm-button" id="confirm-btn" type="submit" disabled>
                 Confirm Appointment
             </button>
         </form>
     </main>
 
-  <!----  <script src="~/wwwroot/Content/StakeholderView/js/StakeholderAppointmentBooking.js"></script> --->
-   <!--- <script src="~/Content/StakeholderView/js/StakeholderAppointmentBooking.js"></script> --->
-    <script src='@Url.Content("~/Content/StakeholderView/js/StakeholderAppointmentBooking.js")'></script>
-</body> 
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("appointment-form");
+            const confirmBtn = document.getElementById("confirm-btn");
+            const reasonInput = document.getElementById("reason");
+            const charCount = document.getElementById("char-count");
+
+            // Enable button if all fields are filled
+            function toggleButton() {
+                const advisor = form.advisor.value.trim();
+                const reason = form.reason.value.trim();
+                const date = form.date.value.trim();
+                const time = form.time.value.trim();
+                confirmBtn.disabled = !advisor || !reason || !date || !time;
+            }
+
+            // Character counter
+            reasonInput.addEventListener("input", () => {
+                charCount.textContent = `${reasonInput.value.length}/300`;
+                toggleButton();
+            });
+
+            form.advisor.addEventListener("change", toggleButton);
+            form.date.addEventListener("input", toggleButton);
+            form.time.addEventListener("input", toggleButton);
+
+            // Submit form via AJAX
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                confirmBtn.disabled = true;
+
+                const formData = new FormData(form);
+                const body = new URLSearchParams(formData);
+
+                try {
+                    const res = await fetch("/api/appointment", {
+                        method: "POST",
+                        body: body
+                    });
+
+                    const result = await res.json();
+
+                    if (res.ok) {
+                        alert("✅ " + result.message);
+                        form.reset();
+                        charCount.textContent = "0/300";
+                        toggleButton();
+                    } else {
+                        alert("❌ " + (result.message || "Failed"));
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("❌ Error submitting appointment");
+                } finally {
+                    toggleButton();
+                }
+            });
+        });
+    </script>
+</body>
 </html>
