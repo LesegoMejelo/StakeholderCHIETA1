@@ -203,9 +203,9 @@ body.dark {
     gap: 20px; /* optional spacing between buttons */
     margin: 0 auto; /* ensure button group itself centers */
     width: fit-content;
-
+}
     /* Summary cards */
-    .summary-grid {
+ .summary-grid {
     display: grid;
     gap: 18px;
     grid-template-columns: 1fr
