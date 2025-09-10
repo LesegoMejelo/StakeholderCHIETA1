@@ -20,7 +20,10 @@ namespace StakeholderCHIETA.Services
         public async Task StoreTokenAsync(string token, int appointmentId, DateTime expiry)
         {
             var cacheKey = $"qr_token_{token}";
-            _cache.Set(cacheKey, appointmentId, expiry);
+            _cache.Set(cacheKey, appointmentId, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpiration = expiry
+            });
         }
 
         public Task StoreTokenAsync(string validationToken, object id, DateTime expiryTime)
@@ -42,5 +45,19 @@ namespace StakeholderCHIETA.Services
         {
             throw new NotImplementedException();
         }
+
+        public async Task<string> GetUserEmailAsync(string userId)
+        {
+            // Example: Try to get from cache
+            var cacheKey = $"user_email_{userId}";
+            if (_cache.TryGetValue(cacheKey, out string email))
+            {
+                return email;
+            }
+
+            // TODO: Replace with actual DB/Firebase lookup
+            return null;
+        }
+
     }
 }
