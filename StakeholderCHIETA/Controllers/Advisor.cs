@@ -15,7 +15,7 @@ namespace StakeholderCHIETA.Controllers
             ViewBag.UserName = userName;
             ViewBag.UserEmail = userEmail;
 
-            return View("~/Views/Employee/EmployeeLanding.cshtml");
+            return View("~/Views/EmployeeViews/EmployeeLanding.cshtml");
         }
 
         // Inquiry Tracker Page

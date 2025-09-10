@@ -122,6 +122,7 @@ namespace StakeholderCHIETA.Controllers
             public string Password { get; set; }
             public string Name { get; set; }
             public string Role { get; set; }
+            public string Status { get; set; }
         }
 
         [HttpPost("RegisterUser")]
@@ -132,6 +133,7 @@ namespace StakeholderCHIETA.Controllers
                 string.IsNullOrEmpty(model.Password) ||
                 string.IsNullOrEmpty(model.Name) ||
                 string.IsNullOrEmpty(model.Role))
+               
             {
                 return BadRequest(new { message = "All fields are required." });
             }
@@ -149,14 +151,13 @@ namespace StakeholderCHIETA.Controllers
                 UserRecord userRecord = await _auth.CreateUserAsync(userRecordArgs);
 
                 var userData = new Dictionary<string, object>
-        {
-            { "Name", model.Name },
-            { "Role", role },
-            { "email", model.Email },
-            { "password", model.Password }, // ⚠️ consider removing
-            { "isActive", true },
-            { "createdAt", Timestamp.GetCurrentTimestamp() }
-        };
+                {
+                    { "Name", model.Name },
+                    { "Role", role },
+                    { "email", model.Email },
+                    { "password", model.Password },                     
+                    { "createdAt", Timestamp.GetCurrentTimestamp() }
+                };
 
                 await _firestoreDb.Collection("Users").Document(userRecord.Uid).SetAsync(userData);
 
@@ -184,8 +185,7 @@ namespace StakeholderCHIETA.Controllers
                         id = d.Id,
                         name = d.ContainsField("Name") ? d.GetValue<string>("Name") : "",                       
                         email = d.ContainsField("email") ? d.GetValue<string>("email") : "",
-                        role = d.ContainsField("Role") ? d.GetValue<string>("Role") : "",
-                        status = d.ContainsField("Status") ? d.GetValue<string>("Status") : ""
+                        role = d.ContainsField("Role") ? d.GetValue<string>("Role") : ""                        
                     })
                     .ToList(); // materialize the result
 
