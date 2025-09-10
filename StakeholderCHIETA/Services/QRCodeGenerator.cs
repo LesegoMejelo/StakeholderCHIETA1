@@ -1,4 +1,4 @@
-﻿using QRCoder;
+﻿/* using QRCoder;
 
 namespace StakeholderCHIETA.Services
 {
@@ -14,3 +14,4 @@ namespace StakeholderCHIETA.Services
         }
     }
 }
+*/
