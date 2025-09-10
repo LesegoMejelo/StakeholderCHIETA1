@@ -59,7 +59,7 @@ namespace Staekholder_CHIETA_X.Controllers
 
                 var docRef = await _db.Collection("appointments").AddAsync(new
                 {
-                    AdvisorID = advisor,
+                    AdvisorId = advisor,
                     AdvisorName = advisorName,
                     ClientName = clientName,
                     Reason = reason,

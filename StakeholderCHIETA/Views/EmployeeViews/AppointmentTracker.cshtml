@@ -3,157 +3,207 @@
 }
 <html>
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>CHIETA — Appointment Tracker</title>
-  <link rel="stylesheet" href="~/Content/EmployeeView/AppointmentTracker.css"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CHIETA — Appointment Tracker</title>
+    <link rel="stylesheet" href="~/Content/EmployeeView/AppointmentTracker.css" />
 </head>
 <body>
-  <!-- Top Bar -->
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo" />
-      <nav class="header-actions" aria-label="User">
-        <div class="menu" id="settings">
-          <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-            <span class="hide-sm">Settings</span>
-          </button>
-          <div class="menu-popover" id="settings-menu" role="menu" hidden>
-            <a role="menuitem" href="/EmployeeLanding /index.html" id="nav-home">Home</a>
-            <a role="menuitem" href="#" id="nav-profile">Profile</a>
-            <a role="menuitem" href="#" id="nav-notifs">Notifications</a>
-            <div class="menu-sep" role="separator"></div>
-            <div class="menu-group" role="group" aria-label="Preferences">
-              <label class="menu-check">
-                <input id="pref-dark" type="checkbox" />
-                <span>Dark mode</span>
-              </label>
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo" />
+            <nav class="header-actions" aria-label="User">
+                <div class="menu" id="settings">
+                    <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span class="hide-sm">Settings</span>
+                    </button>
+                    <div class="menu-popover" id="settings-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeLanding /index.html">Home</a>
+                        <a role="menuitem" href="#">Profile</a>
+                        <a role="menuitem" href="#">Notifications</a>
+                        <div class="menu-sep" role="separator"></div>
+                        <div class="menu-group" role="group" aria-label="Preferences">
+                            <label class="menu-check">
+                                <input id="pref-dark" type="checkbox" />
+                                <span>Dark mode</span>
+                            </label>
+                        </div>
+                        <div class="menu-sep" role="separator"></div>
+                        <a role="menuitem" href="#" class="danger">Sign out</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-wrap">
+        <div class="bg" aria-hidden="true">
+            <div class="bg-blob-right"></div>
+            <div class="bg-arc-left"></div>
+            <div class="bg-arc-right-bottom"></div>
+        </div>
+
+        <div class="container page">
+            <section class="summary-grid">
+                <article class="summary-card">
+                    <h3 class="section-title"><u>Upcoming Appointments</u></h3>
+                    <ul id="upcomingSummary" class="mini-list" aria-live="polite"></ul>
+                </article>
+            </section>
+
+            <section class="card" aria-labelledby="requestsTitle">
+                <div class="card__hd">
+                    <div class="card-title-line">
+                        <div id="requestsTitle" class="card-title like-summary"><u>Appointment Requests</u></div>
+                        <div class="muted small">Review and take action</div>
+                    </div>
+                </div>
+                <div class="card__bd">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th class="th-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requestRows"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer" aria-label="Site">
+        <div class="footer-band"></div>
+        <div class="gold-box"></div>
+    </footer>
+
+    <!-- Decline Modal -->
+    <div class="modal" id="declineModal" aria-modal="true" role="dialog" aria-labelledby="decTitle" aria-describedby="decContext">
+        <div class="modal__dialog">
+            <div class="modal__header">
+                <div>
+                    <div id="decTitle" class="modal__title">Decline & Suggest New Time</div>
+                    <div class="muted" id="decContext" style="font-size:.9rem"></div>
+                </div>
+                <button class="close-btn" data-close-modal="true" aria-label="Close">✕</button>
             </div>
-            <div class="menu-sep" role="separator"></div>
-            <a role="menuitem" href="#" class="danger">Sign out</a>
-          </div>
+            <form id="declineForm" class="form">
+                <input type="hidden" id="decAppointmentId" />
+                <div class="form__row form__row--single">
+                    <div>
+                        <label for="decReason">Reason for declining</label>
+                        <textarea id="decReason" placeholder="e.g., Scheduling conflict, in another meeting…"></textarea>
+                    </div>
+                </div>
+                <div class="form__row">
+                    <div>
+                        <label for="decNewDate">Propose new date (optional)</label>
+                        <input id="decNewDate" type="date" />
+                    </div>
+                    <div>
+                        <label for="decNewTime">Propose new time (optional)</label>
+                        <input id="decNewTime" type="time" />
+                    </div>
+                </div>
+                <div class="form__actions">
+                    <button id="declineCancel" class="btn ghost" type="button">Cancel</button>
+                    <button class="cta" type="submit">Submit</button>
+                </div>
+            </form>
         </div>
-      </nav>
     </div>
-  </header>
 
-  <main class="main-wrap">
-    <!-- Background motif INSIDE the scrolling content -->
-    <div class="bg" aria-hidden="true">
-      <div class="bg-blob-right"></div>
-      <div class="bg-arc-left"></div>
-      <div class="bg-arc-right-bottom"></div>
+    <!-- Info Modal -->
+    <div class="modal" id="infoModal" aria-modal="true" role="dialog" aria-labelledby="infoTitle">
+        <div class="modal__dialog">
+            <div class="modal__header">
+                <div>
+                    <div id="infoTitle" class="modal__title">Appointment Details</div>
+                    <div class="muted" id="infoSubtitle" style="font-size:.9rem"></div>
+                </div>
+                <button class="close-btn" data-close-modal="true" aria-label="Close">✕</button>
+            </div>
+            <div class="form form--static">
+                <div class="kv"><b>Date</b><div id="infoDate"></div></div>
+                <div class="kv"><b>Time</b><div id="infoTime"></div></div>
+                <div class="kv"><b>Reason</b><div id="infoReason"></div></div>
+                <div class="kv"><b>Status</b><div id="infoStatus"></div></div>
+                <div class="kv"><b>Decline reason</b><div id="infoDeclineReason"></div></div>
+                <div class="kv"><b>Proposed new time</b><div id="infoProposed"></div></div>
+            </div>
+            <div class="form__actions form__actions--footer">
+                <button class="btn ghost" data-close-modal="true" type="button">Close</button>
+            </div>
+        </div>
     </div>
 
-    <div class="container page">
-      <!-- ONE summary card (EmployeeLanding style) -->
-      <section class="summary-grid">
-        <article class="summary-card">
-          <h3 class="section-title"><u>Upcoming Appointments</u></h3>
-          <ul id="upcomingSummary" class="mini-list" aria-live="polite"></ul>
-        </article>
-      </section>
-
-      <!-- Appointment Requests -->
-      <section class="card" aria-labelledby="requestsTitle">
-        <div class="card__hd">
-          <div class="card-title-line">
-            <div id="requestsTitle" class="card-title like-summary"><u>Appointment Requests</u></div>
-            <div class="muted small">Review and take action</div>
-          </div>
-        </div>
-
-        <div class="card__bd">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Reason</th>
-                  <th>Status</th>
-                  <th class="th-actions">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="requestRows"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+    <div id="toast" role="status" aria-live="polite" aria-atomic="true">
+        <span id="toastMsg"></span>
+        <button id="toastUndo" class="undo" style="display:none">Undo</button>
     </div>
-  </main>
 
-  <!-- Footer band -->
-  <footer class="footer" aria-label="Site">
-    <div class="footer-band"></div>
-    <div class="gold-box"></div>
-  </footer>
+    <!-- your HTML above ... -->
 
-  <!-- Decline Modal -->
-  <div class="modal" id="declineModal" aria-modal="true" role="dialog" aria-labelledby="decTitle" aria-describedby="decContext">
-    <div class="modal__dialog">
-      <div class="modal__header">
-        <div>
-          <div id="decTitle" class="modal__title">Decline & Suggest New Time</div>
-          <div class="muted" id="decContext" style="font-size:.9rem"></div>
-        </div>
-        <button class="close-btn" data-close-modal="true" aria-label="Close">✕</button>
-      </div>
-      <form id="declineForm" class="form">
-        <div class="form__row form__row--single">
-          <div>
-            <label for="decReason">Reason for declining</label>
-            <textarea id="decReason" placeholder="e.g., Scheduling conflict, in another meeting…"></textarea>
-          </div>
-        </div>
-        <div class="form__row">
-          <div>
-            <label for="decNewDate">Propose new date (optional)</label>
-            <input id="decNewDate" type="date" />
-          </div>
-          <div>
-            <label for="decNewTime">Propose new time (optional)</label>
-            <input id="decNewTime" type="time" />
-          </div>
-        </div>
-        <div class="form__actions">
-          <button id="declineCancel" class="btn ghost" type="button">Cancel</button>
-          <button class="cta" type="submit">Submit</button>
-        </div>
-      </form>
-    </div>
-  </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const tbody = document.getElementById("appointments-body");
 
-  <!-- Info Modal -->
-  <div class="modal" id="infoModal" aria-modal="true" role="dialog" aria-labelledby="infoTitle">
-    <div class="modal__dialog">
-      <div class="modal__header">
-        <div>
-          <div id="infoTitle" class="modal__title">Appointment Details</div>
-          <div class="muted" id="infoSubtitle" style="font-size:.9rem"></div>
-        </div>
-        <button class="close-btn" data-close-modal="true" aria-label="Close">✕</button>
-      </div>
-      <div class="form form--static">
-        <div class="kv"><b>Date</b><div id="infoDate"></div></div>
-        <div class="kv"><b>Time</b><div id="infoTime"></div></div>
-        <div class="kv"><b>Reason</b><div id="infoReason"></div></div>
-        <div class="kv"><b>Status</b><div id="infoStatus"></div></div>
-        <div class="kv"><b>Decline reason</b><div id="infoDeclineReason"></div></div>
-        <div class="kv"><b>Proposed new time</b><div id="infoProposed"></div></div>
-      </div>
-      <div class="form__actions form__actions--footer">
-        <button class="btn ghost" data-close-modal="true" type="button">Close</button>
-      </div>
-    </div>
-  </div>
+            async function loadAppointments() {
+                try {
+                    const res = await fetch("/AdvisorAppointment/AppointmentTrackerData");
+                    if (!res.ok) throw new Error("Failed to fetch appointments");
 
-  <!-- Toast -->
-  <div id="toast" role="status" aria-live="polite" aria-atomic="true">
-    <span id="toastMsg"></span>
-    <button id="toastUndo" class="undo" style="display:none">Undo</button>
-  </div>
+                    const appointments = await res.json();
 
-  <script src="/Content/EmployeeView/js/AppointmentTracker.js"></script>
+                    tbody.innerHTML = ""; // clear old data
+                    appointments.forEach(a => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${a.clientName}</td>
+                            <td>${a.reason}</td>
+                            <td>${a.date}</td>
+                            <td>${a.time}</td>
+                            <td>${a.status}</td>
+                            <td>
+                                ${a.status === "Pending" ? `
+                                    <button onclick="updateStatus('${a.id}','accepted')">Accept</button>
+                                    <button onclick="updateStatus('${a.id}','declined')">Decline</button>
+                                ` : ""}
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                } catch (err) {
+                    console.error("Error loading appointments:", err);
+                }
+            }
+
+            window.updateStatus = async function (id, status) {
+                const res = await fetch("/AdvisorAppointment/UpdateStatus", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams({ appointmentId: id, status })
+                });
+
+                if (res.ok) {
+                    loadAppointments(); // refresh immediately after update
+                } else {
+                    alert("❌ Failed to update appointment");
+                }
+            };
+
+            // 🔄 Auto-refresh every 5 seconds (same as users list)
+            loadAppointments();
+            setInterval(loadAppointments, 5000);
+        });
+    </script>
+    
 </body>
 </html>
