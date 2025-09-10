@@ -116,41 +116,49 @@ namespace StakeholderCHIETA.Controllers
 
 
         // POST: /Auth/Register (only Admins)
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> RegisterUser([FromForm] string email, [FromForm] string password, [FromForm] string Name, [FromForm] string Role)
+        public class RegisterUserDto
         {
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(Name) || string.IsNullOrEmpty(Role))
+            public string Email { get; set; }
+            public string Password { get; set; }
+            public string Name { get; set; }
+            public string Role { get; set; }
+        }
+
+        [HttpPost("RegisterUser")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> RegisterUser([FromBody] RegisterUserDto model)
+        {
+            if (string.IsNullOrEmpty(model.Email) ||
+                string.IsNullOrEmpty(model.Password) ||
+                string.IsNullOrEmpty(model.Name) ||
+                string.IsNullOrEmpty(model.Role))
+            {
                 return BadRequest(new { message = "All fields are required." });
+            }
 
             try
             {
-                // Normalize role
-                Role = char.ToUpper(Role[0]) + Role.Substring(1).ToLower();
+                var role = char.ToUpper(model.Role[0]) + model.Role.Substring(1).ToLower();
 
-                // Create Firebase user
                 var userRecordArgs = new UserRecordArgs
                 {
-                    Email = email,
-                    Password = password,
-                    DisplayName = Name
+                    Email = model.Email,
+                    Password = model.Password,
+                    DisplayName = model.Name
                 };
                 UserRecord userRecord = await _auth.CreateUserAsync(userRecordArgs);
 
-                // Save Firestore user
-                var usersRef = _firestoreDb.Collection("Users");
-
                 var userData = new Dictionary<string, object>
-                {
-                    { "Name", Name ?? "" },
-                    { "Role", Role },
-                    { "email", email },
-                    { "password", password }, // ⚠️ consider removing
-                    { "isActive", true },
-                    { "createdAt", Timestamp.GetCurrentTimestamp() }
-                };
+        {
+            { "Name", model.Name },
+            { "Role", role },
+            { "email", model.Email },
+            { "password", model.Password }, // ⚠️ consider removing
+            { "isActive", true },
+            { "createdAt", Timestamp.GetCurrentTimestamp() }
+        };
 
-                await usersRef.Document(userRecord.Uid).SetAsync(userData);
+                await _firestoreDb.Collection("Users").Document(userRecord.Uid).SetAsync(userData);
 
                 return Ok(new { message = "User registered successfully!", uid = userRecord.Uid });
             }
@@ -159,6 +167,36 @@ namespace StakeholderCHIETA.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+
+        [HttpGet("GetUsers")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetUsers()
+        {
+            try
+            {
+                var usersRef = _firestoreDb.Collection("Users");
+                var snapshot = await usersRef.GetSnapshotAsync();
+
+                var users = snapshot.Documents
+                    .Select(d => new
+                    {
+                        id = d.Id,
+                        name = d.ContainsField("Name") ? d.GetValue<string>("Name") : "",                       
+                        email = d.ContainsField("email") ? d.GetValue<string>("email") : "",
+                        role = d.ContainsField("Role") ? d.GetValue<string>("Role") : "",
+                        status = d.ContainsField("Status") ? d.GetValue<string>("Status") : ""
+                    })
+                    .ToList(); // materialize the result
+
+                return Ok(users);
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { message = "Error fetching users", error = ex.Message });
+            }
+        }
+
 
 
     }

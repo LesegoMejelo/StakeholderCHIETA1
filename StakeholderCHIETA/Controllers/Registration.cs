@@ -23,7 +23,7 @@ namespace StakeholderCHIETA.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            return View("~/Views/AdminViews/Registration.cshtml");
+            return View("~/Views/AdminViews/AdminDashboard.cshtml");
         }
 
         [HttpPost]
@@ -63,12 +63,12 @@ namespace StakeholderCHIETA.Controllers
                 await docRef.SetAsync(userData);
 
                 ViewBag.Message = $"✅ {role} user created successfully!";
-                return View("~/Views/AdminViews/Registration.cshtml");
+                return View("~/Views/AdminViews/AdminDashboard.cshtml");
             }
             catch (Exception ex)
             {
                 ViewBag.Error = $"❌ {ex.Message}";
-                return View("~/Views/AdminViews/Registration.cshtml");
+                return View("~/Views/AdminViews/AdminDashboard.cshtml");
             }
         }
 
