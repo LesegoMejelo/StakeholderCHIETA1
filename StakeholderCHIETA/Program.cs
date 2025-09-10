@@ -1,5 +1,4 @@
-﻿
-using StakeholderCHIETA.Models;
+﻿using StakeholderCHIETA.Models;
 using Microsoft.EntityFrameworkCore;
 using Google.Cloud.Firestore;
 using FirebaseAdmin;

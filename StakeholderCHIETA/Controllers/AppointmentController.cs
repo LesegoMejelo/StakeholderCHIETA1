@@ -1,5 +1,6 @@
 ﻿using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 
 namespace Staekholder_CHIETA_X.Controllers
 {
@@ -12,15 +13,13 @@ namespace Staekholder_CHIETA_X.Controllers
             _db = db;
         }
 
-        // GET: Display the Appointment page with advisors
+        // GET: Appointment page
         public async Task<IActionResult> Index()
         {
-            // Fetch advisors from Users collection
             var advisorsSnapshot = await _db.Collection("Users")
                                             .WhereEqualTo("Role", "Advisor")
                                             .GetSnapshotAsync();
 
-            // Map documents to a simple model
             var advisors = advisorsSnapshot.Documents
                                 .Select(d => new AdvisorViewModel
                                 {
@@ -32,7 +31,7 @@ namespace Staekholder_CHIETA_X.Controllers
             return View("~/Views/StakeholderViews/Appointment/Appointment.cshtml", advisors);
         }
 
-        // POST: Save appointment to Firestore
+        // POST: Save appointment
         [HttpPost]
         [Route("api/appointment")]
         public async Task<IActionResult> Post(
@@ -41,21 +40,44 @@ namespace Staekholder_CHIETA_X.Controllers
             [FromForm] string date,
             [FromForm] string time)
         {
-            var docRef = await _db.Collection("appointments").AddAsync(new
+            if (string.IsNullOrWhiteSpace(advisor) ||
+                string.IsNullOrWhiteSpace(reason) ||
+                string.IsNullOrWhiteSpace(date) ||
+                string.IsNullOrWhiteSpace(time))
             {
-                Advisor = advisor,
-                Reason = reason,
-                Date = date,
-                Time = time,
-                Status = "Pending",
-                createdAt = Timestamp.GetCurrentTimestamp()
-            });
+                return BadRequest(new { message = "All fields are required." });
+            }
 
-            return Ok(new { id = docRef.Id, message = "Appointment booked" });
+            try
+            {
+                var advisorDoc = await _db.Collection("Users").Document(advisor).GetSnapshotAsync();
+                if (!advisorDoc.Exists)
+                    return BadRequest(new { message = "Advisor not found" });
+
+                var advisorName = advisorDoc.GetValue<string>("Name");
+                var clientName = User.Identity.Name;
+
+                var docRef = await _db.Collection("appointments").AddAsync(new
+                {
+                    AdvisorID = advisor,
+                    AdvisorName = advisorName,
+                    ClientName = clientName,
+                    Reason = reason,
+                    Date = date,
+                    Time = time,
+                    Status = "Pending",
+                    CreatedAt = Timestamp.GetCurrentTimestamp()
+                });
+
+                return Ok(new { id = docRef.Id, message = "Appointment booked successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Failed to book appointment: {ex.Message}" });
+            }
         }
     }
 
-    // Simple ViewModel for advisors
     public class AdvisorViewModel
     {
         public string Id { get; set; }
