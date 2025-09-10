@@ -1,53 +1,8 @@
-﻿
-/*using Google.Cloud.Firestore;
-using Microsoft.AspNetCore.Mvc;
-
-namespace Staekholder_CHIETA_X.Controllers
-{
-
-
-    public class InquiryController : Controller
-    {
-        private readonly FirestoreDb _db;
-
-        public InquiryController(FirestoreDb db)
-        {
-            _db = db;
-        }
-
-
-        [HttpPost]
-        [Route("api/inquiry")]
-        public async Task<IActionResult> Post([FromForm] string name, [FromForm] string message, [FromForm] string inquiryType)
-        {
-            var docRef = await _db.Collection("inquiries").AddAsync(new
-            {
-                name = name,
-                message = message,
-                inquiryType = inquiryType,
-                createdAt = Timestamp.GetCurrentTimestamp()
-            });
-
-            return Ok(new { id = docRef.Id, message = "Inquiry submitted" });
-        }
-        public IActionResult Index()
-        {
-            return View();
-        }
-        
-        public IActionResult Inquiry()
-        {
-            return View("~/Views/StakeholderViews/Inquiry/Inquiry.cshtml");
-
-        }
-    }
-}*/
-
-using Google.Cloud.Firestore;
+﻿using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Staekholder_CHIETA_X.Controllers
+namespace StakeholderCHIETA.Controllers
 {
     public class InquiryController : Controller
     {
@@ -59,7 +14,7 @@ namespace Staekholder_CHIETA_X.Controllers
         }
 
         // ✅ SUBMIT INQUIRY (Already working)
-        [HttpPost]
+        /*[HttpPost]
         [Route("api/inquiry")]
         public async Task<IActionResult> Post([FromForm] string name, [FromForm] string message, [FromForm] string inquiryType)
         {
@@ -77,6 +32,31 @@ namespace Staekholder_CHIETA_X.Controllers
             });
 
             return Ok(new { id = docRef.Id, message = "Inquiry submitted" });
+        }
+        */
+
+        [HttpPost]
+        [Route("api/inquiry")]
+        public async Task<IActionResult> Post([FromForm] string name, [FromForm] string message, [FromForm] string inquiryType)
+        {
+            // Use GUID to guarantee uniqueness
+            string uniqueNumber = "INQ-" + Guid.NewGuid().ToString("N").Substring(0, 4).ToUpper();
+
+            var docRef = await _db.Collection("inquiries").AddAsync(new
+            {
+                customId = uniqueNumber,  // <-- store the unique ID
+                name = name,
+                message = message,
+                inquiryType = inquiryType,
+                status = "Pending",
+                updates = new List<object>
+        {
+            new { status = "Pending", updatedBy = "System", timestamp = Timestamp.GetCurrentTimestamp(), notes = "Inquiry submitted" }
+        },
+                createdAt = Timestamp.GetCurrentTimestamp()
+            });
+
+            return Ok(new { id = docRef.Id, customId = uniqueNumber, message = "Inquiry submitted" });
         }
 
         // ✅ CLIENT: View all their inquiries
@@ -159,6 +139,31 @@ namespace Staekholder_CHIETA_X.Controllers
 
             return Ok(inquiries);
         }
+        // ✅ ADVISOR/ADMIN: Get recent inquiries for dashboard (just added)
+        [Authorize(Roles = "Advisor,Admin")]
+        [HttpGet]
+        [Route("api/inquiry/recent")]
+        public async Task<IActionResult> GetRecentInquiries()
+        {
+            var snapshot = await _db.Collection("inquiries")
+                                    .OrderByDescending("createdAt")
+                                    .Limit(5)
+                                    .GetSnapshotAsync();
+
+            var inquiries = snapshot.Documents.Select(doc => new
+            {
+                id = doc.Id,  // Firestore doc ID (optional)
+                customId = doc.ContainsField("customId") ? doc.GetValue<string>("customId") : "INQ-0000",
+                name = doc.ContainsField("name") ? doc.GetValue<string>("name") : "Unknown",
+                inquiryType = doc.ContainsField("inquiryType") ? doc.GetValue<string>("inquiryType") : "General",
+                status = doc.ContainsField("status") ? doc.GetValue<string>("status") : "Pending",
+                createdAt = doc.ContainsField("createdAt") ? doc.GetValue<Timestamp>("createdAt").ToDateTime() : DateTime.MinValue
+            });
+
+            return Ok(inquiries);
+        }
+
+
 
         // 🔹 VIEWS
         public IActionResult Index()
