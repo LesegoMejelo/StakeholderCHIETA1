@@ -43,11 +43,11 @@ namespace Staekholder_CHIETA_X.Controllers
         {
             var docRef = await _db.Collection("appointments").AddAsync(new
             {
-                advisorId = advisor,
-                reason = reason,
-                date = date,
-                time = time,
-                status = "Pending",
+                Advisor = advisor,
+                Reason = reason,
+                Date = date,
+                Time = time,
+                Status = "Pending",
                 createdAt = Timestamp.GetCurrentTimestamp()
             });
 
