@@ -1,0 +1,549 @@
+﻿/* === Base Boardroom Styles === */
+:root {
+    /* Swap these to match your ZIP theme */
+    --brand-bg: #351b3f; /* Likely your deep purple header */
+    --brand-accent: #c8922b; /* Accent (e.g., orange confirm button) */
+    --surface: #ffffff; /* Card background */
+    --surface-2: #f7f3f9; /* Soft surface for contrast */
+    --text: #1f1a24; /* Primary text */
+    --muted: #6b5e78; /* Muted text */
+    --line: #e8dff0; /* Subtle borders */
+    --success: #2e7d32;
+    --danger: #c62828;
+    --shadow: 0 10px 30px rgba(0,0,0,0.08);
+    --radius: 20px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
+    color: var(--text);
+    background: radial-gradient(1000px 1000px at -10% -20%, #4a2a58 0%, transparent 50%), radial-gradient(800px 800px at 110% -10%, #73507f 0%, transparent 50%), #fffafa;
+}
+
+/* Top bar (align with your existing header styles) */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--brand-bg);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-title {
+    margin: 0;
+    font-size: 1.1rem;
+    letter-spacing: 0.3px;
+}
+
+/* Decorative circles (match the "circles" motif in your ZIP) */
+.circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    opacity: 0.9;
+}
+
+.circle-a {
+    background: #ffcc80;
+}
+
+.circle-b {
+    background: #90caf9;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 28px auto;
+    padding: 0 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 920px) {
+    .container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.calendar-card, .slots-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--line);
+    overflow: hidden;
+}
+
+.calendar-head {
+    display: grid;
+    grid-template-columns: 48px 1fr 48px;
+    align-items: center;
+    gap: 4px;
+    padding: 16px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+}
+
+.month-label {
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: .3px;
+}
+
+.calendar-grid {
+    padding: 16px;
+}
+
+.weekday {
+    font-size: .8rem;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.dates {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+
+.date-cell {
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: transform .06s ease, box-shadow .2s ease, border-color .2s ease;
+    background: white;
+}
+
+    .date-cell:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow);
+    }
+
+    .date-cell:focus-visible {
+        outline: 2px solid var(--brand-accent);
+    }
+
+    .date-cell .num {
+        font-weight: 600;
+    }
+
+    .date-cell.disabled {
+        opacity: .45;
+        cursor: not-allowed;
+    }
+
+    .date-cell .dots {
+        position: absolute;
+        bottom: 6px;
+        display: flex;
+        gap: 4px;
+    }
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    display: inline-block;
+}
+
+    .dot.available {
+        background: var(--success);
+    }
+
+    .dot.booked {
+        background: var(--danger);
+    }
+
+    .dot.none {
+        background: #c0c0c0;
+    }
+
+.legend {
+    padding: 12px 16px 16px 16px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    color: var(--muted);
+    font-size: .9rem;
+}
+
+/* Slots panel */
+.slots-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-2);
+}
+
+.slot-list {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 620px) {
+    .slot-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+.slot {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
+    background: #fff;
+    transition: box-shadow .2s ease, transform .06s ease;
+}
+
+    .slot:hover {
+        box-shadow: var(--shadow);
+        transform: translateY(-1px);
+    }
+
+    .slot .when {
+        font-weight: 700;
+    }
+
+    .slot .meta {
+        color: var(--muted);
+        font-size: .9rem;
+    }
+
+    .slot .status {
+        font-size: .8rem;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px dashed var(--line);
+    }
+
+        .slot .status.is-booked {
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+/* Buttons */
+.btn {
+    border: 1px solid transparent;
+    background: var(--surface);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .2s ease, transform .06s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+    .btn:hover {
+        box-shadow: var(--shadow);
+        transform: translateY(-1px);
+    }
+
+    .btn:active {
+        transform: translateY(0);
+    }
+
+    .btn.icon {
+        width: 40px;
+        height: 40px;
+        display: inline-grid;
+        place-items: center;
+    }
+
+    .btn.primary {
+        background: var(--brand-accent);
+        color: #101010;
+        font-weight: 700;
+        border-color: rgba(0,0,0,0.05);
+    }
+
+    .btn.ghost {
+        background: transparent;
+        border-color: rgba(255,255,255,0.3);
+        color: #fff;
+    }
+
+    .btn.small {
+        padding: 6px 10px;
+        font-size: .9rem;
+    }
+
+/* Dialog */
+dialog::backdrop {
+    background: rgba(0,0,0,.35);
+}
+
+dialog {
+    border: none;
+    padding: 0;
+    border-radius: 18px;
+    width: min(520px, 92vw);
+    box-shadow: var(--shadow);
+}
+
+.booking-form {
+    padding: 18px;
+}
+
+    .booking-form h3 {
+        margin: 0 0 6px;
+    }
+
+.muted {
+    color: var(--muted);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+    .form-grid .full {
+        grid-column: 1 / -1;
+    }
+
+label span {
+    display: block;
+    font-size: .9rem;
+    margin-bottom: 6px;
+    color: var(--muted);
+}
+
+input[type="text"], input[type="email"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: #fff;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+/* Toast */
+.toast {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 24px;
+    background: #101010;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease, transform .25s ease;
+    box-shadow: var(--shadow);
+}
+
+    .toast.show {
+        opacity: 1;
+        transform: translate(-50%, -8px);
+    }
+
+/* === EmployeeLanding Skin Overrides === */
+/* === EmployeeLanding Skin for Boardroom Booking (non-destructive) === */
+:root {
+    --purple-900: #3b2458;
+    --purple-700: #4b2e6f;
+    --beige-200: #f0dcb8;
+    --gold-600: #c8922b;
+    --ink: #231f2a;
+    --muted: #6b6574;
+    --panel: #ffffff;
+    --bg: #f5f5f8;
+    --line: #e8e2f0;
+}
+
+/* Base background + text to match EmployeeLanding */
+body {
+    background: var(--bg);
+    color: var(--ink);
+}
+
+/* Header -> restyle existing .topbar to look like EmployeeLanding */
+.topbar {
+    background: linear-gradient(180deg,var(--purple-900), var(--purple-700));
+    border-bottom: 3px solid var(--gold-600);
+    padding: 12px 0;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 6px 18px rgba(0,0,0,.08);
+}
+
+    .topbar .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 16px;
+    }
+
+    .topbar .brand-title {
+        margin: 0;
+        font-weight: 800;
+        letter-spacing: .2px;
+        color: #fff;
+    }
+
+    /* Header actions/buttons */
+    .topbar .actions {
+        margin-left: auto;
+        padding: 0 16px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .topbar .btn.ghost {
+        background: #fff;
+        color: var(--purple-900);
+        border: 2px solid #e8e2f0;
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-weight: 700;
+    }
+
+        .topbar .btn.ghost:hover {
+            background: #f7f1ff;
+            border-color: #d9d0e6
+        }
+
+/* Match EmployeeLanding card look */
+.calendar-card, .slots-card, .filters, .panel, .card {
+    background: #fff;
+    border: 2px solid #d9d0e6;
+    border-radius: 12px;
+    box-shadow: 0 2px 0 rgba(0,0,0,.02);
+}
+
+/* Typography accents */
+h1, h2, h3 {
+    color: #5a4c6b
+}
+
+.muted, .sub, .hint {
+    color: #8a8396
+}
+
+/* Decorative circles/arcs (non-interactive, behind content) */
+.decor {
+    position: absolute;
+    pointer-events: none;
+    z-index: -1
+}
+
+.blob-right {
+    right: -88px;
+    top: 86px;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: var(--beige-200);
+    opacity: .85
+}
+
+.arc-left {
+    left: -70px;
+    top: 470px;
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    border: 3px solid var(--purple-700);
+    background: transparent
+}
+
+.arc-right-bottom {
+    right: -80px;
+    bottom: 40px;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    border: 3px solid var(--gold-600);
+    background: transparent
+}
+
+/* Footer styling similar to EmployeeLanding */
+.site-footer {
+    margin-top: 40px;
+    padding: 26px 0;
+    background: #fff;
+    border-top: 3px solid var(--gold-600);
+    color: #6b6574;
+}
+
+    .site-footer .container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .site-footer .foot-note {
+        font-size: .9rem
+    }
+
+/* Popup close button */
+.popup {
+    position: relative;
+}
+
+.popup-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: transparent;
+    border: none;
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: #666;
+    cursor: pointer;
+    line-height: 1;
+}
+
+    .popup-close:hover {
+        color: #000;
+    }

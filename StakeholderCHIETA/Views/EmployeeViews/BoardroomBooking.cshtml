@@ -1,0 +1,115 @@
+﻿@{
+    Layout = null;
+}
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Boardroom Booking</title>
+    <link rel="stylesheet" href="styles.css" />
+    <!-- -->
+</head>
+<body>
+    <!-- Optional: Include your existing header from the ZIP here -->
+    <!-- Example:
+    <?php include 'partials/header.php'; ?>
+    -->
+    <header class="topbar">
+        <div class="brand">
+            <div class="circle circle-a"></div>
+            <div class="circle circle-b"></div>
+            <h1 class="brand-title">Boardroom Booking</h1>
+        </div>
+        <nav class="actions">
+            <button class="btn ghost" id="btnToday" aria-label="Jump to today">Today</button>
+        </nav>
+    </header>
+    <div class="decor blob-right"></div>
+    <div class="decor arc-left"></div>
+    <div class="decor arc-right-bottom"></div>
+
+
+    <main class="container">
+        <section class="calendar-card">
+            <div class="calendar-head">
+                <button class="btn icon" id="prevMonth" aria-label="Previous month" title="Previous month">&#9664;</button>
+                <h2 id="monthLabel" class="month-label" aria-live="polite"></h2>
+                <button class="btn icon" id="nextMonth" aria-label="Next month" title="Next month">&#9654;</button>
+            </div>
+            <div class="calendar-grid" role="grid" aria-labelledby="monthLabel">
+                <div class="weekday">Sun</div>
+                <div class="weekday">Mon</div>
+                <div class="weekday">Tue</div>
+                <div class="weekday">Wed</div>
+                <div class="weekday">Thu</div>
+                <div class="weekday">Fri</div>
+                <div class="weekday">Sat</div>
+                <div id="dates" class="dates" role="rowgroup"></div>
+            </div>
+            <div class="legend">
+                <span class="dot available"></span> Available
+                <span class="dot booked"></span> Booked
+                <span class="dot none"></span> No slots
+            </div>
+        </section>
+
+        <section class="slots-card">
+            <header class="slots-head">
+                <h3 id="slotsTitle">Select a date</h3>
+                <div class="filters">
+                    <label>
+                        <input type="checkbox" id="showBooked" />
+                        Show booked
+                    </label>
+                </div>
+            </header>
+            <div id="slotList" class="slot-list" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <!-- Booking Dialog -->
+    <dialog id="bookingDialog">
+        <form method="dialog" id="bookingForm" class="booking-form">
+            <h3 id="dialogTitle">Confirm Booking</h3>
+            <p class="muted" id="slotSummary"></p>
+
+            <div class="form-grid">
+                <label>
+                    <span>Your name</span>
+                    <input type="text" id="nameInput" required placeholder="e.g., Sam Maseko" />
+                </label>
+                <label>
+                    <span>Email</span>
+                    <input type="email" id="emailInput" required placeholder="e.g., sam@example.com" />
+                </label>
+                <label class="full">
+                    <span>Purpose</span>
+                    <input type="text" id="purposeInput" required placeholder="e.g., Quarterly review" />
+                </label>
+            </div>
+
+            <div class="dialog-actions">
+                <button type="button" class="btn ghost" id="cancelDialog">Cancel</button>
+                <button type="submit" class="btn primary" id="confirmBooking">Confirm booking</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Optional: Include your existing footer from the ZIP here -->
+    <!-- Example:
+    <?php include 'partials/footer.php'; ?>
+    -->
+
+    <script src="script.js"></script>
+
+    <footer class="site-footer">
+        <div class="container">
+            <div class="foot-note">© CHIETA Workspace</div>
+            <div class="foot-actions">Empowered by CHIETA Stakeholder Platform</div>
+        </div>
+    </footer>
+</body>
+</html>
