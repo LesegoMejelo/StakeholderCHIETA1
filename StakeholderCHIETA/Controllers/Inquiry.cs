@@ -1,65 +1,25 @@
-﻿
-/*using Google.Cloud.Firestore;
-using Microsoft.AspNetCore.Mvc;
-
-namespace Staekholder_CHIETA_X.Controllers
-{
-
-
-    public class InquiryController : Controller
-    {
-        private readonly FirestoreDb _db;
-
-        public InquiryController(FirestoreDb db)
-        {
-            _db = db;
-        }
-
-
-        [HttpPost]
-        [Route("api/inquiry")]
-        public async Task<IActionResult> Post([FromForm] string name, [FromForm] string message, [FromForm] string inquiryType)
-        {
-            var docRef = await _db.Collection("inquiries").AddAsync(new
-            {
-                name = name,
-                message = message,
-                inquiryType = inquiryType,
-                createdAt = Timestamp.GetCurrentTimestamp()
-            });
-
-            return Ok(new { id = docRef.Id, message = "Inquiry submitted" });
-        }
-        public IActionResult Index()
-        {
-            return View();
-        }
-        
-        public IActionResult Inquiry()
-        {
-            return View("~/Views/StakeholderViews/Inquiry/Inquiry.cshtml");
-
-        }
-    }
-}*/
-
-using Google.Cloud.Firestore;
+﻿using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Staekholder_CHIETA_X.Controllers
 {
+    [Authorize] // all endpoints require login by default
     public class InquiryController : Controller
     {
         private readonly FirestoreDb _db;
 
         public InquiryController(FirestoreDb db)
         {
-            _db = db;
+            _db = db ;
         }
 
-        // ✅ SUBMIT INQUIRY (Already working)
+        // SUBMIT INQUIRY (Client)
         [HttpPost]
+        [AllowAnonymous] // allow non-auth users to submit
         [Route("api/inquiry")]
         public async Task<IActionResult> Post([FromForm] string name, [FromForm] string message, [FromForm] string inquiryType)
         {
@@ -68,7 +28,8 @@ namespace Staekholder_CHIETA_X.Controllers
                 name = name,
                 message = message,
                 inquiryType = inquiryType,
-                status = "Pending", // 🔹 Default for new inquiries
+                status = "Pending",
+                //assignedAdvisor = "", //  will be set when assigned
                 updates = new List<object>
                 {
                     new { status = "Pending", updatedBy = "System", timestamp = Timestamp.GetCurrentTimestamp(), notes = "Inquiry submitted" }
@@ -76,10 +37,10 @@ namespace Staekholder_CHIETA_X.Controllers
                 createdAt = Timestamp.GetCurrentTimestamp()
             });
 
-            return Ok(new { id = docRef.Id, message = "Inquiry submitted" });
+            return Ok(new { id = docRef.Id, message = "Inquiry submitted successfully" });
         }
 
-        // ✅ CLIENT: View all their inquiries
+        // CLIENT: View all their inquiries
         [HttpGet]
         [Authorize(Roles = "Client")]
         [Route("api/inquiry/client/{name}")]
@@ -98,9 +59,9 @@ namespace Staekholder_CHIETA_X.Controllers
             return Ok(inquiries);
         }
 
-        // ✅ CLIENT: View single inquiry + history
-        [Authorize(Roles = "Client")]
+        // CLIENT: View single inquiry + history
         [HttpGet]
+        [Authorize(Roles = "Client")]
         [Route("api/inquiry/{id}")]
         public async Task<IActionResult> GetInquiry(string id)
         {
@@ -112,9 +73,28 @@ namespace Staekholder_CHIETA_X.Controllers
             return Ok(snapshot.ToDictionary());
         }
 
-        // ✅ ADVISOR/ADMIN: Update inquiry status
-        [Authorize(Roles = "Advisor,Admin")]
+        // ADVISOR: View inquiries assigned to them
+        [HttpGet]
+        [Authorize(Roles = "Advisor")]
+        [Route("api/inquiry/advisor/{advisorId}")]
+        public async Task<IActionResult> GetAdvisorInquiries(string advisorId)
+        {
+            var snapshot = await _db.Collection("inquiries")
+                                    .WhereEqualTo("assignedAdvisor", advisorId)
+                                    .GetSnapshotAsync();
+
+            var inquiries = snapshot.Documents.Select(doc => new
+            {
+                id = doc.Id,
+                data = doc.ToDictionary()
+            });
+
+            return Ok(inquiries);
+        }
+
+        // ADVISOR/ADMIN: Update inquiry status
         [HttpPost]
+        [Authorize(Roles = "Advisor,Admin")]
         [Route("api/inquiry/{id}/status")]
         public async Task<IActionResult> UpdateStatus(string id, [FromForm] string status, [FromForm] string updatedBy, [FromForm] string notes)
         {
@@ -124,7 +104,9 @@ namespace Staekholder_CHIETA_X.Controllers
             if (!snapshot.Exists) return NotFound("Inquiry not found");
 
             var inquiry = snapshot.ToDictionary();
-            var updates = inquiry.ContainsKey("updates") ? (List<object>)inquiry["updates"] : new List<object>();
+            var updates = inquiry.ContainsKey("updates")
+                ? ((List<object>)inquiry["updates"]).ToList()
+                : new List<object>();
 
             updates.Add(new
             {
@@ -143,9 +125,9 @@ namespace Staekholder_CHIETA_X.Controllers
             return Ok(new { message = "Status updated successfully" });
         }
 
-        // ✅ ADMIN: View all inquiries
-        [Authorize(Roles = "Admin")]
+        // ADMIN: View all inquiries
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         [Route("api/inquiry/all")]
         public async Task<IActionResult> GetAllInquiries()
         {
@@ -160,7 +142,7 @@ namespace Staekholder_CHIETA_X.Controllers
             return Ok(inquiries);
         }
 
-        // 🔹 VIEWS
+     
         public IActionResult Index()
         {
             return View();
@@ -173,7 +155,8 @@ namespace Staekholder_CHIETA_X.Controllers
 
         public IActionResult Tracking()
         {
-            return View("~/Views/Inquiry/Tracking.cshtml");
+            return View("~/Views/EmployeeViews/InquiryTracker.cshtml");
         }
+
     }
 }

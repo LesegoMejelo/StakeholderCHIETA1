@@ -86,16 +86,16 @@
 
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a href="@Url.Action("Create", "Inquiry")">Track your Inquiries </a></h3>
+                    <h3><a asp-controller="Inquiry" asp-action="Tracking">Track Your Inquiries</a></h3>
                     <p>All the inquiries sent to you can be accessed via this page and updates can be made.</p>
-                    <button class="btn" data-nav="@Url.Action("Create", "Inquiry")">Track</button>
+                    <button class="btn" data-nav="@Url.Action("Update", "Inquiry")">Track</button>
                 </div>
 
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a href="@Url.Action("Track", "Inquiry")">Book an Office Space</a></h3>
+                    <h3><a asp-controller="BookSpace" asp-action="Book">Book an Office Space</a></h3>
                     <p>Book the office that meets the needs of all your meetings</p>
-                    <button class="btn" data-nav="@Url.Action("Track", "Inquiry")">Grab</button>
+                    <button class="btn" data-nav="@Url.Action("Book", "OfficeSpace")">Grab</button>
                 </div>
             </div>
         </section>
