@@ -49,6 +49,9 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddMemoryCache();
 
+builder.Services.AddSingleton<IInquiryRealtimeService, InquiryRealtimeService>();
+
+
 builder.Services.AddScoped<IAppointmentQRService, AppointmentQRService>();
 builder.Services.AddScoped<IQRCodeGenerator, QRCodeService>();
 
