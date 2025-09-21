@@ -151,57 +151,337 @@
     <!-- your HTML above ... -->
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const tbody = document.getElementById("appointments-body");
+            document.addEventListener("DOMContentLoaded", () => {
+            const tbody = document.getElementById("requestRows");
+            const upcomingSummary = document.getElementById("upcomingSummary");
 
             async function loadAppointments() {
                 try {
+                    console.log("Loading appointments...");
+
                     const res = await fetch("/AdvisorAppointment/AppointmentTrackerData");
-                    if (!res.ok) throw new Error("Failed to fetch appointments");
+
+                    if (!res.ok) {
+                        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                    }
 
                     const appointments = await res.json();
+                    console.log("Raw appointments data from server:", appointments);
 
-                    tbody.innerHTML = ""; // clear old data
-                    appointments.forEach(a => {
+                    // Clear old data
+                    tbody.innerHTML = "";
+                    upcomingSummary.innerHTML = "";
+
+                    if (!appointments || appointments.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #666;">No appointments found</td></tr>';
+                        upcomingSummary.innerHTML = '<li style="color: #666;">No upcoming appointments</li>';
+                        return;
+                    }
+
+                    console.log("Processing appointments...");
+
+                    // Process each appointment and log the data structure
+                    appointments.forEach((appointment, index) => {
+                        console.log(`Appointment ${index}:`, appointment);
+                        console.log(`- Id: "${appointment.Id}"`);
+                        console.log(`- Date: "${appointment.Date}"`);
+                        console.log(`- Time: "${appointment.Time}"`);
+                        console.log(`- ClientName: "${appointment.ClientName}"`);
+                        console.log(`- Reason: "${appointment.Reason}"`);
+                        console.log(`- Status: "${appointment.Status}"`);
+                    });
+
+                    // Filter upcoming appointments for summary - ONLY show accepted appointments
+                    const today = new Date().toISOString().split('T')[0];
+                    const upcomingAppointments = appointments.filter(a => {
+                         const appointmentDate = a.Date || "";
+                         const status = a.Status || "Pending";
+                        // Only show accepted appointments that are today or in the future
+                        return appointmentDate >= today && status === "Accepted";
+                    }).slice(0, 3);
+
+                    // Populate upcoming summary
+                    if (upcomingAppointments.length > 0) {
+                        upcomingAppointments.forEach(a => {
+                            const li = document.createElement("li");
+                            li.innerHTML = `<strong>${a.ClientName || 'Unknown Client'}</strong> - ${a.Date || 'No Date'} at ${a.Time || 'No Time'}`;
+                            upcomingSummary.appendChild(li);
+                        });
+                    } else {
+                        upcomingSummary.innerHTML = '<li style="color: #666;">No upcoming accepted appointments</li>';
+                    };                    
+
+                    // Populate main table
+                    appointments.forEach((a) => {
                         const row = document.createElement("tr");
+
+                        // Use the exact field values from the server response
+                        const date = a.Date || 'N/A';
+                        const time = a.Time || 'N/A';
+                        const reason = a.Reason || 'No reason provided';
+                        const status = a.Status || 'Pending';
+                        const clientName = a.ClientName || 'Unknown Client';
+                        const appointmentId = a.Id || '';
+
+                        console.log(`Creating row for appointment ID: ${appointmentId}`);
+                        console.log(`- Date: ${date}, Time: ${time}, Reason: ${reason}, Status: ${status}`);
+
+                        const statusClass = status.toLowerCase();
+                        const statusBadge = `<span class="status-badge status-${statusClass}">${status}</span>`;
+
+                        const truncatedReason = reason.length > 50 ? reason.substring(0, 50) + '...' : reason;
+
                         row.innerHTML = `
-                            <td>${a.clientName}</td>
-                            <td>${a.reason}</td>
-                            <td>${a.date}</td>
-                            <td>${a.time}</td>
-                            <td>${a.status}</td>
-                            <td>
-                                ${a.status === "Pending" ? `
-                                    <button onclick="updateStatus('${a.id}','accepted')">Accept</button>
-                                    <button onclick="updateStatus('${a.id}','declined')">Decline</button>
-                                ` : ""}
+                            <td>${date}</td>
+                            <td>${time}</td>
+                            <td title="${reason}">${truncatedReason}</td>
+                            <td>${statusBadge}</td>
+                            <td class="actions-cell">
+                                ${status === "Pending" ? `
+                                    <button class="btn btn-accept" onclick="updateStatus('${appointmentId}','accepted')" title="Accept appointment">
+                                        ✓ Accept
+                                    </button>
+                                    <button class="btn btn-decline" onclick="openDeclineModal('${appointmentId}', '${clientName}', '${date}', '${time}')" title="Decline appointment">
+                                        ✕ Decline
+                                    </button>
+                                ` : `
+                                    <button class="btn btn-info" onclick="showAppointmentDetails('${appointmentId}', '${clientName}', '${date}', '${time}', '${reason}', '${status}', '${a.DeclineReason || ''}', '${a.ProposedNewDate || ''}', '${a.ProposedNewTime || ''}')" title="View details">
+                                        ℹ Details
+                                    </button>
+                                `}
                             </td>
                         `;
                         tbody.appendChild(row);
                     });
 
+                    console.log(`✅ Successfully loaded ${appointments.length} appointments`);
+
                 } catch (err) {
-                    console.error("Error loading appointments:", err);
+                    console.error("❌ Error loading appointments:", err);
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: red;">
+                        Error loading appointments: ${err.message}<br>
+                        <small>Check console for details</small>
+                    </td></tr>`;
                 }
             }
 
+            // Update appointment status function
             window.updateStatus = async function (id, status) {
-                const res = await fetch("/AdvisorAppointment/UpdateStatus", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: new URLSearchParams({ appointmentId: id, status })
-                });
+                try {
+                    console.log(`🔄 Updating appointment ID: "${id}" to status: "${status}"`);
 
-                if (res.ok) {
-                    loadAppointments(); // refresh immediately after update
-                } else {
-                    alert("❌ Failed to update appointment");
+                    if (!id || !status) {
+                        console.error("❌ Missing appointment ID or status");
+                        showToast("❌ Missing appointment ID or status", "error");
+                        return;
+                    }
+
+                    const res = await fetch("/AdvisorAppointment/UpdateStatus", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: new URLSearchParams({
+                            appointmentId: id,
+                            status: status
+                        })
+                    });
+
+                    console.log(`Update response status: ${res.status}`);
+                    console.log(`Update response ok: ${res.ok}`);
+
+                    if (res.ok) {
+                        try {
+                            const result = await res.json();
+                            console.log("✅ Update successful:", result);
+                            showToast(`Appointment ${status} successfully!`);
+                            loadAppointments(); // Reload to see changes
+                        } catch (jsonError) {
+                            console.log("✅ Update successful (non-JSON response)");
+                            showToast(`Appointment ${status} successfully!`);
+                            loadAppointments();
+                        }
+                    } else {
+                        const errorText = await res.text();
+                        console.error("❌ Update failed:", errorText);
+                        showToast("❌ Failed to update appointment", "error");
+                    }
+                } catch (err) {
+                    console.error("❌ Error updating appointment:", err);
+                    showToast("❌ Network error occurred", "error");
                 }
             };
 
-            // 🔄 Auto-refresh every 5 seconds (same as users list)
+            // Show appointment details in modal
+            window.showAppointmentDetails = function(id, clientName, date, time, reason, status, declineReason, proposedNewDate, proposedNewTime) {
+                console.log("Showing appointment details for:", { id, clientName, date, time, reason, status });
+
+                document.getElementById('infoTitle').textContent = 'Appointment Details';
+                document.getElementById('infoSubtitle').textContent = `Appointment with ${clientName}`;
+                document.getElementById('infoDate').textContent = date;
+                document.getElementById('infoTime').textContent = time;
+                document.getElementById('infoReason').textContent = reason;
+                document.getElementById('infoStatus').textContent = status;
+                document.getElementById('infoDeclineReason').textContent = declineReason || 'N/A';
+                document.getElementById('infoProposed').textContent =
+                    (proposedNewDate && proposedNewTime) ? `${proposedNewDate} at ${proposedNewTime}` : 'N/A';
+
+                const modal = document.getElementById('infoModal');
+                modal.style.display = 'flex';
+                modal.removeAttribute('hidden');
+                modal.setAttribute('aria-hidden', 'false');
+
+                // Focus management for accessibility
+                const firstFocusable = modal.querySelector('button');
+                if (firstFocusable) firstFocusable.focus();
+            };
+
+            // Open decline modal
+            window.openDeclineModal = function(id, clientName, date, time) {
+                console.log("Opening decline modal for:", { id, clientName, date, time });
+
+                document.getElementById('decAppointmentId').value = id;
+                document.getElementById('decTitle').textContent = 'Decline & Suggest New Time';
+                document.getElementById('decContext').textContent = `Declining appointment with ${clientName} on ${date} at ${time}`;
+
+                const modal = document.getElementById('declineModal');
+                modal.style.display = 'flex';
+                modal.removeAttribute('hidden');
+                modal.setAttribute('aria-hidden', 'false');
+
+                // Focus on the reason textarea
+                const reasonField = document.getElementById('decReason');
+                if (reasonField) reasonField.focus();
+            };
+
+            // Handle decline form submission
+            const declineForm = document.getElementById('declineForm');
+            if (declineForm) {
+                declineForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const appointmentId = document.getElementById('decAppointmentId').value;
+                    const reason = document.getElementById('decReason').value.trim();
+                    const newDate = document.getElementById('decNewDate').value;
+                    const newTime = document.getElementById('decNewTime').value;
+
+                    console.log('Declining appointment:', { appointmentId, reason, newDate, newTime });
+
+                    if (!reason) {
+                        showToast("❌ Please provide a reason for declining", "error");
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch("/AdvisorAppointment/UpdateStatus", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded"
+                            },
+                            body: new URLSearchParams({
+                                appointmentId: appointmentId,
+                                status: 'declined',
+                                declineReason: reason,
+                                newDate: newDate,
+                                newTime: newTime
+                            })
+                        });
+
+                        if (res.ok) {
+                            console.log('✅ Appointment declined successfully');
+                            showToast("Appointment declined successfully!");
+                            closeModal('declineModal');
+                            loadAppointments();
+                        } else {
+                            const errorText = await res.text();
+                            console.error("❌ Decline failed:", errorText);
+                            showToast("❌ Failed to decline appointment", "error");
+                        }
+                    } catch (err) {
+                        console.error("❌ Error declining appointment:", err);
+                        showToast("❌ Network error occurred", "error");
+                    }
+                });
+            }
+
+            // Modal management functions
+            function closeModal(modalId) {
+                console.log(`Closing modal: ${modalId}`);
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = 'none';
+                    modal.setAttribute('hidden', '');
+                    modal.setAttribute('aria-hidden', 'true');
+
+                    if (modalId === 'declineModal') {
+                        document.getElementById('declineForm').reset();
+                    }
+                }
+            }
+
+            // Close modal event listeners
+            document.querySelectorAll('[data-close-modal]').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const modal = this.closest('.modal');
+                    if (modal) {
+                        closeModal(modal.id);
+                    }
+                });
+            });
+
+            const declineCancel = document.getElementById('declineCancel');
+            if (declineCancel) {
+                declineCancel.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    closeModal('declineModal');
+                });
+            }
+
+            // Close modal when clicking backdrop
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    closeModal(e.target.id);
+                }
+            });
+
+            // Escape key closes modal
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const openModal = document.querySelector('.modal[style*="flex"]');
+                    if (openModal) {
+                        closeModal(openModal.id);
+                    }
+                }
+            });
+
+            // Toast notification function
+            function showToast(message, type = "success") {
+                console.log(`Toast: ${message} (${type})`);
+
+                const toast = document.getElementById('toast');
+                const toastMsg = document.getElementById('toastMsg');
+
+                if (toast && toastMsg) {
+                    toastMsg.textContent = message;
+                    toast.className = `toast show ${type}`;
+
+                    setTimeout(() => {
+                        toast.className = 'toast';
+                    }, 4000);
+                } else {
+                    // Fallback if toast elements don't exist
+                    const alertType = type === 'error' ? '❌' : '✅';
+                    alert(`${alertType} ${message}`);
+                }
+            }
+
+            // Initial load and auto-refresh
+            console.log('🚀 Starting appointment tracker...');
             loadAppointments();
-            setInterval(loadAppointments, 5000);
+
+            // Refresh every 30 seconds
+            setInterval(loadAppointments, 30000);
         });
     </script>
     
