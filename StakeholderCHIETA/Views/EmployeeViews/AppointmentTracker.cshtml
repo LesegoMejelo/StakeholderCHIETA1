@@ -1,159 +1,686 @@
 ﻿@{
     Layout = null;
 }
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>CHIETA — Appointment Tracker</title>
-  <link rel="stylesheet" href="~/Content/EmployeeView/AppointmentTracker.css"/>
+  <title>Appointment Management — CHIETA</title>
+  
 </head>
 <body>
-  <!-- Top Bar -->
+  <!-- Header -->
   <header class="topbar">
     <div class="container topbar-inner">
-      <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo" />
-      <nav class="header-actions" aria-label="User">
-        <div class="menu" id="settings">
-          <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-            <span class="hide-sm">Settings</span>
-          </button>
-          <div class="menu-popover" id="settings-menu" role="menu" hidden>
-            <a role="menuitem" href="/EmployeeLanding /index.html" id="nav-home">Home</a>
-            <a role="menuitem" href="#" id="nav-profile">Profile</a>
-            <a role="menuitem" href="#" id="nav-notifs">Notifications</a>
-            <div class="menu-sep" role="separator"></div>
-            <div class="menu-group" role="group" aria-label="Preferences">
-              <label class="menu-check">
-                <input id="pref-dark" type="checkbox" />
-                <span>Dark mode</span>
-              </label>
-            </div>
-            <div class="menu-sep" role="separator"></div>
-            <a role="menuitem" href="#" class="danger">Sign out</a>
-          </div>
-        </div>
-      </nav>
+      <div class="brand">
+        <div class="logo">CHIETA</div>
+        <div class="divider"></div>
+        <div class="page-title">Appointment Management</div>
+      </div>
     </div>
   </header>
 
-  <main class="main-wrap">
-    <!-- Background motif INSIDE the scrolling content -->
-    <div class="bg" aria-hidden="true">
-      <div class="bg-blob-right"></div>
-      <div class="bg-arc-left"></div>
-      <div class="bg-arc-right-bottom"></div>
+  <main class="container">
+    <h1>Appointment Dashboard</h1>
+    <p class="muted">Manage stakeholder appointment requests and view upcoming appointments</p>
+    
+    <!-- Upcoming appointments section -->
+    <section class="upcoming-section">
+      <h2 class="section-title">Upcoming Appointments</h2>
+      <div class="upcoming-cards" id="upcomingAppointments">
+        <!-- Upcoming appointments will be populated by JavaScript -->
+      </div>
+    </section>
+    
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filters-header">
+        <h2 class="filters-title">Appointment Requests</h2>
+        <button class="clear-filters" id="clearFilters">Clear all filters</button>
+      </div>
+      <div class="filter-grid">
+        <div class="filter-group">
+          <label class="filter-label" for="statusFilter">Status</label>
+          <select class="filter-select" id="statusFilter">
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="accepted">Accepted</option>
+            <option value="declined">Declined</option>
+            <option value="rescheduled">Rescheduled</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label" for="typeFilter">Appointment Type</label>
+          <select class="filter-select" id="typeFilter">
+            <option value="all">All Types</option>
+            <option value="online">Online</option>
+            <option value="physical">In-Person</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label" for="dateFilter">Time Period</label>
+          <select class="filter-select" id="dateFilter">
+            <option value="all">All Time</option>
+            <option value="7">Next 7 Days</option>
+            <option value="30">Next 30 Days</option>
+            <option value="90">Next 3 Months</option>
+          </select>
+        </div>
+      </div>
     </div>
-
-    <div class="container page">
-      <!-- ONE summary card (EmployeeLanding style) -->
-      <section class="summary-grid">
-        <article class="summary-card">
-          <h3 class="section-title"><u>Upcoming Appointments</u></h3>
-          <ul id="upcomingSummary" class="mini-list" aria-live="polite"></ul>
-        </article>
-      </section>
-
-      <!-- Appointment Requests -->
-      <section class="card" aria-labelledby="requestsTitle">
-        <div class="card__hd">
-          <div class="card-title-line">
-            <div id="requestsTitle" class="card-title like-summary"><u>Appointment Requests</u></div>
-            <div class="muted small">Review and take action</div>
-          </div>
-        </div>
-
-        <div class="card__bd">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Reason</th>
-                  <th>Status</th>
-                  <th class="th-actions">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="requestRows"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+    
+    <!-- Results info -->
+    <div class="results-info">
+      <div class="results-count" id="resultsCount">Loading appointments...</div>
+    </div>
+    
+    <!-- Appointments table -->
+    <div class="appointments-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Stakeholder</th>
+            <th>Date & Time</th>
+            <th>Type</th>
+            <th>Advisor</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="appointmentsTableBody">
+          <!-- Appointments will be populated by JavaScript -->
+        </tbody>
+      </table>
     </div>
   </main>
 
-  <!-- Footer band -->
-  <footer class="footer" aria-label="Site">
-    <div class="footer-band"></div>
-    <div class="gold-box"></div>
+  <!-- Info Modal -->
+  <div class="modal" id="infoModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Appointment Details</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      
+      <div class="modal-section">
+        <h3 class="modal-section-title">Appointment Information</h3>
+        <div class="detail-grid">
+          <div class="detail-label">Stakeholder:</div>
+          <div id="detail-stakeholder"></div>
+          
+          <div class="detail-label">Date:</div>
+          <div id="detail-date"></div>
+          
+          <div class="detail-label">Time:</div>
+          <div id="detail-time"></div>
+          
+          <div class="detail-label">Type:</div>
+          <div id="detail-type"></div>
+          
+          <div class="detail-label">Advisor:</div>
+          <div id="detail-advisor"></div>
+          
+          <div class="detail-label">Status:</div>
+          <div id="detail-status"></div>
+        </div>
+      </div>
+      
+      <div class="modal-section">
+        <h3 class="modal-section-title">Reason & Details</h3>
+        <div class="form-group">
+          <div class="form-label">Reason for Appointment</div>
+          <div id="detail-reason" class="form-input" style="background: #f9f9f9"></div>
+        </div>
+        
+        <div class="form-group">
+          <div class="form-label">Additional Details</div>
+          <div id="detail-details" class="form-textarea" style="background: #f9f9f9; min-height: 80px"></div>
+        </div>
+      </div>
+      
+      <div class="form-actions">
+        <button class="action-btn btn-info" id="closeInfoModal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decision Modal -->
+  <div class="modal" id="decisionModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="decisionModalTitle">Respond to Appointment</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      
+      <div class="modal-section">
+        <h3 class="modal-section-title">Appointment Details</h3>
+        <div class="detail-grid">
+          <div class="detail-label">Stakeholder:</div>
+          <div id="decision-stakeholder"></div>
+          
+          <div class="detail-label">Current Date:</div>
+          <div id="decision-date"></div>
+          
+          <div class="detail-label">Current Time:</div>
+          <div id="decision-time"></div>
+        </div>
+      </div>
+      
+      <div class="modal-section">
+        <h3 class="modal-section-title">Your Response</h3>
+        <div id="acceptMessage" style="display: none;">
+          <p>Are you sure you want to accept this appointment?</p>
+        </div>
+        <div class="form-group" id="reasonSection">
+          <label class="form-label" for="responseReason">Reason for your decision</label>
+          <textarea class="form-textarea" id="responseReason" placeholder="Please provide a reason for your decision..."></textarea>
+        </div>
+        
+        <div id="rescheduleSection" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="newDate">Proposed Date</label>
+            <input type="date" class="form-input" id="newDate" min="">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="newTime">Proposed Time</label>
+            <select class="form-select" id="newTime">
+              <option value="">Select a time</option>
+              <option value="09:00">09:00 AM</option>
+              <option value="09:30">09:30 AM</option>
+              <option value="10:00">10:00 AM</option>
+              <option value="10:30">10:30 AM</option>
+              <option value="11:00">11:00 AM</option>
+              <option value="11:30">11:30 AM</option>
+              <option value="14:00">02:00 PM</option>
+              <option value="14:30">02:30 PM</option>
+              <option value="15:00">03:00 PM</option>
+              <option value="15:30">03:30 PM</option>
+              <option value="16:00">04:00 PM</option>
+              <option value="16:30">04:30 PM</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-actions">
+        <button class="action-btn btn-info" id="cancelDecision">Cancel</button>
+        <button class="action-btn" id="submitDecision">Submit Response</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-band"><div class="gold-box"></div></div>
   </footer>
 
-  <!-- Decline Modal -->
-  <div class="modal" id="declineModal" aria-modal="true" role="dialog" aria-labelledby="decTitle" aria-describedby="decContext">
-    <div class="modal__dialog">
-      <div class="modal__header">
-        <div>
-          <div id="decTitle" class="modal__title">Decline & Suggest New Time</div>
-          <div class="muted" id="decContext" style="font-size:.9rem"></div>
-        </div>
-        <button class="close-btn" data-close-modal="true" aria-label="Close">✕</button>
-      </div>
-      <form id="declineForm" class="form">
-        <div class="form__row form__row--single">
-          <div>
-            <label for="decReason">Reason for declining</label>
-            <textarea id="decReason" placeholder="e.g., Scheduling conflict, in another meeting…"></textarea>
-          </div>
-        </div>
-        <div class="form__row">
-          <div>
-            <label for="decNewDate">Propose new date (optional)</label>
-            <input id="decNewDate" type="date" />
-          </div>
-          <div>
-            <label for="decNewTime">Propose new time (optional)</label>
-            <input id="decNewTime" type="time" />
-          </div>
-        </div>
-        <div class="form__actions">
-          <button id="declineCancel" class="btn ghost" type="button">Cancel</button>
-          <button class="cta" type="submit">Submit</button>
-        </div>
-      </form>
-    </div>
-  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Sample appointment data
+      const appointments = [
+        {
+          id: 'apt-1',
+          stakeholder: 'John Smith',
+          email: 'john.smith@example.com',
+          date: '2024-04-15',
+          time: '10:00',
+          type: 'online',
+          advisor: 'Jane Smith',
+          status: 'pending',
+          reason: 'Grant Application Assistance',
+          details: 'Need help with completing the mandatory grant application for Q2. Specifically questions about eligible expenses.',
+          timestamp: '2024-04-10T14:30:00'
+        },
+        {
+          id: 'apt-2',
+          stakeholder: 'Sarah Johnson',
+          email: 'sarahj@example.com',
+          date: '2024-04-16',
+          time: '14:30',
+          type: 'physical',
+          advisor: 'Mike Johnson',
+          status: 'pending',
+          reason: 'Bursary Application Review',
+          details: 'Would like to review my bursary application before submission to ensure all documents are in order.',
+          timestamp: '2024-04-11T09:15:00'
+        },
+        {
+          id: 'apt-3',
+          stakeholder: 'Robert Williams',
+          email: 'r.williams@example.com',
+          date: '2024-04-18',
+          time: '11:00',
+          type: 'online',
+          advisor: 'Sarah Williams',
+          status: 'accepted',
+          reason: 'Compliance Query',
+          details: 'Questions about new compliance requirements for skills development programs.',
+          timestamp: '2024-04-05T11:45:00'
+        },
+        {
+          id: 'apt-4',
+          stakeholder: 'Lisa Brown',
+          email: 'lisa.brown@example.com',
+          date: '2024-04-20',
+          time: '15:30',
+          type: 'physical',
+          advisor: 'Thomas Brown',
+          status: 'declined',
+          reason: 'Skills Program Registration',
+          details: 'Need assistance with registering our employees for the electrical engineering learnership program.',
+          timestamp: '2024-04-07T16:20:00'
+        },
+        {
+          id: 'apt-5',
+          stakeholder: 'David Wilson',
+          email: 'dwilson@example.com',
+          date: '2024-04-22',
+          time: '09:30',
+          type: 'online',
+          advisor: 'Jane Smith',
+          status: 'rescheduled',
+          reason: 'Site Visit Request',
+          details: 'Would like to request a site visit to assess our training facilities for accreditation purposes.',
+          timestamp: '2024-04-08T13:10:00',
+          rescheduledTo: '2024-04-25 at 10:00'
+        }
+      ];
 
-  <!-- Info Modal -->
-  <div class="modal" id="infoModal" aria-modal="true" role="dialog" aria-labelledby="infoTitle">
-    <div class="modal__dialog">
-      <div class="modal__header">
-        <div>
-          <div id="infoTitle" class="modal__title">Appointment Details</div>
-          <div class="muted" id="infoSubtitle" style="font-size:.9rem"></div>
-        </div>
-        <button class="close-btn" data-close-modal="true" aria-label="Close">✕</button>
-      </div>
-      <div class="form form--static">
-        <div class="kv"><b>Date</b><div id="infoDate"></div></div>
-        <div class="kv"><b>Time</b><div id="infoTime"></div></div>
-        <div class="kv"><b>Reason</b><div id="infoReason"></div></div>
-        <div class="kv"><b>Status</b><div id="infoStatus"></div></div>
-        <div class="kv"><b>Decline reason</b><div id="infoDeclineReason"></div></div>
-        <div class="kv"><b>Proposed new time</b><div id="infoProposed"></div></div>
-      </div>
-      <div class="form__actions form__actions--footer">
-        <button class="btn ghost" data-close-modal="true" type="button">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast -->
-  <div id="toast" role="status" aria-live="polite" aria-atomic="true">
-    <span id="toastMsg"></span>
-    <button id="toastUndo" class="undo" style="display:none">Undo</button>
-  </div>
-
-  <script src="~/Content/EmployeeView/js/AppointmentTracker.js"></script>
+      const appointmentsTable = document.getElementById('appointmentsTableBody');
+      const upcomingAppointments = document.getElementById('upcomingAppointments');
+      const statusFilter = document.getElementById('statusFilter');
+      const typeFilter = document.getElementById('typeFilter');
+      const dateFilter = document.getElementById('dateFilter');
+      const clearFiltersBtn = document.getElementById('clearFilters');
+      const resultsCount = document.getElementById('resultsCount');
+      
+      const infoModal = document.getElementById('infoModal');
+      const decisionModal = document.getElementById('decisionModal');
+      
+      let filteredAppointments = [...appointments];
+      let currentAction = null;
+      let currentAppointmentId = null;
+      
+      // Initial render
+      renderAppointments();
+      renderUpcomingAppointments();
+      
+      // Add event listeners for filters
+      statusFilter.addEventListener('change', filterAppointments);
+      typeFilter.addEventListener('change', filterAppointments);
+      dateFilter.addEventListener('change', filterAppointments);
+      clearFiltersBtn.addEventListener('click', clearAllFilters);
+      
+      // Modal close buttons
+      document.querySelectorAll('.close-modal, #closeInfoModal, #cancelDecision').forEach(btn => {
+        btn.addEventListener('click', function() {
+          infoModal.classList.remove('active');
+          decisionModal.classList.remove('active');
+        });
+      });
+      
+      // Submit decision button
+      document.getElementById('submitDecision').addEventListener('click', function() {
+        if (currentAction === 'accept') {
+          // No reason needed for acceptance
+          handleAppointmentAcceptance();
+        } else {
+          const reason = document.getElementById('responseReason').value.trim();
+          
+          if (!reason) {
+            alert('Please provide a reason for your decision');
+            return;
+          }
+          
+          if (currentAction === 'reschedule') {
+            const newDate = document.getElementById('newDate').value;
+            const newTime = document.getElementById('newTime').value;
+            
+            if (!newDate || !newTime) {
+              alert('Please select both a date and time for the rescheduled appointment');
+              return;
+            }
+          }
+          
+          handleAppointmentDecision(reason);
+        }
+      });
+      
+      function handleAppointmentAcceptance() {
+        // Update appointment status (in a real app, this would call an API)
+        const appointmentIndex = appointments.findIndex(a => a.id === currentAppointmentId);
+        if (appointmentIndex !== -1) {
+          appointments[appointmentIndex].status = 'accepted';
+        }
+        
+        // Show success message
+        alert('Appointment accepted successfully!');
+        
+        // Refresh the tables
+        filterAppointments();
+        renderUpcomingAppointments(); // This line was missing - FIXED
+        
+        // Close modal
+        decisionModal.classList.remove('active');
+      }
+      
+      function handleAppointmentDecision(reason) {
+        // Update appointment status (in a real app, this would call an API)
+        const appointmentIndex = appointments.findIndex(a => a.id === currentAppointmentId);
+        if (appointmentIndex !== -1) {
+          if (currentAction === 'decline') {
+            appointments[appointmentIndex].status = 'declined';
+          } else if (currentAction === 'reschedule') {
+            appointments[appointmentIndex].status = 'rescheduled';
+            const newDate = document.getElementById('newDate').value;
+            const newTime = document.getElementById('newTime').value;
+            appointments[appointmentIndex].rescheduledTo = `${newDate} at ${newTime}`;
+          }
+        }
+        
+        // Show success message
+        alert(`Appointment ${currentAction}ed successfully!`);
+        
+        // Refresh the table
+        filterAppointments();
+        renderUpcomingAppointments(); // Also update upcoming appointments for rescheduled ones
+        
+        // Close modal
+        decisionModal.classList.remove('active');
+      }
+      
+      function filterAppointments() {
+        const statusValue = statusFilter.value;
+        const typeValue = typeFilter.value;
+        const dateValue = dateFilter.value;
+        
+        filteredAppointments = appointments.filter(appointment => {
+          // Status filter
+          if (statusValue !== 'all' && appointment.status !== statusValue) {
+            return false;
+          }
+          
+          // Type filter
+          if (typeValue !== 'all' && appointment.type !== typeValue) {
+            return false;
+          }
+          
+          // Date filter
+          if (dateValue !== 'all') {
+            const days = parseInt(dateValue);
+            const cutoffDate = new Date();
+            const appointmentDate = new Date(appointment.date);
+            
+            // For future appointments
+            if (appointmentDate < cutoffDate) {
+              return false;
+            }
+            
+            const diffTime = Math.abs(appointmentDate - cutoffDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays > days) {
+              return false;
+            }
+          }
+          
+          return true;
+        });
+        
+        renderAppointments();
+      }
+      
+      function renderUpcomingAppointments() {
+        // Get today's date
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Filter accepted and rescheduled appointments that are in the future
+        const upcoming = appointments.filter(appointment => {
+          const appointmentDate = new Date(appointment.date);
+          return (appointment.status === 'accepted' || appointment.status === 'rescheduled') && 
+                 appointmentDate >= today;
+        });
+        
+        // Sort by date
+        upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        // Clear current upcoming appointments
+        upcomingAppointments.innerHTML = '';
+        
+        if (upcoming.length === 0) {
+          upcomingAppointments.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--muted)">
+              No upcoming appointments
+            </div>
+          `;
+        } else {
+          upcoming.forEach(appointment => {
+            const card = document.createElement('div');
+            card.className = `upcoming-card ${appointment.status}`;
+            
+            const dateObj = new Date(appointment.date);
+            const formattedDate = dateObj.toLocaleDateString('en-US', { 
+              weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
+            });
+            
+            card.innerHTML = `
+              <div class="upcoming-card-header">
+                <h3 class="upcoming-card-title">${appointment.stakeholder}</h3>
+                <div class="upcoming-card-date">${formattedDate}</div>
+              </div>
+              <div class="upcoming-card-details">
+                <div class="upcoming-card-detail"><b>Time:</b> ${appointment.time}</div>
+                <div class="upcoming-card-detail"><b>Type:</b> ${appointment.type === 'online' ? 'Online' : 'In-Person'}</div>
+                <div class="upcoming-card-detail"><b>Advisor:</b> ${appointment.advisor}</div>
+                <div class="upcoming-card-detail"><b>Reason:</b> ${appointment.reason}</div>
+              </div>
+            `;
+            
+            upcomingAppointments.appendChild(card);
+          });
+        }
+      }
+      
+      function clearAllFilters() {
+        statusFilter.value = 'all';
+        typeFilter.value = 'all';
+        dateFilter.value = 'all';
+        filterAppointments();
+      }
+      
+      function renderAppointments() {
+        appointmentsTable.innerHTML = '';
+        
+        // Update results count
+        resultsCount.textContent = `${filteredAppointments.length} ${filteredAppointments.length === 1 ? 'appointment' : 'appointments'} found`;
+        
+        if (filteredAppointments.length === 0) {
+          appointmentsTable.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 30px; color: var(--muted)">
+                No appointments match your current filters
+              </td>
+            </tr>
+          `;
+        } else {
+          filteredAppointments.forEach(appointment => {
+            const row = document.createElement('tr');
+            
+            // Format status badge
+            let statusBadge = '';
+            switch(appointment.status) {
+              case 'pending':
+                statusBadge = `<span class="status-badge status-pending">Pending</span>`;
+                break;
+              case 'accepted':
+                statusBadge = `<span class="status-badge status-accepted">Accepted</span>`;
+                break;
+              case 'declined':
+                statusBadge = `<span class="status-badge status-declined">Declined</span>`;
+                break;
+              case 'rescheduled':
+                statusBadge = `<span class="status-badge status-rescheduled">Rescheduled</span>`;
+                break;
+            }
+            
+            // Format date
+            const dateObj = new Date(appointment.date);
+            const formattedDate = dateObj.toLocaleDateString('en-US', { 
+              weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
+            });
+            
+            row.innerHTML = `
+              <td>${appointment.stakeholder}<br><small>${appointment.email}</small></td>
+              <td>${formattedDate}<br>${appointment.time}</td>
+              <td>${appointment.type === 'online' ? 'Online' : 'In-Person'}</td>
+              <td>${appointment.advisor}</td>
+              <td>${statusBadge}</td>
+              <td>
+                <div class="action-group">
+                  <button class="action-btn btn-info" data-action="info" data-id="${appointment.id}">Info</button>
+                  ${appointment.status === 'pending' ? `
+                    <button class="action-btn btn-accept" data-action="accept" data-id="${appointment.id}">Accept</button>
+                    <button class="action-btn btn-decline" data-action="decline" data-id="${appointment.id}">Decline</button>
+                    <button class="action-btn btn-reschedule" data-action="reschedule" data-id="${appointment.id}">Reschedule</button>
+                  ` : ''}
+                </div>
+              </td>
+            `;
+            
+            appointmentsTable.appendChild(row);
+          });
+          
+          // Add event listeners to action buttons
+          document.querySelectorAll('[data-action="info"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const appointmentId = this.dataset.id;
+              showAppointmentInfo(appointmentId);
+            });
+          });
+          
+          document.querySelectorAll('[data-action="accept"], [data-action="decline"], [data-action="reschedule"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const action = this.dataset.action;
+              const appointmentId = this.dataset.id;
+              showDecisionModal(action, appointmentId);
+            });
+          });
+        }
+      }
+      
+      function showAppointmentInfo(appointmentId) {
+        const appointment = appointments.find(a => a.id === appointmentId);
+        if (!appointment) return;
+        
+        // Populate info modal
+        document.getElementById('detail-stakeholder').textContent = `${appointment.stakeholder} (${appointment.email})`;
+        
+        const dateObj = new Date(appointment.date);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { 
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+        });
+        document.getElementById('detail-date').textContent = formattedDate;
+        document.getElementById('detail-time').textContent = appointment.time;
+        document.getElementById('detail-type').textContent = appointment.type === 'online' ? 'Online Meeting' : 'In-Person';
+        document.getElementById('detail-advisor').textContent = appointment.advisor;
+        
+        let statusText = '';
+        switch(appointment.status) {
+          case 'pending':
+            statusText = 'Pending Review';
+            break;
+          case 'accepted':
+            statusText = 'Accepted';
+            break;
+          case 'declined':
+            statusText = 'Declined';
+            break;
+          case 'rescheduled':
+            statusText = `Rescheduled to ${appointment.rescheduledTo}`;
+            break;
+        }
+        document.getElementById('detail-status').textContent = statusText;
+        
+        document.getElementById('detail-reason').textContent = appointment.reason;
+        document.getElementById('detail-details').textContent = appointment.details || 'No additional details provided';
+        
+        // Show modal
+        infoModal.classList.add('active');
+      }
+      
+      function showDecisionModal(action, appointmentId) {
+        const appointment = appointments.find(a => a.id === appointmentId);
+        if (!appointment) return;
+        
+        currentAction = action;
+        currentAppointmentId = appointmentId;
+        
+        // Set modal title based on action
+        let modalTitle = '';
+        switch(action) {
+          case 'accept':
+            modalTitle = 'Accept Appointment';
+            document.getElementById('submitDecision').textContent = 'Accept Appointment';
+            document.getElementById('submitDecision').className = 'action-btn btn-accept';
+            document.getElementById('acceptMessage').style.display = 'block';
+            document.getElementById('reasonSection').style.display = 'none';
+            break;
+          case 'decline':
+            modalTitle = 'Decline Appointment';
+            document.getElementById('submitDecision').textContent = 'Decline Appointment';
+            document.getElementById('submitDecision').className = 'action-btn btn-decline';
+            document.getElementById('acceptMessage').style.display = 'none';
+            document.getElementById('reasonSection').style.display = 'block';
+            break;
+          case 'reschedule':
+            modalTitle = 'Reschedule Appointment';
+            document.getElementById('submitDecision').textContent = 'Propose New Time';
+            document.getElementById('submitDecision').className = 'action-btn btn-reschedule';
+            document.getElementById('acceptMessage').style.display = 'none';
+            document.getElementById('reasonSection').style.display = 'block';
+            break;
+        }
+        document.getElementById('decisionModalTitle').textContent = modalTitle;
+        
+        // Populate appointment details
+        document.getElementById('decision-stakeholder').textContent = `${appointment.stakeholder} (${appointment.email})`;
+        
+        const dateObj = new Date(appointment.date);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { 
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+        });
+        document.getElementById('decision-date').textContent = formattedDate;
+        document.getElementById('decision-time').textContent = appointment.time;
+        
+        // Show/hide reschedule section
+        if (action === 'reschedule') {
+          document.getElementById('rescheduleSection').style.display = 'block';
+          
+          // Set minimum date to tomorrow
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const yyyy = tomorrow.getFullYear();
+          const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+          const dd = String(tomorrow.getDate()).padStart(2, '0');
+          const tomorrowStr = `${yyyy}-${mm}-${dd}`;
+          document.getElementById('newDate').min = tomorrowStr;
+        } else {
+          document.getElementById('rescheduleSection').style.display = 'none';
+        }
+        
+        // Clear previous inputs
+        document.getElementById('responseReason').value = '';
+        document.getElementById('newDate').value = '';
+        document.getElementById('newTime').value = '';
+        
+        // Show modal
+        decisionModal.classList.add('active');
+      }
+    });
+  </script>
 </body>
 </html>
