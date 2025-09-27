@@ -57,7 +57,7 @@ a {
 }
 
 .logo {
-    height: 46px;
+    height: 55px;
     width: auto
 }
 
@@ -189,6 +189,7 @@ body.dark {
     color: var(--ink)
 }
 
+
 .tagline {
     text-align: center;
     color: #7e758a;
@@ -196,8 +197,15 @@ body.dark {
     margin: 0 0 22px
 }
 
-/* Summary cards */
-.summary-grid {
+.welcome-buttons {
+    display: flex;
+    justify-content: center; /* centers the buttons horizontally */
+    gap: 20px; /* optional spacing between buttons */
+    margin: 0 auto; /* ensure button group itself centers */
+    width: fit-content;
+}
+    /* Summary cards */
+ .summary-grid {
     display: grid;
     gap: 18px;
     grid-template-columns: 1fr
@@ -331,6 +339,7 @@ body.dark {
     border-radius: 10px;
     cursor: pointer;
     font-weight: 700
+    
 }
 
     .btn:hover {

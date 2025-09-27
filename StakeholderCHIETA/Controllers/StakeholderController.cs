@@ -27,7 +27,7 @@ namespace StakeholderCHIETA.Controllers
 
         public IActionResult Appointment()
         {
-            return View("~/Views/StakeholderViews/Appointment/Book.cshtml"); // Corresponds to Appointment.cshtml
+            return View("~/Views/StakeholderViews/Appointment/Appointment.cshtml"); // Corresponds to Appointment.cshtml
         }
     }
 }

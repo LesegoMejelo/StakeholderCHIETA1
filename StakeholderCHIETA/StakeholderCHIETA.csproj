@@ -7,7 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="Views\StakeholderViews\StakeholderFeedback.cshtml" />
+    <Compile Remove="Views\StakeholderViews\Log Inquiry\**" />
+    <Compile Remove="Views\StakeholderViews\Log Inquiry_Invalid _ignore_DeleteLater\**" />
+    <Content Remove="Views\StakeholderViews\Log Inquiry\**" />
+    <Content Remove="Views\StakeholderViews\Log Inquiry_Invalid _ignore_DeleteLater\**" />
+    <EmbeddedResource Remove="Views\StakeholderViews\Log Inquiry\**" />
+    <EmbeddedResource Remove="Views\StakeholderViews\Log Inquiry_Invalid _ignore_DeleteLater\**" />
+    <None Remove="Views\StakeholderViews\Log Inquiry\**" />
+    <None Remove="Views\StakeholderViews\Log Inquiry_Invalid _ignore_DeleteLater\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,15 +33,6 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="QRCoder" Version="1.6.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Views\StakeholderViews\Log Inquiry\" />
-    <Folder Include="Views\StakeholderViews\Log Inquiry_Invalid _ignore_DeleteLater\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Views\StakeholderViews\StakeholderFeedback.cshtml" />
   </ItemGroup>
 
 </Project>
