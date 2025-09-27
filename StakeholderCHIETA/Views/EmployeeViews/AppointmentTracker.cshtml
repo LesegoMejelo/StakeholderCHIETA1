@@ -1,489 +1,221 @@
 ﻿@{
     Layout = null;
 }
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CHIETA — Appointment Tracker</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Appointment Management — CHIETA</title>
     <link rel="stylesheet" href="~/Content/EmployeeView/AppointmentTracker.css" />
 </head>
 <body>
-    <header class="topbar">
-        <div class="container topbar-inner">
-            <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo" />
-            <nav class="header-actions" aria-label="User">
-                <div class="menu" id="settings">
-                    <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-                        <span class="hide-sm">Settings</span>
-                    </button>
-                    <div class="menu-popover" id="settings-menu" role="menu" hidden>
-                        <a role="menuitem" href="/EmployeeLanding /index.html">Home</a>
-                        <a role="menuitem" href="#">Profile</a>
-                        <a role="menuitem" href="#">Notifications</a>
-                        <div class="menu-sep" role="separator"></div>
-                        <div class="menu-group" role="group" aria-label="Preferences">
-                            <label class="menu-check">
-                                <input id="pref-dark" type="checkbox" />
-                                <span>Dark mode</span>
-                            </label>
-                        </div>
-                        <div class="menu-sep" role="separator"></div>
-                        <a role="menuitem" href="#" class="danger">Sign out</a>
-                    </div>
-                </div>
-            </nav>
-        </div>
-    </header>
-
-    <main class="main-wrap">
-        <div class="bg" aria-hidden="true">
-            <div class="bg-blob-right"></div>
-            <div class="bg-arc-left"></div>
-            <div class="bg-arc-right-bottom"></div>
-        </div>
-
-        <div class="container page">
-            <section class="summary-grid">
-                <article class="summary-card">
-                    <h3 class="section-title"><u>Upcoming Appointments</u></h3>
-                    <ul id="upcomingSummary" class="mini-list" aria-live="polite"></ul>
-                </article>
-            </section>
-
-            <section class="card" aria-labelledby="requestsTitle">
-                <div class="card__hd">
-                    <div class="card-title-line">
-                        <div id="requestsTitle" class="card-title like-summary"><u>Appointment Requests</u></div>
-                        <div class="muted small">Review and take action</div>
-                    </div>
-                </div>
-                <div class="card__bd">
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Time</th>
-                                    <th>Reason</th>
-                                    <th>Status</th>
-                                    <th class="th-actions">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="requestRows"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-        </div>
-    </main>
-
-    <footer class="footer" aria-label="Site">
-        <div class="footer-band"></div>
-        <div class="gold-box"></div>
-    </footer>
-
-    <!-- Decline Modal -->
-    <div class="modal" id="declineModal" aria-modal="true" role="dialog" aria-labelledby="decTitle" aria-describedby="decContext">
-        <div class="modal__dialog">
-            <div class="modal__header">
-                <div>
-                    <div id="decTitle" class="modal__title">Decline & Suggest New Time</div>
-                    <div class="muted" id="decContext" style="font-size:.9rem"></div>
-                </div>
-                <button class="close-btn" data-close-modal="true" aria-label="Close">✕</button>
-            </div>
-            <form id="declineForm" class="form">
-                <input type="hidden" id="decAppointmentId" />
-                <div class="form__row form__row--single">
-                    <div>
-                        <label for="decReason">Reason for declining</label>
-                        <textarea id="decReason" placeholder="e.g., Scheduling conflict, in another meeting…"></textarea>
-                    </div>
-                </div>
-                <div class="form__row">
-                    <div>
-                        <label for="decNewDate">Propose new date (optional)</label>
-                        <input id="decNewDate" type="date" />
-                    </div>
-                    <div>
-                        <label for="decNewTime">Propose new time (optional)</label>
-                        <input id="decNewTime" type="time" />
-                    </div>
-                </div>
-                <div class="form__actions">
-                    <button id="declineCancel" class="btn ghost" type="button">Cancel</button>
-                    <button class="cta" type="submit">Submit</button>
-                </div>
-            </form>
-        </div>
+  <!-- Header -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <div class="logo">CHIETA</div>
+        <div class="divider"></div>
+        <div class="page-title">Appointment Management</div>
+      </div>
     </div>
+  </header>
 
-    <!-- Info Modal -->
-    <div class="modal" id="infoModal" aria-modal="true" role="dialog" aria-labelledby="infoTitle">
-        <div class="modal__dialog">
-            <div class="modal__header">
-                <div>
-                    <div id="infoTitle" class="modal__title">Appointment Details</div>
-                    <div class="muted" id="infoSubtitle" style="font-size:.9rem"></div>
-                </div>
-                <button class="close-btn" data-close-modal="true" aria-label="Close">✕</button>
-            </div>
-            <div class="form form--static">
-                <div class="kv"><b>Date</b><div id="infoDate"></div></div>
-                <div class="kv"><b>Time</b><div id="infoTime"></div></div>
-                <div class="kv"><b>Reason</b><div id="infoReason"></div></div>
-                <div class="kv"><b>Status</b><div id="infoStatus"></div></div>
-                <div class="kv"><b>Decline reason</b><div id="infoDeclineReason"></div></div>
-                <div class="kv"><b>Proposed new time</b><div id="infoProposed"></div></div>
-            </div>
-            <div class="form__actions form__actions--footer">
-                <button class="btn ghost" data-close-modal="true" type="button">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="toast" role="status" aria-live="polite" aria-atomic="true">
-        <span id="toastMsg"></span>
-        <button id="toastUndo" class="undo" style="display:none">Undo</button>
-    </div>
-
-    <!-- your HTML above ... -->
-
-    <script>
-            document.addEventListener("DOMContentLoaded", () => {
-            const tbody = document.getElementById("requestRows");
-            const upcomingSummary = document.getElementById("upcomingSummary");
-
-            async function loadAppointments() {
-                try {
-                    console.log("Loading appointments...");
-
-                    const res = await fetch("/AdvisorAppointment/AppointmentTrackerData");
-
-                    if (!res.ok) {
-                        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-                    }
-
-                    const appointments = await res.json();
-                    console.log("Raw appointments data from server:", appointments);
-
-                    // Clear old data
-                    tbody.innerHTML = "";
-                    upcomingSummary.innerHTML = "";
-
-                    if (!appointments || appointments.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #666;">No appointments found</td></tr>';
-                        upcomingSummary.innerHTML = '<li style="color: #666;">No upcoming appointments</li>';
-                        return;
-                    }
-
-                    console.log("Processing appointments...");
-
-                    // Process each appointment and log the data structure
-                    appointments.forEach((appointment, index) => {
-                        console.log(`Appointment ${index}:`, appointment);
-                        console.log(`- Id: "${appointment.Id}"`);
-                        console.log(`- Date: "${appointment.Date}"`);
-                        console.log(`- Time: "${appointment.Time}"`);
-                        console.log(`- ClientName: "${appointment.ClientName}"`);
-                        console.log(`- Reason: "${appointment.Reason}"`);
-                        console.log(`- Status: "${appointment.Status}"`);
-                    });
-
-                    // Filter upcoming appointments for summary - ONLY show accepted appointments
-                    const today = new Date().toISOString().split('T')[0];
-                    const upcomingAppointments = appointments.filter(a => {
-                         const appointmentDate = a.Date || "";
-                         const status = a.Status || "Pending";
-                        // Only show accepted appointments that are today or in the future
-                        return appointmentDate >= today && status === "Accepted";
-                    }).slice(0, 3);
-
-                    // Populate upcoming summary
-                    if (upcomingAppointments.length > 0) {
-                        upcomingAppointments.forEach(a => {
-                            const li = document.createElement("li");
-                            li.innerHTML = `<strong>${a.ClientName || 'Unknown Client'}</strong> - ${a.Date || 'No Date'} at ${a.Time || 'No Time'}`;
-                            upcomingSummary.appendChild(li);
-                        });
-                    } else {
-                        upcomingSummary.innerHTML = '<li style="color: #666;">No upcoming accepted appointments</li>';
-                    };                    
-
-                    // Populate main table
-                    appointments.forEach((a) => {
-                        const row = document.createElement("tr");
-
-                        // Use the exact field values from the server response
-                        const date = a.Date || 'N/A';
-                        const time = a.Time || 'N/A';
-                        const reason = a.Reason || 'No reason provided';
-                        const status = a.Status || 'Pending';
-                        const clientName = a.ClientName || 'Unknown Client';
-                        const appointmentId = a.Id || '';
-
-                        console.log(`Creating row for appointment ID: ${appointmentId}`);
-                        console.log(`- Date: ${date}, Time: ${time}, Reason: ${reason}, Status: ${status}`);
-
-                        const statusClass = status.toLowerCase();
-                        const statusBadge = `<span class="status-badge status-${statusClass}">${status}</span>`;
-
-                        const truncatedReason = reason.length > 50 ? reason.substring(0, 50) + '...' : reason;
-
-                        row.innerHTML = `
-                            <td>${date}</td>
-                            <td>${time}</td>
-                            <td title="${reason}">${truncatedReason}</td>
-                            <td>${statusBadge}</td>
-                            <td class="actions-cell">
-                                ${status === "Pending" ? `
-                                    <button class="btn btn-accept" onclick="updateStatus('${appointmentId}','accepted')" title="Accept appointment">
-                                        ✓ Accept
-                                    </button>
-                                    <button class="btn btn-decline" onclick="openDeclineModal('${appointmentId}', '${clientName}', '${date}', '${time}')" title="Decline appointment">
-                                        ✕ Decline
-                                    </button>
-                                ` : `
-                                    <button class="btn btn-info" onclick="showAppointmentDetails('${appointmentId}', '${clientName}', '${date}', '${time}', '${reason}', '${status}', '${a.DeclineReason || ''}', '${a.ProposedNewDate || ''}', '${a.ProposedNewTime || ''}')" title="View details">
-                                        ℹ Details
-                                    </button>
-                                `}
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-
-                    console.log(`✅ Successfully loaded ${appointments.length} appointments`);
-
-                } catch (err) {
-                    console.error("❌ Error loading appointments:", err);
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: red;">
-                        Error loading appointments: ${err.message}<br>
-                        <small>Check console for details</small>
-                    </td></tr>`;
-                }
-            }
-
-            // Update appointment status function
-            window.updateStatus = async function (id, status) {
-                try {
-                    console.log(`🔄 Updating appointment ID: "${id}" to status: "${status}"`);
-
-                    if (!id || !status) {
-                        console.error("❌ Missing appointment ID or status");
-                        showToast("❌ Missing appointment ID or status", "error");
-                        return;
-                    }
-
-                    const res = await fetch("/AdvisorAppointment/UpdateStatus", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded"
-                        },
-                        body: new URLSearchParams({
-                            appointmentId: id,
-                            status: status
-                        })
-                    });
-
-                    console.log(`Update response status: ${res.status}`);
-                    console.log(`Update response ok: ${res.ok}`);
-
-                    if (res.ok) {
-                        try {
-                            const result = await res.json();
-                            console.log("✅ Update successful:", result);
-                            showToast(`Appointment ${status} successfully!`);
-                            loadAppointments(); // Reload to see changes
-                        } catch (jsonError) {
-                            console.log("✅ Update successful (non-JSON response)");
-                            showToast(`Appointment ${status} successfully!`);
-                            loadAppointments();
-                        }
-                    } else {
-                        const errorText = await res.text();
-                        console.error("❌ Update failed:", errorText);
-                        showToast("❌ Failed to update appointment", "error");
-                    }
-                } catch (err) {
-                    console.error("❌ Error updating appointment:", err);
-                    showToast("❌ Network error occurred", "error");
-                }
-            };
-
-            // Show appointment details in modal
-            window.showAppointmentDetails = function(id, clientName, date, time, reason, status, declineReason, proposedNewDate, proposedNewTime) {
-                console.log("Showing appointment details for:", { id, clientName, date, time, reason, status });
-
-                document.getElementById('infoTitle').textContent = 'Appointment Details';
-                document.getElementById('infoSubtitle').textContent = `Appointment with ${clientName}`;
-                document.getElementById('infoDate').textContent = date;
-                document.getElementById('infoTime').textContent = time;
-                document.getElementById('infoReason').textContent = reason;
-                document.getElementById('infoStatus').textContent = status;
-                document.getElementById('infoDeclineReason').textContent = declineReason || 'N/A';
-                document.getElementById('infoProposed').textContent =
-                    (proposedNewDate && proposedNewTime) ? `${proposedNewDate} at ${proposedNewTime}` : 'N/A';
-
-                const modal = document.getElementById('infoModal');
-                modal.style.display = 'flex';
-                modal.removeAttribute('hidden');
-                modal.setAttribute('aria-hidden', 'false');
-
-                // Focus management for accessibility
-                const firstFocusable = modal.querySelector('button');
-                if (firstFocusable) firstFocusable.focus();
-            };
-
-            // Open decline modal
-            window.openDeclineModal = function(id, clientName, date, time) {
-                console.log("Opening decline modal for:", { id, clientName, date, time });
-
-                document.getElementById('decAppointmentId').value = id;
-                document.getElementById('decTitle').textContent = 'Decline & Suggest New Time';
-                document.getElementById('decContext').textContent = `Declining appointment with ${clientName} on ${date} at ${time}`;
-
-                const modal = document.getElementById('declineModal');
-                modal.style.display = 'flex';
-                modal.removeAttribute('hidden');
-                modal.setAttribute('aria-hidden', 'false');
-
-                // Focus on the reason textarea
-                const reasonField = document.getElementById('decReason');
-                if (reasonField) reasonField.focus();
-            };
-
-            // Handle decline form submission
-            const declineForm = document.getElementById('declineForm');
-            if (declineForm) {
-                declineForm.addEventListener('submit', async function(e) {
-                    e.preventDefault();
-
-                    const appointmentId = document.getElementById('decAppointmentId').value;
-                    const reason = document.getElementById('decReason').value.trim();
-                    const newDate = document.getElementById('decNewDate').value;
-                    const newTime = document.getElementById('decNewTime').value;
-
-                    console.log('Declining appointment:', { appointmentId, reason, newDate, newTime });
-
-                    if (!reason) {
-                        showToast("❌ Please provide a reason for declining", "error");
-                        return;
-                    }
-
-                    try {
-                        const res = await fetch("/AdvisorAppointment/UpdateStatus", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/x-www-form-urlencoded"
-                            },
-                            body: new URLSearchParams({
-                                appointmentId: appointmentId,
-                                status: 'declined',
-                                declineReason: reason,
-                                newDate: newDate,
-                                newTime: newTime
-                            })
-                        });
-
-                        if (res.ok) {
-                            console.log('✅ Appointment declined successfully');
-                            showToast("Appointment declined successfully!");
-                            closeModal('declineModal');
-                            loadAppointments();
-                        } else {
-                            const errorText = await res.text();
-                            console.error("❌ Decline failed:", errorText);
-                            showToast("❌ Failed to decline appointment", "error");
-                        }
-                    } catch (err) {
-                        console.error("❌ Error declining appointment:", err);
-                        showToast("❌ Network error occurred", "error");
-                    }
-                });
-            }
-
-            // Modal management functions
-            function closeModal(modalId) {
-                console.log(`Closing modal: ${modalId}`);
-                const modal = document.getElementById(modalId);
-                if (modal) {
-                    modal.style.display = 'none';
-                    modal.setAttribute('hidden', '');
-                    modal.setAttribute('aria-hidden', 'true');
-
-                    if (modalId === 'declineModal') {
-                        document.getElementById('declineForm').reset();
-                    }
-                }
-            }
-
-            // Close modal event listeners
-            document.querySelectorAll('[data-close-modal]').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const modal = this.closest('.modal');
-                    if (modal) {
-                        closeModal(modal.id);
-                    }
-                });
-            });
-
-            const declineCancel = document.getElementById('declineCancel');
-            if (declineCancel) {
-                declineCancel.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    closeModal('declineModal');
-                });
-            }
-
-            // Close modal when clicking backdrop
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('modal')) {
-                    closeModal(e.target.id);
-                }
-            });
-
-            // Escape key closes modal
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    const openModal = document.querySelector('.modal[style*="flex"]');
-                    if (openModal) {
-                        closeModal(openModal.id);
-                    }
-                }
-            });
-
-            // Toast notification function
-            function showToast(message, type = "success") {
-                console.log(`Toast: ${message} (${type})`);
-
-                const toast = document.getElementById('toast');
-                const toastMsg = document.getElementById('toastMsg');
-
-                if (toast && toastMsg) {
-                    toastMsg.textContent = message;
-                    toast.className = `toast show ${type}`;
-
-                    setTimeout(() => {
-                        toast.className = 'toast';
-                    }, 4000);
-                } else {
-                    // Fallback if toast elements don't exist
-                    const alertType = type === 'error' ? '❌' : '✅';
-                    alert(`${alertType} ${message}`);
-                }
-            }
-
-            // Initial load and auto-refresh
-            console.log('🚀 Starting appointment tracker...');
-            loadAppointments();
-
-            // Refresh every 30 seconds
-            setInterval(loadAppointments, 30000);
-        });
-    </script>
+  <main class="container">
+    <h1>Appointment Dashboard</h1>
+    <p class="muted">Manage stakeholder appointment requests and view upcoming appointments</p>
     
+    <!-- Upcoming appointments section -->
+    <section class="upcoming-section">
+      <h2 class="section-title">Upcoming Appointments</h2>
+      <div class="upcoming-cards" id="upcomingAppointments">
+        <!-- Upcoming appointments will be populated by JavaScript -->
+      </div>
+    </section>
+    
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filters-header">
+        <h2 class="filters-title">Appointment Requests</h2>
+        <button class="clear-filters" id="clearFilters">Clear all filters</button>
+      </div>
+      <div class="filter-grid">
+        <div class="filter-group">
+          <label class="filter-label" for="statusFilter">Status</label>
+          <select class="filter-select" id="statusFilter">
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="accepted">Accepted</option>
+            <option value="declined">Declined</option>
+            <option value="rescheduled">Rescheduled</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label" for="typeFilter">Appointment Type</label>
+          <select class="filter-select" id="typeFilter">
+            <option value="all">All Types</option>
+            <option value="online">Online</option>
+            <option value="physical">In-Person</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label" for="dateFilter">Time Period</label>
+          <select class="filter-select" id="dateFilter">
+            <option value="all">All Time</option>
+            <option value="7">Next 7 Days</option>
+            <option value="30">Next 30 Days</option>
+            <option value="90">Next 3 Months</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Results info -->
+    <div class="results-info">
+      <div class="results-count" id="resultsCount">Loading appointments...</div>
+    </div>
+    
+    <!-- Appointments table -->
+    <div class="appointments-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Stakeholder</th>
+            <th>Date & Time</th>
+            <th>Type</th>
+            <th>Advisor</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="appointmentsTableBody">
+          <!-- Appointments will be populated by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+
+  <!-- Info Modal -->
+  <div class="modal" id="infoModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Appointment Details</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      
+      <div class="modal-section">
+        <h3 class="modal-section-title">Appointment Information</h3>
+        <div class="detail-grid">
+          <div class="detail-label">Stakeholder:</div>
+          <div id="detail-stakeholder"></div>
+          
+          <div class="detail-label">Date:</div>
+          <div id="detail-date"></div>
+          
+          <div class="detail-label">Time:</div>
+          <div id="detail-time"></div>
+          
+          <div class="detail-label">Type:</div>
+          <div id="detail-type"></div>
+          
+          <div class="detail-label">Advisor:</div>
+          <div id="detail-advisor"></div>
+          
+          <div class="detail-label">Status:</div>
+          <div id="detail-status"></div>
+        </div>
+      </div>
+      
+      <div class="modal-section">
+        <h3 class="modal-section-title">Reason & Details</h3>
+        <div class="form-group">
+          <div class="form-label">Reason for Appointment</div>
+          <div id="detail-reason" class="form-input" style="background: #f9f9f9"></div>
+        </div>
+        
+        <div class="form-group">
+          <div class="form-label">Additional Details</div>
+          <div id="detail-details" class="form-textarea" style="background: #f9f9f9; min-height: 80px"></div>
+        </div>
+      </div>
+      
+      <div class="form-actions">
+        <button class="action-btn btn-info" id="closeInfoModal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decision Modal -->
+  <div class="modal" id="decisionModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="decisionModalTitle">Respond to Appointment</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      
+      <div class="modal-section">
+        <h3 class="modal-section-title">Appointment Details</h3>
+        <div class="detail-grid">
+          <div class="detail-label">Stakeholder:</div>
+          <div id="decision-stakeholder"></div>
+          
+          <div class="detail-label">Current Date:</div>
+          <div id="decision-date"></div>
+          
+          <div class="detail-label">Current Time:</div>
+          <div id="decision-time"></div>
+        </div>
+      </div>
+      
+      <div class="modal-section">
+        <h3 class="modal-section-title">Your Response</h3>
+        <div id="acceptMessage" style="display: none;">
+          <p>Are you sure you want to accept this appointment?</p>
+        </div>
+        <div class="form-group" id="reasonSection">
+          <label class="form-label" for="responseReason">Reason for your decision</label>
+          <textarea class="form-textarea" id="responseReason" placeholder="Please provide a reason for your decision..."></textarea>
+        </div>
+        
+        <div id="rescheduleSection" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="newDate">Proposed Date</label>
+            <input type="date" class="form-input" id="newDate" min="">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="newTime">Proposed Time</label>
+            <select class="form-select" id="newTime">
+              <option value="">Select a time</option>
+              <option value="09:00">09:00 AM</option>
+              <option value="09:30">09:30 AM</option>
+              <option value="10:00">10:00 AM</option>
+              <option value="10:30">10:30 AM</option>
+              <option value="11:00">11:00 AM</option>
+              <option value="11:30">11:30 AM</option>
+              <option value="14:00">02:00 PM</option>
+              <option value="14:30">02:30 PM</option>
+              <option value="15:00">03:00 PM</option>
+              <option value="15:30">03:30 PM</option>
+              <option value="16:00">04:00 PM</option>
+              <option value="16:30">04:30 PM</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-actions">
+        <button class="action-btn btn-info" id="cancelDecision">Cancel</button>
+        <button class="action-btn" id="submitDecision">Submit Response</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-band"><div class="gold-box"></div></div>
+  </footer>
+
+        <script src="~/Content/EmployeeView/js/AppointmentTracker.js"></script>
 </body>
 </html>
