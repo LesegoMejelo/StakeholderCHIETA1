@@ -63,14 +63,15 @@
                         <table>
                             <thead>
                                 <tr>
+                                    <th>Client</th>
+                                    <th>Reason</th>
                                     <th>Date</th>
                                     <th>Time</th>
-                                    <th>Reason</th>
                                     <th>Status</th>
-                                    <th class="th-actions">Actions</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="requestRows"></tbody>
+                            <tbody id="appointments-body"></tbody>
                         </table>
                     </div>
                 </div>
@@ -147,63 +148,50 @@
         <span id="toastMsg"></span>
         <button id="toastUndo" class="undo" style="display:none">Undo</button>
     </div>
+    <script src="/Content/EmployeeView/js/AppointmentTracker.js "></script>
 
     <!-- your HTML above ... -->
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const tbody = document.getElementById("appointments-body");
+            const tbody = document.getElementById("requestRows");
 
             async function loadAppointments() {
-                try {
-                    const res = await fetch("/AdvisorAppointment/AppointmentTrackerData");
-                    if (!res.ok) throw new Error("Failed to fetch appointments");
+                const res = await fetch("/AdvisorAppointment/AppointmentTrackerData");
+                const appointments = await res.json();
+                tbody.innerHTML = "";
 
-                    const appointments = await res.json();
-
-                    tbody.innerHTML = ""; // clear old data
-                    appointments.forEach(a => {
-                        const row = document.createElement("tr");
-                        row.innerHTML = `
-                            <td>${a.clientName}</td>
-                            <td>${a.reason}</td>
-                            <td>${a.date}</td>
-                            <td>${a.time}</td>
-                            <td>${a.status}</td>
-                            <td>
-                                ${a.status === "Pending" ? `
-                                    <button onclick="updateStatus('${a.id}','accepted')">Accept</button>
-                                    <button onclick="updateStatus('${a.id}','declined')">Decline</button>
-                                ` : ""}
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-
-                } catch (err) {
-                    console.error("Error loading appointments:", err);
-                }
+                appointments.forEach(a => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${a.clientName}</td>
+                        <td>${a.reason}</td>
+                        <td>${a.date}</td>
+                        <td>${a.time}</td>
+                        <td>${a.status}</td>
+                        <td>
+                            ${a.status === "Pending" ? `
+                                <button onclick="updateStatus('${a.id}','accepted')">Accept</button>
+                                <button onclick="updateStatus('${a.id}','declined')">Decline</button>
+                            ` : ""}
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
             }
 
-            window.updateStatus = async function (id, status) {
-                const res = await fetch("/AdvisorAppointment/UpdateStatus", {
+            window.updateStatus = async (id, status) => {
+                await fetch("/AdvisorAppointment/UpdateStatus", {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: new URLSearchParams({ appointmentId: id, status })
                 });
-
-                if (res.ok) {
-                    loadAppointments(); // refresh immediately after update
-                } else {
-                    alert("❌ Failed to update appointment");
-                }
+                loadAppointments();
             };
 
-            // 🔄 Auto-refresh every 5 seconds (same as users list)
             loadAppointments();
             setInterval(loadAppointments, 5000);
         });
     </script>
-    
 </body>
 </html>

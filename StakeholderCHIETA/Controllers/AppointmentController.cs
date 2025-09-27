@@ -1,8 +1,10 @@
 ﻿using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace Staekholder_CHIETA_X.Controllers
+namespace StakeholderCHIETA.Controllers
 {
     public class AppointmentController : Controller
     {
@@ -23,7 +25,7 @@ namespace Staekholder_CHIETA_X.Controllers
             var advisors = advisorsSnapshot.Documents
                                 .Select(d => new AdvisorViewModel
                                 {
-                                    Id = d.Id,
+                                    Uid = d.Id,
                                     Name = d.GetValue<string>("Name")
                                 })
                                 .ToList();
@@ -35,12 +37,12 @@ namespace Staekholder_CHIETA_X.Controllers
         [HttpPost]
         [Route("api/appointment")]
         public async Task<IActionResult> Post(
-            [FromForm] string advisor,
+            [FromForm] string advisorUid,
             [FromForm] string reason,
             [FromForm] string date,
             [FromForm] string time)
         {
-            if (string.IsNullOrWhiteSpace(advisor) ||
+            if (string.IsNullOrWhiteSpace(advisorUid) ||
                 string.IsNullOrWhiteSpace(reason) ||
                 string.IsNullOrWhiteSpace(date) ||
                 string.IsNullOrWhiteSpace(time))
@@ -50,16 +52,16 @@ namespace Staekholder_CHIETA_X.Controllers
 
             try
             {
-                var advisorDoc = await _db.Collection("Users").Document(advisor).GetSnapshotAsync();
+                var advisorDoc = await _db.Collection("Users").Document(advisorUid).GetSnapshotAsync();
                 if (!advisorDoc.Exists)
                     return BadRequest(new { message = "Advisor not found" });
 
                 var advisorName = advisorDoc.GetValue<string>("Name");
-                var clientName = User.Identity.Name;
+                var clientName = User.Identity?.Name ?? "Unknown";
 
                 var docRef = await _db.Collection("appointments").AddAsync(new
                 {
-                    AdvisorId = advisor,
+                    AdvisorId = advisorUid, // 🔑 will be used on advisor side
                     AdvisorName = advisorName,
                     ClientName = clientName,
                     Reason = reason,
@@ -80,7 +82,7 @@ namespace Staekholder_CHIETA_X.Controllers
 
     public class AdvisorViewModel
     {
-        public string Id { get; set; }
+        public string Uid { get; set; }
         public string Name { get; set; }
     }
 }
