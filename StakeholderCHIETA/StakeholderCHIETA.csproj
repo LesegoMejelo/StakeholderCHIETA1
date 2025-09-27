@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Views\StakeholderViews\StakeholderFeedback.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FirebaseAdmin" Version="3.3.0" />
     <PackageReference Include="Google.Apis.Auth" Version="1.70.0" />
     <PackageReference Include="Google.Cloud.Firestore" Version="3.10.0" />
@@ -27,6 +31,10 @@
   <ItemGroup>
     <Folder Include="Views\StakeholderViews\Log Inquiry\" />
     <Folder Include="Views\StakeholderViews\Log Inquiry_Invalid _ignore_DeleteLater\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Views\StakeholderViews\StakeholderFeedback.cshtml" />
   </ItemGroup>
 
 </Project>
