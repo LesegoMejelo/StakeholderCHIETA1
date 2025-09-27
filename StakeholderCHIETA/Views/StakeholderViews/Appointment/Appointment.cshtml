@@ -60,65 +60,7 @@
             </button>
         </form>
     </main>
+    <script scr="~/Content/StakeholderView/js/StakeholderAppointmentBooking.js"></script>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const form = document.getElementById("appointment-form");
-            const confirmBtn = document.getElementById("confirm-btn");
-            const reasonInput = document.getElementById("reason");
-            const charCount = document.getElementById("char-count");
-
-            // Enable button if all fields are filled
-            function toggleButton() {
-                const advisor = form.advisor.value.trim();
-                const reason = form.reason.value.trim();
-                const date = form.date.value.trim();
-                const time = form.time.value.trim();
-                confirmBtn.disabled = !advisor || !reason || !date || !time;
-            }
-
-            // Character counter
-            reasonInput.addEventListener("input", () => {
-                charCount.textContent = `${reasonInput.value.length}/300`;
-                toggleButton();
-            });
-
-            form.advisor.addEventListener("change", toggleButton);
-            form.date.addEventListener("input", toggleButton);
-            form.time.addEventListener("input", toggleButton);
-
-            // Submit form via AJAX
-            form.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                confirmBtn.disabled = true;
-
-                const formData = new FormData(form);
-                const body = new URLSearchParams(formData);
-
-                try {
-                    const res = await fetch("/api/appointment", {
-                        method: "POST",
-                        body: body
-                    });
-
-                    const result = await res.json();
-
-                    if (res.ok) {
-                        alert("✅ " + result.message);
-                        form.reset();
-                        charCount.textContent = "0/300";
-                        toggleButton();
-                    } else {
-                        alert("❌ " + (result.message || "Failed"));
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert("❌ Error submitting appointment");
-                } finally {
-                    toggleButton();
-                }
-            });
-        });
-    </script>
 </body>
 </html>
