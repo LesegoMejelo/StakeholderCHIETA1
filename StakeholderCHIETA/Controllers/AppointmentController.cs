@@ -84,4 +84,3 @@ namespace Staekholder_CHIETA_X.Controllers
         public string Name { get; set; }
     }
 }
-*/
