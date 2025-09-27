@@ -118,29 +118,78 @@
     };
   }
 
-  // submit
-  $("#inquiryForm").addEventListener("submit", (e)=>{
-    e.preventDefault();
-    if(!validateStep(1) || !validateStep(2)){ return; }
+    // STRUCTURED API submission - replaces concatenated message approach
+    $("#inquiryForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!validateStep(1) || !validateStep(2)) { return; }
 
-    // Build payload
-    const payload = readForm();
-    payload.tags = payload.tags.slice(0,6);
-    payload.files = Array.from($("#attachment").files||[]).map(f=>({ name:f.name, size:f.size }));
-    payload.createdAt = new Date().toISOString();
-    payload.ref = genRef();
+        // Get form data
+        const payload = readForm();
 
-    // Simulate API call
-    console.log("Submitting inquiry payload:", payload);
+        // Show loading state
+        const submitBtn = $("#inquiryForm button[type='submit']");
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = "Submitting...";
+        submitBtn.disabled = true;
 
-    // Show success (no email text)
-    $("#refCode").textContent = payload.ref;
-    $("#successSummary").textContent = `We created your inquiry under “${payload.category} — ${payload.subject}”. Keep this reference for your records.`;
-    $("#trackLink").href = "track.html?ref=" + encodeURIComponent(payload.ref);
-    $("#successPanel").hidden = false;
-    $$(".panel").forEach(p=> p.classList.remove("active"));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
+        try {
+            // Prepare structured data for backend API
+            const formData = new FormData();
+            formData.append('name', 'Website User'); // You can change this or collect from user
+            formData.append('subject', payload.subject);
+            formData.append('description', payload.description);
+            formData.append('inquiryType', payload.category);
+            formData.append('desiredOutcome', payload.desired || '');
+            formData.append('relatedDate', payload.relatedDate || '');
+            formData.append('tags', payload.tags.join(', ')); // Convert array to comma-separated string
+            formData.append('followUpCall', payload.callback);
+
+            console.log('Submitting structured data to API:', {
+                name: 'Website User',
+                subject: payload.subject,
+                description: payload.description,
+                inquiryType: payload.category,
+                desiredOutcome: payload.desired,
+                relatedDate: payload.relatedDate,
+                tags: payload.tags.join(', '),
+                followUpCall: payload.callback
+            });
+
+            // Submit to your backend
+            const response = await fetch('/api/inquiry', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('API Error:', errorText);
+                throw new Error(`Server responded with ${response.status}: ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('API Success:', result);
+
+            // Show success with real database ID and reference number
+            const referenceNumber = result.referenceNumber || result.id || genRef();
+            $("#refCode").textContent = referenceNumber;
+            $("#successSummary").textContent = `We created your inquiry under "${payload.category} — ${payload.subject}". Keep this reference for your records.`;
+            $("#trackLink").href = "track.html?ref=" + encodeURIComponent(referenceNumber);
+            $("#successPanel").hidden = false;
+            $$(".panel").forEach(p => p.classList.remove("active"));
+            window.scrollTo({ top: 0, behavior: "smooth" });
+
+            toast("Inquiry submitted successfully!");
+
+        } catch (error) {
+            console.error('Submission failed:', error);
+            toast("Failed to submit inquiry. Please try again.");
+        } finally {
+            // Reset button
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    });
 
   function genRef(){
     const now = new Date();
