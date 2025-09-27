@@ -1,5 +1,4 @@
-﻿
-using StakeholderCHIETA.Models;
+﻿using StakeholderCHIETA.Models;
 using Microsoft.EntityFrameworkCore;
 using Google.Cloud.Firestore;
 using FirebaseAdmin;
@@ -47,6 +46,8 @@ builder.Services.AddSingleton(FirebaseAuth.GetAuth(app));
 
 // Add services to the container
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddMemoryCache();
 
 builder.Services.AddScoped<IAppointmentQRService, AppointmentQRService>();
 builder.Services.AddScoped<IQRCodeGenerator, QRCodeService>();

@@ -6,8 +6,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Advisor Landing Page</title>
+
+>>>>>>>>> Temporary merge branch 2:StakeholderCHIETA/Views/Employee/EmployeeLanding.cshtml
+=========
+
+>>>>>>>>> Temporary merge branch 2:StakeholderCHIETA/Views/Employee/EmployeeLanding.cshtml
     <link rel="stylesheet" href="~/Content/EmployeeView/EmployeeLandingPage.css" />
+
 </head>
+
 <body>
     <!-- Top Bar -->
     <header class="topbar">
@@ -72,23 +79,23 @@
             <div class="actions-grid">
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a href="~/Views/EmployeeViews/AppointmentTracker.cshtml">Check your appointments</a></h3>
+                    <h3><a asp-controller="AdvisorAppointment" asp-action="AppointmentTracker">Check your appointments</a></h3>
                     <p>You can check all the appointments made with you. Each appointment will have the option to accept or decline.</p>
-                    <button class="btn" data-nav="@Url.Action("Booking", "Appointment")">Go</button>
+                    <button class="btn" data-nav="@Url.Action("Booking", "Appointment")">Book</button>
                 </div>
 
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a href="@Url.Action("Create", "Inquiry")">Track your Inquiries </a></h3>
+                    <h3><a asp-controller="Inquiry" asp-action="Tracking">Track Your Inquiries</a></h3>
                     <p>All the inquiries sent to you can be accessed via this page and updates can be made.</p>
-                    <button class="btn" data-nav="@Url.Action("Create", "Inquiry")">Go</button>
+                    <button class="btn" data-nav="@Url.Action("Update", "Inquiry")">Track</button>
                 </div>
 
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a href="@Url.Action("Track", "Inquiry")">Book an Office Space</a></h3>
+                    <h3><a asp-controller="BookSpace" asp-action="Book">Book an Office Space</a></h3>
                     <p>Book the office that meets the needs of all your meetings</p>
-                    <button class="btn" data-nav="@Url.Action("Track", "Inquiry")">Go</button>
+                    <button class="btn" data-nav="@Url.Action("Book", "OfficeSpace")">Grab</button>
                 </div>
             </div>
         </section>
