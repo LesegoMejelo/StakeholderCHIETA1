@@ -1,304 +1,463 @@
-﻿(() => {
-    // ---------- Safe storage ----------
-    const SafeStore = (() => {
-      try {
-        const k = "__test__";
-        localStorage.setItem(k, "1");
-        localStorage.removeItem(k);
-        return {
-          get: (key) => JSON.parse(localStorage.getItem(key) || "null"),
-          set: (key, val) => localStorage.setItem(key, JSON.stringify(val)),
-        };
-      } catch {
-        const mem = {};
-        return { get: (k) => mem[k] ?? null, set: (k, v) => (mem[k] = v) };
-      }
-    })();
-  
-    const STORAGE_KEY = "appt_tracker2_state_refined_modals_v1";
-  
-    // ---------- Seed data ----------
-    const defaultState = {
-      requests: [
-        { id: "r1", date: "2025-08-24", time: "10:00", reason: "Skills roadmap session", status: "Scheduled" },
-        { id: "r2", date: "2025-08-26", time: "14:00", reason: "Grant application review", status: "Scheduled" },
-        { id: "r3", date: "2025-08-29", time: "09:30", reason: "Compliance onboarding", status: "Scheduled" },
-        { id: "r4", date: "2025-09-01", time: "11:30", reason: "Quarterly review", status: "Scheduled" },
-        { id: "r5", date: "2025-09-03", time: "16:00", reason: "Supplier onboarding", status: "Scheduled" },
-        { id: "r6", date: "2025-09-05", time: "09:00", reason: "UX feedback session", status: "Scheduled" },
-        { id: "r7", date: "2025-09-07", time: "13:15", reason: "Budget alignment", status: "Scheduled" },
-        { id: "r8", date: "2025-09-10", time: "15:45", reason: "Security compliance check", status: "Scheduled" },
-        { id: "r9", date: "2025-09-12", time: "08:30", reason: "Partner intro call", status: "Scheduled" },
-        { id: "r10", date: "2025-09-14", time: "12:00", reason: "Marketing sync", status: "Scheduled" }
-      ],
-      appointments: [
-        { id: "a1", date: "2025-08-01", title: "Intro call" },
-        { id: "a2", date: "2025-08-07", title: "Site visit" },
-        { id: "a3", date: "2025-08-13", title: "Review" },
-        { id: "a4", date: "2025-08-22", title: "Workshop" },
-        { id: "a5", date: "2025-08-30", title: "Follow-up" }
-      ]
-    };
-  
-    let state = SafeStore.get(STORAGE_KEY) || defaultState;
-    const $ = (s, r=document) => r.querySelector(s);
-    const save = () => SafeStore.set(STORAGE_KEY, state);
-  
-    // ---------- Undo manager (20s) ----------
-  const Undo = {
-    last: null,
-    timer: null,
-    ttl: 20000,
-    arm(payload){
-      // payload: { kind: 'replace'|'delete', index, prev, collection, message }
-      this.last = payload;
-      clearTimeout(this.timer);
-      this.timer = setTimeout(()=> this.disarm(), this.ttl);
-      showToast(payload.message, true);
+﻿document.addEventListener('DOMContentLoaded', function() {
+  // Sample appointment data
+  const appointments = [
+    {
+      id: 'apt-1',
+      stakeholder: 'John Smith',
+      email: 'john.smith@example.com',
+      date: '2024-04-15',
+      time: '10:00',
+      type: 'online',
+      advisor: 'Jane Smith',
+      status: 'pending',
+      reason: 'Grant Application Assistance',
+      details: 'Need help with completing the mandatory grant application for Q2. Specifically questions about eligible expenses.',
+      timestamp: '2024-04-10T14:30:00'
     },
-    disarm(){ this.last = null; hideUndo(); },
-    apply(){
-      if(!this.last) return;
-      const { kind, index, prev, collection } = this.last;
-      if(kind === "delete"){
-        collection.splice(index, 0, JSON.parse(JSON.stringify(prev)));
-      }else{
-        collection[index] = JSON.parse(JSON.stringify(prev));
+    {
+      id: 'apt-2',
+      stakeholder: 'Sarah Johnson',
+      email: 'sarahj@example.com',
+      date: '2024-04-16',
+      time: '14:30',
+      type: 'physical',
+      advisor: 'Mike Johnson',
+      status: 'pending',
+      reason: 'Bursary Application Review',
+      details: 'Would like to review my bursary application before submission to ensure all documents are in order.',
+      timestamp: '2024-04-11T09:15:00'
+    },
+    {
+      id: 'apt-3',
+      stakeholder: 'Robert Williams',
+      email: 'r.williams@example.com',
+      date: '2024-04-18',
+      time: '11:00',
+      type: 'online',
+      advisor: 'Sarah Williams',
+      status: 'accepted',
+      reason: 'Compliance Query',
+      details: 'Questions about new compliance requirements for skills development programs.',
+      timestamp: '2024-04-05T11:45:00'
+    },
+    {
+      id: 'apt-4',
+      stakeholder: 'Lisa Brown',
+      email: 'lisa.brown@example.com',
+      date: '2024-04-20',
+      time: '15:30',
+      type: 'physical',
+      advisor: 'Thomas Brown',
+      status: 'declined',
+      reason: 'Skills Program Registration',
+      details: 'Need assistance with registering our employees for the electrical engineering learnership program.',
+      timestamp: '2024-04-07T16:20:00'
+    },
+    {
+      id: 'apt-5',
+      stakeholder: 'David Wilson',
+      email: 'dwilson@example.com',
+      date: '2024-04-22',
+      time: '09:30',
+      type: 'online',
+      advisor: 'Jane Smith',
+      status: 'rescheduled',
+      reason: 'Site Visit Request',
+      details: 'Would like to request a site visit to assess our training facilities for accreditation purposes.',
+      timestamp: '2024-04-08T13:10:00',
+      rescheduledTo: '2024-04-25 at 10:00'
+    }
+  ];
+
+  const appointmentsTable = document.getElementById('appointmentsTableBody');
+  const upcomingAppointments = document.getElementById('upcomingAppointments');
+  const statusFilter = document.getElementById('statusFilter');
+  const typeFilter = document.getElementById('typeFilter');
+  const dateFilter = document.getElementById('dateFilter');
+  const clearFiltersBtn = document.getElementById('clearFilters');
+  const resultsCount = document.getElementById('resultsCount');
+  
+  const infoModal = document.getElementById('infoModal');
+  const decisionModal = document.getElementById('decisionModal');
+  
+  let filteredAppointments = [...appointments];
+  let currentAction = null;
+  let currentAppointmentId = null;
+  
+  // Initial render
+  renderAppointments();
+  renderUpcomingAppointments();
+  
+  // Add event listeners for filters
+  statusFilter.addEventListener('change', filterAppointments);
+  typeFilter.addEventListener('change', filterAppointments);
+  dateFilter.addEventListener('change', filterAppointments);
+  clearFiltersBtn.addEventListener('click', clearAllFilters);
+  
+  // Modal close buttons
+  document.querySelectorAll('.close-modal, #closeInfoModal, #cancelDecision').forEach(btn => {
+    btn.addEventListener('click', function() {
+      infoModal.classList.remove('active');
+      decisionModal.classList.remove('active');
+    });
+  });
+  
+  // Submit decision button
+  document.getElementById('submitDecision').addEventListener('click', function() {
+    if (currentAction === 'accept') {
+      // No reason needed for acceptance
+      handleAppointmentAcceptance();
+    } else {
+      const reason = document.getElementById('responseReason').value.trim();
+      
+      if (!reason) {
+        alert('Please provide a reason for your decision');
+        return;
       }
-      save(); renderAll();
-      showToast("Undone.", false);
-      this.disarm();
+      
+      if (currentAction === 'reschedule') {
+        const newDate = document.getElementById('newDate').value;
+        const newTime = document.getElementById('newTime').value;
+        
+        if (!newDate || !newTime) {
+          alert('Please select both a date and time for the rescheduled appointment');
+          return;
+        }
+      }
+      
+      handleAppointmentDecision(reason);
     }
-  };
+  });
   
-  
-    // ---------- UI helpers ----------
-    function showToast(msg, withUndo){
-      $("#toastMsg").textContent = msg;
-      $("#toastUndo").style.display = withUndo ? "inline-block" : "none";
-      $("#toast").classList.add("show");
+  function handleAppointmentAcceptance() {
+    // Update appointment status (in a real app, this would call an API)
+    const appointmentIndex = appointments.findIndex(a => a.id === currentAppointmentId);
+    if (appointmentIndex !== -1) {
+      appointments[appointmentIndex].status = 'accepted';
     }
-    function hideUndo(){
-      $("#toastUndo").style.display = "none";
-      $("#toast").classList.remove("show");
+    
+    // Show success message
+    alert('Appointment accepted successfully!');
+    
+    // Refresh the tables
+    filterAppointments();
+    renderUpcomingAppointments(); // This line was missing - FIXED
+    
+    // Close modal
+    decisionModal.classList.remove('active');
+  }
+  
+  function handleAppointmentDecision(reason) {
+    // Update appointment status (in a real app, this would call an API)
+    const appointmentIndex = appointments.findIndex(a => a.id === currentAppointmentId);
+    if (appointmentIndex !== -1) {
+      if (currentAction === 'decline') {
+        appointments[appointmentIndex].status = 'declined';
+      } else if (currentAction === 'reschedule') {
+        appointments[appointmentIndex].status = 'rescheduled';
+        const newDate = document.getElementById('newDate').value;
+        const newTime = document.getElementById('newTime').value;
+        appointments[appointmentIndex].rescheduledTo = `${newDate} at ${newTime}`;
+      }
     }
-    $("#toastUndo")?.addEventListener("click", () => Undo.apply());
+    
+    // Show success message
+    alert(`Appointment ${currentAction}ed successfully!`);
+    
+    // Refresh the table
+    filterAppointments();
+    renderUpcomingAppointments(); // Also update upcoming appointments for rescheduled ones
+    
+    // Close modal
+    decisionModal.classList.remove('active');
+  }
   
-    function badgeClass(status){
-      const s = (status||"").toLowerCase();
-      if(s.includes("confirm")) return "confirmed";
-      if(s.includes("declined — proposed")) return "declined-proposed";
-      if(s.includes("declined")) return "declined";
-      return "scheduled";
+  function filterAppointments() {
+    const statusValue = statusFilter.value;
+    const typeValue = typeFilter.value;
+    const dateValue = dateFilter.value;
+    
+    filteredAppointments = appointments.filter(appointment => {
+      // Status filter
+      if (statusValue !== 'all' && appointment.status !== statusValue) {
+        return false;
+      }
+      
+      // Type filter
+      if (typeValue !== 'all' && appointment.type !== typeValue) {
+        return false;
+      }
+      
+      // Date filter
+      if (dateValue !== 'all') {
+        const days = parseInt(dateValue);
+        const cutoffDate = new Date();
+        const appointmentDate = new Date(appointment.date);
+        
+        // For future appointments
+        if (appointmentDate < cutoffDate) {
+          return false;
+        }
+        
+        const diffTime = Math.abs(appointmentDate - cutoffDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays > days) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+    
+    renderAppointments();
+  }
+  
+  function renderUpcomingAppointments() {
+    // Get today's date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Filter accepted and rescheduled appointments that are in the future
+    const upcoming = appointments.filter(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      return (appointment.status === 'accepted' || appointment.status === 'rescheduled') && 
+             appointmentDate >= today;
+    });
+    
+    // Sort by date
+    upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    // Clear current upcoming appointments
+    upcomingAppointments.innerHTML = '';
+    
+    if (upcoming.length === 0) {
+      upcomingAppointments.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--muted)">
+          No upcoming appointments
+        </div>
+      `;
+    } else {
+      upcoming.forEach(appointment => {
+        const card = document.createElement('div');
+        card.className = `upcoming-card ${appointment.status}`;
+        
+        const dateObj = new Date(appointment.date);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { 
+          weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
+        });
+        
+        card.innerHTML = `
+          <div class="upcoming-card-header">
+            <h3 class="upcoming-card-title">${appointment.stakeholder}</h3>
+            <div class="upcoming-card-date">${formattedDate}</div>
+          </div>
+          <div class="upcoming-card-details">
+            <div class="upcoming-card-detail"><b>Time:</b> ${appointment.time}</div>
+            <div class="upcoming-card-detail"><b>Type:</b> ${appointment.type === 'online' ? 'Online' : 'In-Person'}</div>
+            <div class="upcoming-card-detail"><b>Advisor:</b> ${appointment.advisor}</div>
+            <div class="upcoming-card-detail"><b>Reason:</b> ${appointment.reason}</div>
+          </div>
+        `;
+        
+        upcomingAppointments.appendChild(card);
+      });
     }
+  }
   
-    // ---------- Renderers ----------
-    function renderRequests(){
-      const tbody = $("#requestRows");
-      if(!tbody) return;
-      tbody.innerHTML = "";
+  function clearAllFilters() {
+    statusFilter.value = 'all';
+    typeFilter.value = 'all';
+    dateFilter.value = 'all';
+    filterAppointments();
+  }
   
-      state.requests.forEach((req) => {
-        const tr = document.createElement("tr");
-        tr.dataset.id = req.id;
-  
-        tr.innerHTML = `
-          <td>${req.date}</td>
-          <td>${req.time}</td>
-          <td>${req.reason}</td>
-          <td><span class="badge ${badgeClass(req.status)}">${req.status}</span></td>
+  function renderAppointments() {
+    appointmentsTable.innerHTML = '';
+    
+    // Update results count
+    resultsCount.textContent = `${filteredAppointments.length} ${filteredAppointments.length === 1 ? 'appointment' : 'appointments'} found`;
+    
+    if (filteredAppointments.length === 0) {
+      appointmentsTable.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 30px; color: var(--muted)">
+            No appointments match your current filters
+          </td>
+        </tr>
+      `;
+    } else {
+      filteredAppointments.forEach(appointment => {
+        const row = document.createElement('tr');
+        
+        // Format status badge
+        let statusBadge = '';
+        switch(appointment.status) {
+          case 'pending':
+            statusBadge = `<span class="status-badge status-pending">Pending</span>`;
+            break;
+          case 'accepted':
+            statusBadge = `<span class="status-badge status-accepted">Accepted</span>`;
+            break;
+          case 'declined':
+            statusBadge = `<span class="status-badge status-declined">Declined</span>`;
+            break;
+          case 'rescheduled':
+            statusBadge = `<span class="status-badge status-rescheduled">Rescheduled</span>`;
+            break;
+        }
+        
+        // Format date
+        const dateObj = new Date(appointment.date);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { 
+          weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
+        });
+        
+        row.innerHTML = `
+          <td>${appointment.stakeholder}<br><small>${appointment.email}</small></td>
+          <td>${formattedDate}<br>${appointment.time}</td>
+          <td>${appointment.type === 'online' ? 'Online' : 'In-Person'}</td>
+          <td>${appointment.advisor}</td>
+          <td>${statusBadge}</td>
           <td>
-            <div class="cell-actions">
-              <button class="btn ghost small" data-action="info">More info</button>
-              <button class="btn small" data-action="accept" ${finalized(req) ? "disabled" : ""}>Accept</button>
-              <button class="btn secondary small" data-action="decline" ${finalized(req) ? "disabled" : ""}>Decline</button>
+            <div class="action-group">
+              <button class="action-btn btn-info" data-action="info" data-id="${appointment.id}">Info</button>
+              ${appointment.status === 'pending' ? `
+                <button class="action-btn btn-accept" data-action="accept" data-id="${appointment.id}">Accept</button>
+                <button class="action-btn btn-decline" data-action="decline" data-id="${appointment.id}">Decline</button>
+                <button class="action-btn btn-reschedule" data-action="reschedule" data-id="${appointment.id}">Reschedule</button>
+              ` : ''}
             </div>
           </td>
         `;
-  
-        tbody.appendChild(tr);
+        
+        appointmentsTable.appendChild(row);
       });
-  
-      function finalized(r){ return ["Confirmed","Declined","Declined — proposed"].includes(r.status); }
-    }
-  
-    function renderUpcomingSummary(){
-      const ul = $("#upcomingSummary");
-      if(!ul) return;
-      ul.innerHTML = "";
-  
-      const confirmed = state.requests
-        .filter(r => r.status === "Confirmed")
-        .map(r => ({ id:"u_"+r.id, date:r.date, title:r.reason, time:r.time }));
-  
-      const all = [...state.appointments, ...confirmed]
-        .filter(a => a.date)
-        .sort((a,b)=> a.date.localeCompare(b.date));
-  
-      // Show first 3 like EmployeeLanding
-      all.slice(0,3).forEach(a => {
-        const li = document.createElement("li");
-        const left = `${a.date} • ${a.time || ""}`.trim().replace(/\s+•\s*$/, "");
-        li.innerHTML = `<span class="muted">${left}</span><span>${a.title}</span>`;
-        ul.appendChild(li);
+      
+      // Add event listeners to action buttons
+      document.querySelectorAll('[data-action="info"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const appointmentId = this.dataset.id;
+          showAppointmentInfo(appointmentId);
+        });
+      });
+      
+      document.querySelectorAll('[data-action="accept"], [data-action="decline"], [data-action="reschedule"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const action = this.dataset.action;
+          const appointmentId = this.dataset.id;
+          showDecisionModal(action, appointmentId);
+        });
       });
     }
+  }
   
-    function renderAll(){
-      renderUpcomingSummary();
-      renderRequests();
-    }
-  
-    // ---------- Modals / focus ----------
-    function openModal(id){
-      const m = $(id);
-      m.classList.add("show");
-      trapFocus(m);
-    }
-    function closeModal(id){
-      const m = $(id);
-      m.classList.remove("show");
-      releaseFocus();
-    }
-  
-    let lastFocused = null;
-    function trapFocus(container){
-      lastFocused = document.activeElement;
-      const focusable = 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])';
-      const nodes = Array.from(container.querySelectorAll(focusable)).filter(n=>!n.disabled);
-      const first = nodes[0], last = nodes[nodes.length-1];
-      function onKey(ev){
-        if(ev.key === "Escape"){ ev.preventDefault(); closeModal("#declineModal"); closeModal("#infoModal"); }
-        if(ev.key === "Tab"){
-          if(ev.shiftKey && document.activeElement === first){ ev.preventDefault(); last.focus(); }
-          else if(!ev.shiftKey && document.activeElement === last){ ev.preventDefault(); first.focus(); }
-        }
-      }
-      container.addEventListener("keydown", onKey);
-    }
-    function releaseFocus(){
-      if(lastFocused && typeof lastFocused.focus === "function"){ lastFocused.focus(); }
-    }
-  
-    // ---------- Settings menu + dark toggle ----------
-    const settingsBtn = $("#settings-btn");
-    const settingsMenu = $("#settings-menu");
-    settingsBtn?.addEventListener("click", (e)=>{
-      e.stopPropagation();
-      const expanded = settingsBtn.getAttribute("aria-expanded") === "true";
-      settingsBtn.setAttribute("aria-expanded", String(!expanded));
-      settingsMenu.hidden = expanded;
+  function showAppointmentInfo(appointmentId) {
+    const appointment = appointments.find(a => a.id === appointmentId);
+    if (!appointment) return;
+    
+    // Populate info modal
+    document.getElementById('detail-stakeholder').textContent = `${appointment.stakeholder} (${appointment.email})`;
+    
+    const dateObj = new Date(appointment.date);
+    const formattedDate = dateObj.toLocaleDateString('en-US', { 
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
     });
-    document.addEventListener("click", (e)=>{
-      if(settingsMenu && !settingsMenu.hidden && !settingsMenu.contains(e.target) && e.target !== settingsBtn){
-        settingsBtn.setAttribute("aria-expanded", "false");
-        settingsMenu.hidden = true;
-      }
-    });
-    $("#pref-dark")?.addEventListener("change", (e)=>{
-      document.body.classList.toggle("dark", e.target.checked);
-    });
-  
-    // ---------- Decline flow (2s delay + red state) ----------
-    const pendingDecline = new Map(); // id -> {timer, btn}
-  
-    document.addEventListener("click", (e)=>{
-      const btn = e.target.closest("button"); if(!btn) return;
-  
-      if(btn.dataset.closeModal === "true" || btn.id === "declineCancel"){
-        const m = $("#declineModal");
-        const pendingId = m.dataset.id;
-        if(pendingId && pendingDecline.has(pendingId)){
-          const entry = pendingDecline.get(pendingId);
-          clearTimeout(entry.timer);
-          entry.btn.classList.remove("danger");
-          pendingDecline.delete(pendingId);
-        }
-        closeModal("#declineModal"); closeModal("#infoModal");
-        return;
-      }
-  
-      // Table actions
-      const action = btn.dataset.action;
-      if(action && btn.closest("table")){
-        const row = btn.closest("tr");
-        const id = row?.dataset?.id;
-        const idx = state.requests.findIndex(r => r.id === id);
-        const req = state.requests[idx];
-        if(idx < 0) return;
-  
-        if(action === "info"){
-          showInfo(req);
-        } else if(action === "accept"){
-          const prev = JSON.parse(JSON.stringify(req));
-          req.status = "Confirmed";
-          save(); renderAll();
-          Undo.arm({ message: "Appointment confirmed. Undo?", index: idx, prev, collection: state.requests });
-        } else if(action === "decline"){
-          // Make Decline look "armed"
-          btn.classList.add("danger");
-  
-          // Prepare modal fields
-          const m = $("#declineModal");
-          m.dataset.id = req.id;
-          $("#decReason").value = req.declineReason || "";
-          $("#decNewDate").value = (req.proposed?.date) || "";
-          $("#decNewTime").value = (req.proposed?.time) || "";
-          $("#decContext").textContent = `${req.date} at ${req.time} — ${req.reason}`;
-  
-          // Start (or restart) 2s timer to show modal
-          if(pendingDecline.has(req.id)){
-            clearTimeout(pendingDecline.get(req.id).timer);
-          }
-          const timer = setTimeout(()=>{
-            openModal("#declineModal");
-            btn.classList.remove("danger");
-            pendingDecline.delete(req.id);
-          }, 2000);
-          pendingDecline.set(req.id, { timer, btn });
-        }
-      }
-    });
-  
-    // ---------- Decline submit ----------
-    $("#declineForm")?.addEventListener("submit", (e)=>{
-      e.preventDefault();
-      const id = $("#declineModal").dataset.id;
-      const idx = state.requests.findIndex(r => r.id === id);
-      const req = state.requests[idx];
-      if(idx < 0) return;
-      const prev = JSON.parse(JSON.stringify(req));
-  
-      const reason = $("#decReason").value.trim();
-      const newDate = $("#decNewDate").value;
-      const newTime = $("#decNewTime").value;
-  
-      req.declineReason = reason || "";
-      req.proposed = { date:newDate || "", time:newTime || "" };
-      const proposedProvided = (newDate || newTime);
-      req.status = proposedProvided ? "Declined — proposed" : "Declined";
-  
-      save(); renderAll();
-      closeModal("#declineModal");
-      Undo.arm({
-        message: proposedProvided ? "Declined with a proposed time. Undo?" : "Declined. Undo?",
-        index: idx, prev, collection: state.requests
-      });
-    });
-  
-    // ---------- Info modal ----------
-    function showInfo(req){
-      $("#infoSubtitle").textContent = `Request #${req.id}`;
-      $("#infoDate").textContent = req.date || "—";
-      $("#infoTime").textContent = req.time || "—";
-      $("#infoReason").textContent = req.reason || "—";
-      $("#infoStatus").textContent = req.status || "—";
-      $("#infoDeclineReason").textContent = (req.declineReason && req.status.toLowerCase().includes("declined")) ? req.declineReason : "—";
-      const proposed = (req.proposed && (req.proposed.date || req.proposed.time)) ? `${req.proposed.date || ""} ${req.proposed.time || ""}`.trim() : "—";
-      $("#infoProposed").textContent = proposed;
-      openModal("#infoModal");
+    document.getElementById('detail-date').textContent = formattedDate;
+    document.getElementById('detail-time').textContent = appointment.time;
+    document.getElementById('detail-type').textContent = appointment.type === 'online' ? 'Online Meeting' : 'In-Person';
+    document.getElementById('detail-advisor').textContent = appointment.advisor;
+    
+    let statusText = '';
+    switch(appointment.status) {
+      case 'pending':
+        statusText = 'Pending Review';
+        break;
+      case 'accepted':
+        statusText = 'Accepted';
+        break;
+      case 'declined':
+        statusText = 'Declined';
+        break;
+      case 'rescheduled':
+        statusText = `Rescheduled to ${appointment.rescheduledTo}`;
+        break;
     }
+    document.getElementById('detail-status').textContent = statusText;
+    
+    document.getElementById('detail-reason').textContent = appointment.reason;
+    document.getElementById('detail-details').textContent = appointment.details || 'No additional details provided';
+    
+    // Show modal
+    infoModal.classList.add('active');
+  }
   
-    // ---------- Boot ----------
-    renderAll();
-  })();
+  function showDecisionModal(action, appointmentId) {
+    const appointment = appointments.find(a => a.id === appointmentId);
+    if (!appointment) return;
+    
+    currentAction = action;
+    currentAppointmentId = appointmentId;
+    
+    // Set modal title based on action
+    let modalTitle = '';
+    switch(action) {
+      case 'accept':
+        modalTitle = 'Accept Appointment';
+        document.getElementById('submitDecision').textContent = 'Accept Appointment';
+        document.getElementById('submitDecision').className = 'action-btn btn-accept';
+        document.getElementById('acceptMessage').style.display = 'block';
+        document.getElementById('reasonSection').style.display = 'none';
+        break;
+      case 'decline':
+        modalTitle = 'Decline Appointment';
+        document.getElementById('submitDecision').textContent = 'Decline Appointment';
+        document.getElementById('submitDecision').className = 'action-btn btn-decline';
+        document.getElementById('acceptMessage').style.display = 'none';
+        document.getElementById('reasonSection').style.display = 'block';
+        break;
+      case 'reschedule':
+        modalTitle = 'Reschedule Appointment';
+        document.getElementById('submitDecision').textContent = 'Propose New Time';
+        document.getElementById('submitDecision').className = 'action-btn btn-reschedule';
+        document.getElementById('acceptMessage').style.display = 'none';
+        document.getElementById('reasonSection').style.display = 'block';
+        break;
+    }
+    document.getElementById('decisionModalTitle').textContent = modalTitle;
+    
+    // Populate appointment details
+    document.getElementById('decision-stakeholder').textContent = `${appointment.stakeholder} (${appointment.email})`;
+    
+    const dateObj = new Date(appointment.date);
+    const formattedDate = dateObj.toLocaleDateString('en-US', { 
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+    });
+    document.getElementById('decision-date').textContent = formattedDate;
+    document.getElementById('decision-time').textContent = appointment.time;
+    
+    // Show/hide reschedule section
+    if (action === 'reschedule') {
+      document.getElementById('rescheduleSection').style.display = 'block';
+      
+      // Set minimum date to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const yyyy = tomorrow.getFullYear();
+      const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+      const dd = String(tomorrow.getDate()).padStart(2, '0');
+      const tomorrowStr = `${yyyy}-${mm}-${dd}`;
+      document.getElementById('newDate').min = tomorrowStr;
+    } else {
+      document.getElementById('rescheduleSection').style.display = 'none';
+    }
+    
+    // Clear previous inputs
+    document.getElementById('responseReason').value = '';
+    document.getElementById('newDate').value = '';
+    document.getElementById('newTime').value = '';
+    
+    // Show modal
+    decisionModal.classList.add('active');
+  }
+});

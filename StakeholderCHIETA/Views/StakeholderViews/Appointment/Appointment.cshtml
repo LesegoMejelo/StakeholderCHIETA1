@@ -3,123 +3,181 @@
 @{
     Layout = null;
 }
-
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Make An Appointment</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Book Appointment — CHIETA</title>
     <link rel="stylesheet" href="~/Content/StakeholderView/AppointmentBooking.css" />
+   
 </head>
 <body>
-    <header class="header">
-        <a asp-page="/Home.cshtml">
-            <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo" />
-        </a>
+    <!-- Decorative circles as full page background -->
+    <div class="decor blob-right" aria-hidden="true"></div>
+    <div class="decor arc-left" aria-hidden="true"></div>
+    <div class="decor arc-right-bottom" aria-hidden="true"></div>
+
+    <!-- Header -->
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <div class="brand">
+                <img class="logo" src="~/Content/StakeholderView/StakeholderLandingImages/logo.png" alt="CHIETA logo" />
+                <div class="divider"></div>
+                <div class="page-title">Schedule an Appointment</div>
+            </div>
+
+
+            <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                <span class="hide-sm">Settings</span>
+            </button>
+            <nav class="menu-popover" id="settings-menu" role="menu" hidden>
+                <a role="menuitem" href="#">Profile</a>
+                <a role="menuitem" href="#">Notifications</a>
+                <a role="menuitem" href="#">Help</a>
+            </nav>
+        </div>
     </header>
 
     <main class="container">
-        <h1>Make An Appointment</h1>
+        <div class="booking-form">
+            <h2 class="form-title">Schedule an Appointment</h2>
+            <p class="form-subtitle">Choose between an online or in-person meeting with our team</p>
 
-        <form id="appointment-form" novalidate>
-            <div class="form-group">
-                <label for="advisor">Name of Advisor</label>
-                <div class="field-wrap">
-                    <select id="advisor" name="advisor" required>
-                        <option value="">Select Advisor</option>
-                        @foreach (var advisor in Model)
-                        {
-                            <option value="@advisor.Uid">@advisor.Name</option>
-                        }
+            <form id="appointmentForm">
+                <!-- Appointment type selection -->
+                <div class="form-group">
+                    <label class="form-label">Appointment Type</label>
+                    <div class="type-selector">
+                        <div class="type-option" data-type="online">
+
+                            <div class="type-name">Online Meeting</div>
+                            <div class="type-desc">Video conference call</div>
+                        </div>
+                        <div class="type-option" data-type="physical">
+
+                            <div class="type-name">In-Person</div>
+                            <div class="type-desc">At our offices</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="appointmentType" name="appointmentType" required>
+                </div>
+
+                <!-- Advisor selection -->
+                <div class="form-group">
+                    <label class="form-label">Select Advisor</label>
+                    <div id="advisorOptions">
+                        <div class="advisor-option" data-advisor="jsmith">
+                            <div class="advisor-avatar">JS</div>
+                            <div class="advisor-info">
+                                <div class="advisor-name">Jane Smith</div>
+                                <div class="advisor-role">Grants Specialist</div>
+                                <div class="advisor-specialties">
+                                    <span class="specialty-tag">Grants</span>
+                                    <span class="specialty-tag">Funding</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="advisor-option" data-advisor="mjohnson">
+                            <div class="advisor-avatar">MJ</div>
+                            <div class="advisor-info">
+                                <div class="advisor-name">Mike Johnson</div>
+                                <div class="advisor-role">Bursary Coordinator</div>
+                                <div class="advisor-specialties">
+                                    <span class="specialty-tag">Bursaries</span>
+                                    <span class="specialty-tag">Education</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="advisor-option" data-advisor="swilliams">
+                            <div class="advisor-avatar">SW</div>
+                            <div class="advisor-info">
+                                <div class="advisor-name">Sarah Williams</div>
+                                <div class="advisor-role">Compliance Officer</div>
+                                <div class="advisor-specialties">
+                                    <span class="specialty-tag">Compliance</span>
+                                    <span class="specialty-tag">Regulations</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="advisor-option" data-advisor="tbrown">
+                            <div class="advisor-avatar">TB</div>
+                            <div class="advisor-info">
+                                <div class="advisor-name">Thomas Brown</div>
+                                <div class="advisor-role">Skills Development</div>
+                                <div class="advisor-specialties">
+                                    <span class="specialty-tag">Training</span>
+                                    <span class="specialty-tag">Programs</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="selectedAdvisor" name="selectedAdvisor" required>
+                </div>
+
+                <div class="form-grid">
+                    <!-- Date selection -->
+                    <div class="form-group">
+                        <label for="appointmentDate" class="form-label">Date</label>
+                        <input type="date" id="appointmentDate" class="form-input" name="date" required min="">
+                    </div>
+
+                    <!-- Time selection -->
+                    <div class="form-group">
+                        <label class="form-label">Time Slot</label>
+                        <div class="time-slots" id="timeSlots">
+                            <!-- Time slots will be generated by JavaScript -->
+                        </div>
+                        <input type="hidden" id="appointmentTime" name="time" required>
+                    </div>
+                </div>
+
+                <!-- Reason for appointment -->
+                <div class="form-group">
+                    <label for="appointmentReason" class="form-label">Reason for Appointment</label>
+                    <select id="appointmentReason" class="form-select" name="reason" required>
+                        <option value="">Select a reason</option>
+                        <option value="Grant Application">Grant Application</option>
+                        <option value="Bursary Inquiry">Bursary Inquiry</option>
+                        <option value="Compliance Issue">Compliance Issue</option>
+                        <option value="Skills Program">Skills Program</option>
+                        <option value="Site Visit">Site Visit</option>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
-                <p class="hint">Choose who you’d like to meet.</p>
-            </div>
 
-            <div class="form-group">
-                <label for="reason">Reason For Appointment:</label>
-                <textarea id="reason" name="reason" placeholder="Write your reason here..." maxlength="300" required></textarea>
-                <div class="meta-row">
-                    <p class="hint">Keep it brief (max 300 chars).</p>
-                    <span id="char-count" class="count">0/300</span>
+                <!-- Additional details -->
+                <div class="form-group">
+                    <label for="appointmentDetails" class="form-label">Additional Details</label>
+                    <textarea id="appointmentDetails" class="form-textarea" name="details" placeholder="Please provide any additional information that might be helpful..."></textarea>
                 </div>
-            </div>
 
-            <div class="date-time-wrapper">
-                <div class="date-container">
-                    <label for="date">Select date</label>
-                    <input type="date" id="date" name="date" required>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn" id="submitButton">Schedule Appointment</button>
                 </div>
-                <div class="time-container">
-                    <label for="time">Enter time</label>
-                    <input type="time" id="time" name="time" required>
-                </div>
-            </div>
-
-            <button class="confirm-button" id="confirm-btn" type="submit" disabled>
-                Confirm Appointment
-            </button>
-        </form>
+            </form>
+        </div>
     </main>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const form = document.getElementById("appointment-form");
-            const confirmBtn = document.getElementById("confirm-btn");
-            const reasonInput = document.getElementById("reason");
-            const charCount = document.getElementById("char-count");
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmationModal">
+        <div class="modal-content">
+            <h3 class="modal-title" id="modalTitle">Appointment Scheduled</h3>
+            <p class="modal-message" id="modalMessage">Your appointment has been successfully scheduled.</p>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" id="modalClose">Close</button>
+                <button class="modal-btn confirm" id="modalConfirm">OK</button>
+            </div>
+        </div>
+    </div>
 
-            // Enable button if all fields are filled
-            function toggleButton() {
-                const advisor = form.advisor.value.trim();
-                const reason = form.reason.value.trim();
-                const date = form.date.value.trim();
-                const time = form.time.value.trim();
-                confirmBtn.disabled = !advisor || !reason || !date || !time;
-            }
-
-            // Character counter
-            reasonInput.addEventListener("input", () => {
-                charCount.textContent = `${reasonInput.value.length}/300`;
-                toggleButton();
-            });
-
-            form.advisor.addEventListener("change", toggleButton);
-            form.date.addEventListener("input", toggleButton);
-            form.time.addEventListener("input", toggleButton);
-
-            // Submit form via AJAX
-            form.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                confirmBtn.disabled = true;
-
-                const formData = new FormData(form);
-                const body = new URLSearchParams(formData);
-
-                try {
-                    const res = await fetch("/api/appointment", {
-                        method: "POST",
-                        body: body
-                    });
-
-                    const result = await res.json();
-
-                    if (res.ok) {
-                        alert("✅ " + result.message);
-                        form.reset();
-                        charCount.textContent = "0/300";
-                        toggleButton();
-                    } else {
-                        alert("❌ " + (result.message || "Failed"));
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert("❌ Error submitting appointment");
-                } finally {
-                    toggleButton();
-                }
-            });
-        });
-    </script>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-band"><div class="gold-box"></div></div>
+    </footer>
+    <script src="~/Content/StakeholderView/js/StakeholderAppointmentBooking.js"></script>
 </body>
 </html>

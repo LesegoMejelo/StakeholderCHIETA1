@@ -1,0 +1,184 @@
+<html >
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Stakeholder Feedback — CHIETA</title>
+  <link rel="stylesheet" href="~/Content/StakeholderView/Feedback.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <div class="logo">CHIETA</div>
+        <div class="divider"></div>
+        <div class="page-title">Stakeholder Feedback</div>
+      </div>
+      <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+        <span class="hide-sm">Settings</span>
+      </button>
+      <nav class="menu-popover" id="settings-menu" role="menu" hidden>
+        <a role="menuitem" href="#">Profile</a>
+        <a role="menuitem" href="#">Notifications</a>
+        <a role="menuitem" href="#">Help</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="decor blob-right" aria-hidden="true"></div>
+  <div class="decor arc-left" aria-hidden="true"></div>
+  <div class="decor arc-right-bottom" aria-hidden="true"></div>
+
+  <main class="container narrow">
+    <section class="summary-grid" aria-label="Feedback Summary">
+      <div class="kpi-card">
+        <div class="kpi-title">Average Rating</div>
+        <div class="kpi-value" id="avgRating">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Total Responses</div>
+        <div class="kpi-value" id="respCount">0</div>
+      </div>
+    </section>
+
+    <section class="tabs">
+      <button class="tab active" data-tab="appointments" aria-controls="tab-appointments" aria-selected="true">Appointments</button>
+      <button class="tab" data-tab="inquiries" aria-controls="tab-inquiries" aria-selected="false">Inquiries</button>
+    </section>
+
+    <section id="tab-appointments" class="panel active" role="tabpanel">
+      <div class="grid">
+        <aside class="list-card">
+          <div class="list__hd">
+            <div>
+              <div class="list__title">Your Appointments</div>
+              <div class="muted sub">Select a completed appointment to leave feedback</div>
+            </div>
+            <div class="filters">
+              <input id="apptSearch" class="input" type="search" placeholder="Search…"/>
+              <label class="check">
+                <input type="checkbox" id="apptCompletedOnly" checked/>
+                <span>Completed only</span>
+              </label>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Date</th><th>Time</th><th>Subject</th><th>Status</th><th>Feedback</th></tr>
+              </thead>
+              <tbody id="apptRows"></tbody>
+            </table>
+          </div>
+        </aside>
+
+        <section class="detail-card" aria-label="Appointment Feedback Form">
+          <div class="card__hd">
+            <div>
+              <div class="card__title">Appointment Feedback</div>
+              <div class="muted" style="font-size:.92rem">Rate your experience and add a short comment.</div>
+            </div>
+          </div>
+          <div class="card__bd">
+            <form id="apptForm" class="form" autocomplete="off">
+              <div class="two-col">
+                <div class="form__row">
+                  <label>Selected</label>
+                  <div id="apptSelected" class="selected-label">—</div>
+                </div>
+                <div class="form__row">
+                  <label for="apptRating">Overall rating</label>
+                  <div id="apptStars" class="stars" role="radiogroup" aria-labelledby="apptRatingLabel">
+                    <span id="apptRatingLabel" class="sr-only">Overall rating</span>
+                  </div>
+                </div>
+              </div>
+              <div class="form__row">
+                <label>What stood out?</label>
+                <div id="apptTags" class="chip-row"></div>
+              </div>
+              <div class="form__row">
+                <label for="apptComment">Comments</label>
+                <textarea id="apptComment" rows="4" placeholder="Anything we should know? (optional)"></textarea>
+              </div>
+              <div class="actions">
+                <button type="button" id="apptSubmit" class="btn">Submit Feedback</button>
+              </div>
+            </form>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="tab-inquiries" class="panel" role="tabpanel">
+      <div class="grid">
+        <aside class="list-card">
+          <div class="list__hd">
+            <div>
+              <div class="list__title">Your Inquiries</div>
+              <div class="muted sub">Select a resolved inquiry to leave feedback</div>
+            </div>
+            <div class="filters">
+              <input id="inqSearch" class="input" type="search" placeholder="Search…"/>
+              <label class="check">
+                <input type="checkbox" id="inqResolvedOnly" checked/>
+                <span>Resolved only</span>
+              </label>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Ref #</th><th>Title</th><th>Date</th><th>Status</th><th>Feedback</th></tr>
+              </thead>
+              <tbody id="inqRows"></tbody>
+            </table>
+          </div>
+        </aside>
+
+        <section class="detail-card" aria-label="Inquiry Feedback Form">
+          <div class="card__hd">
+            <div>
+              <div class="card__title">Inquiry Feedback</div>
+              <div class="muted" style="font-size:.92rem">Tell us whether the resolution helped.</div>
+            </div>
+          </div>
+          <div class="card__bd">
+            <form id="inqForm" class="form" autocomplete="off">
+              <div class="two-col">
+                <div class="form__row">
+                  <label>Selected</label>
+                  <div id="inqSelected" class="selected-label">—</div>
+                </div>
+                <div class="form__row">
+                  <label for="inqRating">Overall rating</label>
+                  <div id="inqStars" class="stars" role="radiogroup" aria-labelledby="inqRatingLabel">
+                    <span id="inqRatingLabel" class="sr-only">Overall rating</span>
+                  </div>
+                </div>
+              </div>
+              <div class="form__row">
+                <label>What stood out?</label>
+                <div id="inqTags" class="chip-row"></div>
+              </div>
+              <div class="form__row">
+                <label for="inqComment">Comments</label>
+                <textarea id="inqComment" rows="4" placeholder="Tell us more (optional)"></textarea>
+              </div>
+              <div class="actions">
+                <button type="button" id="inqSubmit" class="btn">Submit Feedback</button>
+              </div>
+            </form>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-band"><div class="gold-box"></div></div>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"><span id="toastMsg">Saved</span></div>
+  <script src="~/Content/StakeholderView/js/StakeholderFeedback.js"></script>
+</body>
+</html>

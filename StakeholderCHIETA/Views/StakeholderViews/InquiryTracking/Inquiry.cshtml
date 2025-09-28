@@ -1,103 +1,110 @@
 ﻿@{
     Layout = null;
 }
-
-
 <html>
 <head>
-    <meta charset="utf-8" />
-    <title>Inquiry Page</title>
-    <link rel="stylesheet" href="~/Content/StakeholderView/Style.css" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>My Inquiries — CHIETA</title>
+  <link rel="stylesheet" href="~/Content/StakeholderView/TrackAnInquiry.css"/>
 </head>
 <body>
+  <!-- Decorative circles as full page background -->
+  <div class="decor blob-right" aria-hidden="true"></div>
+  <div class="decor arc-left" aria-hidden="true"></div>
+  <div class="decor arc-right-bottom" aria-hidden="true"></div>
 
-    <div class="navbar">
-        <img src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png">
+ <!-- Header -->
+ <header class="topbar">
+  <div class="container topbar-inner">
+    <div class="brand">
+      <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/logo.png" alt="CHIETA logo" />
+      <div class="divider"></div>
+      <div class="page-title">Track an Inquiry</div>
     </div>
+  
 
-    <div class="container">
-        <div class="title">Log an Inquiry</div>
+    <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+      <span class="hide-sm">Settings</span>
+    </button>
+    <nav class="menu-popover" id="settings-menu" role="menu" hidden>
+      <a role="menuitem" href="#">Profile</a>
+      <a role="menuitem" href="#">Notifications</a>
+      <a role="menuitem" href="#">Help</a>
+    </nav>
+  </div>
+  </header>
 
-        <!-- Inquiry Type Dropdown -->
-        <div class="dropdown">
-            <label for="inquiryType">Select Inquiry Type:</label>
-            <select id="inquiryType">
-                <option value="">-- Choose an option --</option>
-                <option value="Feedback Follow-Up">Feedback Follow-Up</option>
-                <option value="Training Availability">Training Availability</option>
-                <option value="Accreditation and Compliance">Accreditation and Compliance</option>
-                <option value="Funding and Grants">Funding and Grants</option>
-                <option value="Boardroom/Facility Use">Boardroom/Facility Use</option>
-                <option value="Other">Other</option>
-            </select>
+  <main class="container">
+    <h1>My Inquiry History</h1>
+    <p class="muted">Track the status of your inquiries and view responses from our team.</p>
+    
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filters-header">
+        <h2 class="filters-title">Filter Inquiries</h2>
+        <button class="clear-filters" id="clearFilters">Clear all filters</button>
+      </div>
+      <div class="filter-grid">
+        <div class="filter-group">
+          <label class="filter-label" for="statusFilter">Status</label>
+          <select class="filter-select" id="statusFilter">
+            <option value="all">All Statuses</option>
+            <option value="new">New</option>
+            <option value="in-progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
         </div>
-
-        <!--Comment section-->
-        <div class="Comment-section">
-            <label for="issue">Describe Issue:</label>
-            <textarea id="issue" placeholder="Type your issue here..."></textarea>
-
-            Message and Name Input -->
-
-            <div class="Comment-section NameLabel">
-            <label for="nameInput">Your Name:</label>
-            <input type="text" id="nameInput" placeholder="Your name" />
-            </div>
-            
-
-            <!--Submit Button-->
-            <button id="submitBtn" type="button">Submit</button>
-            
-            <!--Confirmation message-->
-
-            <div id="confirmationMessage" class="cloud-message" style="display: none;">
-                Your inquiry has been submitted. Please expect to hear from us within the next 3 business days.
-            </div>
+        
+        <div class="filter-group">
+          <label class="filter-label" for="categoryFilter">Category</label>
+          <select class="filter-select" id="categoryFilter">
+            <option value="all">All Categories</option>
+            <option value="Grants">Grants</option>
+            <option value="Bursaries">Bursaries</option>
+            <option value="Skills Development">Skills Development</option>
+            <option value="Compliance">Compliance</option>
+            <option value="Site Visit">Site Visit</option>
+            <option value="Other">Other</option>
+          </select>
         </div>
+        
+        <div class="filter-group">
+          <label class="filter-label" for="dateFilter">Time Period</label>
+          <select class="filter-select" id="dateFilter">
+            <option value="all">All Time</option>
+            <option value="7">Last 7 Days</option>
+            <option value="30">Last 30 Days</option>
+            <option value="90">Last 3 Months</option>
+            <option value="180">Last 6 Months</option>
+          </select>
+        </div>
+      </div>
     </div>
+    
+    <!-- Results info -->
+    <div class="results-info">
+      <div class="results-count" id="resultsCount">Loading inquiries...</div>
+      <div>
+        <label for="sortSelect">Sort by: </label>
+        <select class="sort-select" id="sortSelect">
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="recent-update">Recently Updated</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="inquiry-cards" id="inquiryList">
+      <!-- Inquiries will be populated by JavaScript -->
+    </div>
+  </main>
 
-    <script>
-        document.getElementById("submitBtn").addEventListener("click", async function () {
-            const name = document.getElementById("nameInput").value.trim();
-            const message = document.getElementById("issue").value.trim();
-            const inquiryType = document.getElementById("inquiryType").value;
-
-            // Basic validation
-            if (!message || !inquiryType) {
-                alert("Please fill in all fields.");
-                return;
-            }
-
-            try {
-                const response = await fetch("/api/inquiry", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    },
-                    body: new URLSearchParams({
-                        name: name || "Anonymous",
-                        message: message,
-                        inquiryType: inquiryType
-                    })
-                });
-
-                const result = await response.json();
-                console.log("Server response:", result);
-
-                // Show confirmation
-                document.getElementById("confirmationMessage").style.display = "block";
-
-                // Clear form
-                document.getElementById("nameInput").value = "";
-                document.getElementById("issue").value = "";
-                document.getElementById("inquiryType").value = "";
-
-            } catch (error) {
-                console.error("Submission failed:", error);
-                alert("Something went wrong. Please try again.");
-            }
-        });
-    </script>
-
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-band"><div class="gold-box"></div></div>
+  </footer>
+  <script src="~/Content/StakeholderView/js/TrackAnInquiry.js"></script>
 </body>
 </html>

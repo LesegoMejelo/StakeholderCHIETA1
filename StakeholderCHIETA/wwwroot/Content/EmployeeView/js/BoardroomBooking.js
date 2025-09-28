@@ -1,275 +1,333 @@
-﻿// ====== Utilities
-const $ = (sel, ctx = document) => ctx.querySelector(sel);
-const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
-const fmt = (d) => d.toISOString().slice(0, 10);
-const pad = (n) => `${n}`.padStart(2, '0');
-
-// ====== Demo data (Replace with API calls)
-/**
- * slotsByDate maps 'YYYY-MM-DD' -> array of slots
- * Each slot: { time: 'HH:MM', durationMins: number, room: string, booked?: boolean, bookedBy?: {...} }
- */
-let slotsByDate = {
-    // seed a few dates near "today" for demo
-};
-
-// Seed slots for the next 30 days (9am-4pm, hourly) for demo
-(function seedDemoSlots() {
-    const today = new Date();
-    for (let offset = 0; offset < 30; offset++) {
-        const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
-        const key = fmt(d);
-        const slots = [];
-        for (let h = 9; h <= 16; h++) {
-            // small chance a slot is pre-booked
-            const isBooked = Math.random() < 0.15;
-            slots.push({ time: `${pad(h)}:00`, durationMins: 60, room: "Main Boardroom", booked: isBooked });
-            if (Math.random() < 0.2) {
-                slots.push({ time: `${pad(h)}:30`, durationMins: 30, room: "Huddle Room", booked: Math.random() < 0.1 });
-            }
+﻿document.addEventListener('DOMContentLoaded', function() {
+    // Available spaces data
+    const boardrooms = [
+      { id: 'br-1', name: 'Executive Boardroom', capacity: '12 people', amenities: 'Projector, Video Conferencing', location: 'Floor 3' },
+      { id: 'br-2', name: 'Innovation Room', capacity: '8 people', amenities: 'Whiteboard, Screen', location: 'Floor 2' },
+      { id: 'br-3', name: 'Conference Room A', capacity: '15 people', amenities: 'Projector, Phone', location: 'Floor 1' },
+      { id: 'br-4', name: 'Conference Room B', capacity: '10 people', amenities: 'Screen, Video Call', location: 'Floor 1' }
+    ];
+    
+    const officeSpaces = [
+      { id: 'os-1', name: 'Focus Office 1', capacity: '4 people', amenities: 'Desk, Monitor', location: 'Floor 2' },
+      { id: 'os-2', name: 'Focus Office 2', capacity: '4 people', amenities: 'Desk, Whiteboard', location: 'Floor 2' },
+      { id: 'os-3', name: 'Collaboration Space', capacity: '6 people', amenities: 'Flexible seating', location: 'Floor 3' }
+    ];
+    
+    // Time slots
+    const timeSlots = [
+      '08:00', '09:00', '10:00', '11:00', 
+      '12:00', '13:00', '14:00', '15:00', 
+      '16:00', '17:00'
+    ];
+    
+    // Existing bookings (simulated data)
+    const existingBookings = [
+      { date: '2024-04-15', spaceId: 'br-1', time: '10:00' },
+      { date: '2024-04-15', spaceId: 'br-2', time: '14:00' },
+      { date: '2024-04-16', spaceId: 'os-1', time: '09:00' },
+      { date: '2024-04-16', spaceId: 'br-3', time: '11:00' },
+      { date: '2024-04-18', spaceId: 'br-1', time: '15:00' }
+    ];
+    
+    // Current state
+    let currentDate = new Date();
+    let selectedDate = null;
+    let selectedSpaceType = null;
+    let selectedSpace = null;
+    let selectedTime = null;
+    
+    // DOM elements
+    const spaceTypeInput = document.getElementById('spaceType');
+    const currentMonthEl = document.getElementById('currentMonth');
+    const calendarBody = document.getElementById('calendarBody');
+    const selectedDateDisplay = document.getElementById('selectedDateDisplay');
+    const spacesGrid = document.getElementById('spacesGrid');
+    const submitBtn = document.getElementById('submitBooking');
+    const confirmationModal = document.getElementById('confirmationModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    
+    // Initialize calendar
+    renderCalendar();
+    
+    // Space type selection
+    document.querySelectorAll('.space-option').forEach(option => {
+      option.addEventListener('click', function() {
+        document.querySelectorAll('.space-option').forEach(opt => {
+          opt.classList.remove('selected');
+        });
+        this.classList.add('selected');
+        selectedSpaceType = this.dataset.type;
+        spaceTypeInput.value = selectedSpaceType;
+        
+        // If a date is already selected, show available spaces
+        if (selectedDate) {
+          renderAvailableSpaces();
         }
-        slotsByDate[key] = slots;
-    }
-})();
-
-// Persist bookings in localStorage so refresh keeps state (demo only)
-function saveState() {
-    localStorage.setItem('slotsByDate', JSON.stringify(slotsByDate));
-}
-function loadState() {
-    const raw = localStorage.getItem('slotsByDate');
-    if (raw) {
-        try { slotsByDate = JSON.parse(raw); } catch { }
-    }
-}
-loadState();
-
-// ====== Calendar
-const monthLabel = $('#monthLabel');
-const datesEl = $('#dates');
-const prevBtn = $('#prevMonth');
-const nextBtn = $('#nextMonth');
-const todayBtn = $('#btnToday');
-const showBookedToggle = $('#showBooked');
-
-let current = new Date(); // current month in view
-let selectedDate = null;
-
-function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
-function endOfMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0); }
-
-function renderCalendar() {
-    const start = startOfMonth(current);
-    const end = endOfMonth(current);
-    monthLabel.textContent = start.toLocaleString(undefined, { month: 'long', year: 'numeric' });
-
-    // First weekday offset (0 = Sun)
-    const firstDay = new Date(start);
-    const offset = firstDay.getDay();
-
-    datesEl.innerHTML = '';
-
-    // total cells = offset leading + days in month
-    const totalDays = end.getDate();
-    const totalCells = offset + totalDays;
-    // fill a full grid of weeks
-    const rows = Math.ceil(totalCells / 7);
-    const cells = rows * 7;
-
-    for (let i = 0; i < cells; i++) {
-        const cell = document.createElement('button');
-        cell.className = 'date-cell';
-        cell.type = 'button';
-        cell.setAttribute('role', 'gridcell');
-
-        const dayNum = i - offset + 1;
-        if (dayNum < 1 || dayNum > totalDays) {
-            cell.classList.add('disabled');
-            cell.tabIndex = -1;
-            cell.setAttribute('aria-hidden', 'true');
-        } else {
-            const d = new Date(current.getFullYear(), current.getMonth(), dayNum);
-            const key = fmt(d);
-            cell.dataset.date = key;
-
-            const num = document.createElement('div');
-            num.className = 'num';
-            num.textContent = String(dayNum);
-            cell.appendChild(num);
-
-            // dots indicator
-            const dots = document.createElement('div');
-            dots.className = 'dots';
-            const slots = slotsByDate[key] || [];
-            const anyAvailable = slots.some(s => !s.booked);
-            const anyBooked = slots.some(s => s.booked);
-            if (slots.length === 0) {
-                const dot = document.createElement('span');
-                dot.className = 'dot none';
-                dots.appendChild(dot);
+      });
+    });
+    
+    // Calendar navigation
+    document.getElementById('prevMonth').addEventListener('click', function() {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+    });
+    
+    document.getElementById('nextMonth').addEventListener('click', function() {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    });
+    
+    // Modal confirmation
+    document.getElementById('modalConfirm').addEventListener('click', function() {
+      confirmationModal.classList.remove('active');
+      resetForm();
+    });
+    
+    // Submit booking
+    submitBtn.addEventListener('click', function() {
+      if (validateBooking()) {
+        showConfirmation();
+      }
+    });
+    
+    function renderCalendar() {
+      // Set current month display
+      currentMonthEl.textContent = currentDate.toLocaleDateString('en-US', { 
+        year: 'numeric', month: 'long' 
+      });
+      
+      // Clear previous calendar
+      calendarBody.innerHTML = '';
+      
+      // Get first day of month and number of days
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const daysInMonth = lastDay.getDate();
+      const startingDay = firstDay.getDay();
+      
+      // Create calendar rows
+      let date = 1;
+      for (let i = 0; i < 6; i++) {
+        const row = document.createElement('tr');
+        
+        for (let j = 0; j < 7; j++) {
+          const cell = document.createElement('td');
+          
+          if (i === 0 && j < startingDay) {
+            // Empty cells before first day of month
+            cell.textContent = '';
+            cell.classList.add('unavailable');
+          } else if (date > daysInMonth) {
+            // Empty cells after last day of month
+            cell.textContent = '';
+            cell.classList.add('unavailable');
+          } else {
+            // Date cells
+            const cellDate = new Date(year, month, date);
+            cell.textContent = date;
+            
+            // Check if today
+            const today = new Date();
+            if (cellDate.toDateString() === today.toDateString()) {
+              cell.classList.add('today');
+            }
+            
+            // Check if date is in the past
+            if (cellDate < new Date().setHours(0, 0, 0, 0)) {
+              cell.classList.add('unavailable');
             } else {
-                if (anyAvailable) {
-                    const dot = document.createElement('span');
-                    dot.className = 'dot available';
-                    dots.appendChild(dot);
-                }
-                if (anyBooked) {
-                    const dot = document.createElement('span');
-                    dot.className = 'dot booked';
-                    dots.appendChild(dot);
-                }
+              cell.addEventListener('click', function() {
+                selectDate(cellDate);
+              });
             }
+            
+            date++;
+          }
             cell.appendChild(dots);
-
-            // today highlighting via title
-            if (fmt(new Date()) === key) {
-                cell.title = 'Today';
-            }
-
-            cell.addEventListener('click', () => selectDate(d));
+          
+          row.appendChild(cell);
         }
+        
+        calendarBody.appendChild(row);
+      }
         datesEl.appendChild(cell);
     }
-}
-
-function selectDate(d) {
-    selectedDate = new Date(d);
-    const label = selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-    $('#slotsTitle').textContent = `Available for ${label}`;
-    renderSlots();
-    // focus corresponding cell
-    const key = fmt(selectedDate);
-    const cell = $(`.date-cell[data-date="${key}"]`);
-    if (cell) cell.focus();
-}
-
-prevBtn.addEventListener('click', () => { current = new Date(current.getFullYear(), current.getMonth() - 1, 1); renderCalendar(); });
-nextBtn.addEventListener('click', () => { current = new Date(current.getFullYear(), current.getMonth() + 1, 1); renderCalendar(); });
-todayBtn.addEventListener('click', () => { current = new Date(); renderCalendar(); selectDate(new Date()); });
-
-// ====== Slots List & Booking
-const slotList = $('#slotList');
-const bookingDialog = $('#bookingDialog');
-const bookingForm = $('#bookingForm');
-const cancelDialog = $('#cancelDialog');
-const confirmBooking = $('#confirmBooking');
-const slotSummary = $('#slotSummary');
-const nameInput = $('#nameInput');
-const emailInput = $('#emailInput');
-const purposeInput = $('#purposeInput');
-const toast = $('#toast');
-
-let pending = null; // { dateKey, index }
-
-function renderSlots() {
-    slotList.innerHTML = '';
-    if (!selectedDate) {
-        slotList.innerHTML = `<p class="muted">Pick a date on the calendar to see available times.</p>`;
-        return;
+    
+    function selectDate(date) {
+      selectedDate = date;
+      
+      // Update UI
+      document.querySelectorAll('.calendar td').forEach(cell => {
+        cell.classList.remove('selected');
+      });
+      
+      // Find and select the clicked date cell
+      const dateString = date.getDate().toString();
+      const cells = document.querySelectorAll('.calendar td');
+      for (let cell of cells) {
+        if (cell.textContent === dateString) {
+          cell.classList.add('selected');
+          break;
+        }
+      }
+      
+      // Update selected date display
+      selectedDateDisplay.textContent = date.toLocaleDateString('en-US', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      });
+      
+      // Show available spaces if space type is selected
+      if (selectedSpaceType) {
+        renderAvailableSpaces();
+      }
+      
+      updateSubmitButton();
     }
+    
+    function renderAvailableSpaces() {
+      // Clear previous spaces
+      spacesGrid.innerHTML = '';
+      
+      // Get available spaces based on type
+      const spaces = selectedSpaceType === 'boardroom' ? boardrooms : officeSpaces;
+      
+      if (spaces.length === 0) {
+        spacesGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--muted)">
+            No ${selectedSpaceType === 'boardroom' ? 'boardrooms' : 'office spaces'} available
+          </div>
+        `;
+        return;
+      }
     const key = fmt(selectedDate);
     const showBooked = showBookedToggle.checked;
     const slots = (slotsByDate[key] || []).filter(s => showBooked || !s.booked);
-
-    if (slots.length === 0) {
-        slotList.innerHTML = `<p class="muted">No slots for this day.</p>`;
-        return;
-    }
-
-    slots.forEach((s, i) => {
-        const card = document.createElement('div');
-        card.className = 'slot';
-
-        const when = document.createElement('div');
-        when.className = 'when';
-        when.textContent = `${s.time} • ${s.durationMins} min`;
-        card.appendChild(when);
-
-        const actions = document.createElement('div');
-        if (s.booked) {
-            const status = document.createElement('span');
-            status.className = 'status is-booked';
-            status.textContent = 'Booked';
-            actions.appendChild(status);
-        } else {
-            const btn = document.createElement('button');
-            btn.className = 'btn small primary';
-            btn.textContent = 'Book';
-            btn.addEventListener('click', () => openBooking(key, i));
-            actions.appendChild(btn);
-        }
-        card.appendChild(actions);
-
-        const meta = document.createElement('div');
-        meta.className = 'meta';
-        meta.textContent = s.room || 'Boardroom';
-        card.appendChild(meta);
-
-        slotList.appendChild(card);
-    });
-}
-
-function openBooking(dateKey, slotIndex) {
-    pending = { dateKey, index: slotIndex };
-    const s = slotsByDate[dateKey][slotIndex];
-    $('#dialogTitle').textContent = 'Confirm Booking';
-    slotSummary.textContent = `${new Date(dateKey).toDateString()} at ${s.time} • ${s.durationMins} min • ${s.room}`;
-    nameInput.value = '';
-    emailInput.value = '';
-    purposeInput.value = '';
-    bookingDialog.showModal();
-    nameInput.focus();
-}
-
-cancelDialog.addEventListener('click', () => bookingDialog.close());
-
-bookingForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (!pending) return bookingDialog.close();
-    const s = slotsByDate[pending.dateKey][pending.index];
-    s.booked = true;
-    s.bookedBy = {
-        name: nameInput.value.trim(),
-        email: emailInput.value.trim(),
-        purpose: purposeInput.value.trim(),
-        timestamp: new Date().toISOString()
-    };
-    saveState();
-    bookingDialog.close();
-    toastMessage('Booking confirmed ✅');
-    renderCalendar();
-    renderSlots();
-});
-
-showBookedToggle.addEventListener('change', renderSlots);
-
-function toastMessage(msg) {
-    toast.textContent = msg;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2200);
-}
-
-// ====== Init
-renderCalendar();
-selectDate(new Date());
-
-// ====== Public API (for future integration)
-// Example: addSlotsForDate('2025-09-15', [{time:'11:00', durationMins:60, room:'Main'}]);
-window.addSlotsForDate = function (dateKey, newSlots) {
-    slotsByDate[dateKey] = (slotsByDate[dateKey] || []).concat(newSlots);
-    saveState();
-    renderCalendar();
-    if (selectedDate && fmt(selectedDate) === dateKey) renderSlots();
-}
-
-
-// Popup close functionality
-document.addEventListener("DOMContentLoaded", () => {
-    const closeBtn = document.getElementById("popupClose");
-    const popup = document.getElementById("popup");
-    if (closeBtn && popup) {
-        closeBtn.addEventListener("click", () => {
-            popup.style.display = "none";
+      
+      // Format date for comparison
+      const dateString = selectedDate.toISOString().split('T')[0];
+      
+      spaces.forEach(space => {
+        const spaceCard = document.createElement('div');
+        spaceCard.className = 'space-card';
+        spaceCard.dataset.spaceId = space.id;
+        
+        // Generate time slots HTML
+        let timeSlotsHTML = '';
+        timeSlots.forEach(time => {
+          // Check if this space/time is already booked
+          const isBooked = existingBookings.some(booking => 
+            booking.date === dateString && 
+            booking.spaceId === space.id && 
+            booking.time === time
+          );
+          
+          timeSlotsHTML += `
+            <div class="time-slot ${isBooked ? 'unavailable' : ''}" data-time="${time}">
+              ${time}
+            </div>
+          `;
         });
+        
+        spaceCard.innerHTML = `
+          <div class="space-card-header">
+            <h4 class="space-card-title">${space.name}</h4>
+            <div class="space-card-capacity">${space.capacity}</div>
+          </div>
+          <div class="space-card-details">
+            <div class="space-card-detail"><b>Amenities:</b> ${space.amenities}</div>
+            <div class="space-card-detail"><b>Location:</b> ${space.location}</div>
+          </div>
+          <div class="time-slots">
+            ${timeSlotsHTML}
+          </div>
+        `;
+        
+        spacesGrid.appendChild(spaceCard);
+      });
+      
+      // Add event listeners to time slots
+      document.querySelectorAll('.time-slot:not(.unavailable)').forEach(slot => {
+        slot.addEventListener('click', function() {
+          // Deselect all time slots
+          document.querySelectorAll('.time-slot').forEach(s => {
+            s.classList.remove('selected');
+          });
+          
+          // Select this time slot
+          this.classList.add('selected');
+          
+          // Update selected space and time
+          selectedSpace = this.closest('.space-card').dataset.spaceId;
+          selectedTime = this.dataset.time;
+          
+          updateSubmitButton();
+        });
+      });
     }
-});
+    
+    function updateSubmitButton() {
+      const isReady = selectedDate && selectedSpaceType && selectedSpace && selectedTime;
+      submitBtn.disabled = !isReady;
+    }
+    
+    function validateBooking() {
+      const meetingTitle = document.getElementById('meetingTitle').value.trim();
+      const organizerName = document.getElementById('organizerName').value.trim();
+      const attendeeCount = document.getElementById('attendeeCount').value;
+      
+      if (!meetingTitle || !organizerName || !attendeeCount) {
+        alert('Please complete all required fields');
+        return false;
+      }
+      
+      return true;
+    }
+    
+    function showConfirmation() {
+      const meetingTitle = document.getElementById('meetingTitle').value;
+      const spaceType = selectedSpaceType === 'boardroom' ? 'Boardroom' : 'Office Space';
+      const spaceName = (selectedSpaceType === 'boardroom' ? boardrooms : officeSpaces)
+        .find(space => space.id === selectedSpace).name;
+      
+      const dateString = selectedDate.toLocaleDateString('en-US', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      });
+      
+      modalTitle.textContent = 'Booking Confirmed';
+      modalMessage.innerHTML = `
+        Your ${spaceType.toLowerCase()} has been successfully booked.<br><br>
+        <strong>Meeting:</strong> ${meetingTitle}<br>
+        <strong>Space:</strong> ${spaceName}<br>
+        <strong>Date:</strong> ${dateString}<br>
+        <strong>Time:</strong> ${selectedTime}
+      `;
+      
+      confirmationModal.classList.add('active');
+    }
+    
+    function resetForm() {
+      // Reset form
+      document.getElementById('bookingForm').reset();
+      document.querySelectorAll('.space-option').forEach(opt => {
+        opt.classList.remove('selected');
+      });
+      
+      // Reset selections
+      selectedDate = null;
+      selectedSpaceType = null;
+      selectedSpace = null;
+      selectedTime = null;
+      
+      // Reset UI
+      document.querySelectorAll('.calendar td').forEach(cell => {
+        cell.classList.remove('selected');
+      });
+      
+      selectedDateDisplay.textContent = 'Select a date';
+      spacesGrid.innerHTML = '';
+      submitBtn.disabled = true;
+    }
+  });
