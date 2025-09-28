@@ -3,164 +3,168 @@
 }
 <html>
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Submit an Inquiry — CHIETA</title>
-  <link rel="stylesheet" href="~/Content/StakeholderView/LogAnInquiry.css"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Submit an Inquiry — CHIETA</title>
+    <link rel="stylesheet" href="~/Content/StakeholderView/LogAnInquiry.css" />
 </head>
 <body>
-  <!-- Header -->
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <div class="brand">
-        <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/logo.png" alt="CHIETA logo" />
-        <div class="divider"></div>
-        <div class="page-title">Log an Inquiry</div>
-      </div>
-    
-
-      <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-        <span class="hide-sm">Settings</span>
-      </button>
-      <nav class="menu-popover" id="settings-menu" role="menu" hidden>
-        <a role="menuitem" href="#">Profile</a>
-        <a role="menuitem" href="#">Notifications</a>
-        <a role="menuitem" href="#">Help</a>
-      </nav>
-    </div>
-  </header>
-
-  <!-- Decorative shapes -->
-  <div class="decor blob-right" aria-hidden="true"></div>
-  <div class="decor arc-left" aria-hidden="true"></div>
-  <div class="decor arc-right-bottom" aria-hidden="true"></div>
-
-  <main class="container narrow">
-    <!-- Why this page -->
-    <section class="intro">
-      <h1>We’re here to help</h1>
-      <p class="muted">Log a question or issue about grants, bursaries, skills programmes, or compliance. You’ll get a reference number when submitted.</p>
-    </section>
-
-    <!-- Progress -->
-    <section class="wizard">
-      <div class="steps" role="tablist" aria-label="Inquiry steps">
-        <button class="step current" data-step="1" role="tab" aria-selected="true"><span>1</span> Category</button>
-        <button class="step" data-step="2" role="tab" aria-selected="false"><span>2</span> Details & Review</button>
-      </div>
-      <div class="bar"><div class="bar__fill" id="progressFill" style="width:50%"></div></div>
-    </section>
-
-    <!-- Panels -->
-    <form id="inquiryForm" class="cards" novalidate>
-      <!-- Step 1: Category -->
-      <section class="card panel active" data-panel="1" aria-labelledby="catTitle">
-        <div class="card__hd">
-          <div>
-            <div id="catTitle" class="card__title">Choose a category</div>
-            <div class="muted" style="font-size:.92rem">This helps us route your inquiry to the right team.</div>
-          </div>
-        </div>
-        <div class="card__bd">
-          <div class="radio-grid" role="radiogroup" aria-label="Category">
-            <label class="radio"><input type="radio" name="category" value="Grants" required>Grants</label>
-            <label class="radio"><input type="radio" name="category" value="Bursaries">Bursaries</label>
-            <label class="radio"><input type="radio" name="category" value="Skills Development">Skills Development</label>
-            <label class="radio"><input type="radio" name="category" value="Compliance">Compliance</label>
-            <label class="radio"><input type="radio" name="category" value="Site Visit">Site Visit</label>
-            <label class="radio"><input type="radio" name="category" value="Other">Other</label>
-          </div>
-
-          <div class="form__row">
-            <label for="subject">Subject <span class="req">*</span></label>
-            <input type="text" id="subject" name="subject" placeholder="E.g. Query about discretionary grant window" required maxlength="120">
-            <div class="help-line"><span id="subjectCount">0</span>/120</div>
-          </div>
-
-          <div class="form__row">
-            <label>Quick tags (optional)</label>
-            <div id="tagChips" class="chip-row"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Step 2: Details & Review -->
-      <section class="card panel" data-panel="2" aria-labelledby="detailsTitle">
-        <div class="card__hd">
-          <div>
-            <div id="detailsTitle" class="card__title">Details & review</div>
-            <div class="muted" style="font-size:.92rem">Tell us what happened and what outcome you’re hoping for. Review before submitting.</div>
-          </div>
-        </div>
-        <div class="card__bd">
-          <div class="form__row">
-            <label for="description">Description <span class="req">*</span></label>
-            <textarea id="description" name="description" rows="6" placeholder="Provide context, steps taken, and any relevant IDs…" required></textarea>
-          </div>
-
-          <div class="two-col">
-            <div class="form__row">
-              <label for="desired">Desired outcome</label>
-              <input type="text" id="desired" name="desired" placeholder="E.g. Confirmation of required documents"/>
+    <!-- Header -->
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <div class="brand">
+                <img class="logo" src="/logo.png" alt="CHIETA logo" />
+                <div class="divider"></div>
+                <div class="page-title">Log an Inquiry</div>
             </div>
-            <div class="form__row">
-              <label for="relatedDate">Related date (optional)</label>
-              <input type="date" id="relatedDate" name="relatedDate"/>
+
+            <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                <span class="hide-sm">Settings</span>
+            </button>
+            <nav class="menu-popover" id="settings-menu" role="menu" hidden>
+                <a role="menuitem" href="#">Profile</a>
+                <a role="menuitem" href="#">Notifications</a>
+                <a role="menuitem" href="#">Help</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Decorative shapes -->
+    <div class="decor blob-right" aria-hidden="true"></div>
+    <div class="decor arc-left" aria-hidden="true"></div>
+    <div class="decor arc-right-bottom" aria-hidden="true"></div>
+
+    <main class="container narrow">
+        <!-- Why this page -->
+        <section class="intro">
+            <h1>We're here to help</h1>
+            <p class="muted">Log a question or issue about grants, bursaries, skills programmes, or compliance. You'll get a reference number when submitted.</p>
+        </section>
+
+        <!-- Progress -->
+        <section class="wizard">
+            <div class="steps" role="tablist" aria-label="Inquiry steps">
+                <button class="step current" data-step="1" role="tab" aria-selected="true"><span>1</span> Category</button>
+                <button class="step" data-step="2" role="tab" aria-selected="false"><span>2</span> Details & Review</button>
             </div>
-          </div>
+            <div class="bar"><div class="bar__fill" id="progressFill" style="width:50%"></div></div>
+        </section>
 
-          <div class="form__row">
-            <label for="attachment">Attachments (optional)</label>
-            <input type="file" id="attachment" name="attachment" accept=".pdf,.doc,.docx,.png,.jpg" multiple>
-            <div class="help-line">Max 5 files, 5&nbsp;MB each. Do not upload sensitive personal data.</div>
-            <ul id="fileList" class="file-list"></ul>
-          </div>
+        <!-- Panels -->
+        <form id="inquiryForm" class="cards" novalidate>
+            <!-- Step 1: Category -->
+            <section class="card panel active" data-panel="1" aria-labelledby="catTitle">
+                <div class="card__hd">
+                    <div>
+                        <div id="catTitle" class="card__title">Choose a category</div>
+                        <div class="muted" style="font-size:.92rem">This helps us route your inquiry to the right team.</div>
+                    </div>
+                </div>
+                <div class="card__bd">
+                    <div class="radio-grid" role="radiogroup" aria-label="Category">
+                        <label class="radio"><input type="radio" name="category" value="Grants" required>Grants</label>
+                        <label class="radio"><input type="radio" name="category" value="Bursaries">Bursaries</label>
+                        <label class="radio"><input type="radio" name="category" value="Skills Development">Skills Development</label>
+                        <label class="radio"><input type="radio" name="category" value="Compliance">Compliance</label>
+                        <label class="radio"><input type="radio" name="category" value="Site Visit">Site Visit</label>
+                        <label class="radio"><input type="radio" name="category" value="Other">Other</label>
+                    </div>
 
-          <div class="form__row">
-            <label class="check"><input type="checkbox" id="callback" name="callback"> I'd like a follow-up call</label>
-          </div>
+                    <div class="form__row">
+                        <label for="subject">Subject <span class="req">*</span></label>
+                        <input type="text" id="subject" name="subject" placeholder="E.g. Query about discretionary grant window" required maxlength="120">
+                        <div class="help-line"><span id="subjectCount">0</span>/120</div>
+                    </div>
 
-          <div class="review">
-            <h3>Preview</h3>
-            <div id="reviewBox" class="review-box"></div>
-          </div>
+                    <div class="form__row">
+                        <label>Quick tags (optional)</label>
+                        <div id="tagChips" class="chip-row"></div>
+                    </div>
 
-          <div class="actions">
-            <button type="button" class="btn ghost" data-prev="1">Back</button>
-            <button type="submit" class="btn">Submit inquiry</button>
-          </div>
-        </div>
-      </section>
-    </form>
+                    <div class="actions">
+                        <button type="button" class="btn" data-next="2">Next</button>
+                    </div>
+                </div>
+            </section>
 
-    <!-- Success screen -->
-    <section class="card success-panel" id="successPanel" hidden>
-      <div class="card__hd">
-        <div>
-          <div class="card__title">Inquiry submitted</div>
-          <div class="muted" style="font-size:.92rem">Your reference number is below.</div>
-        </div>
-      </div>
-      <div class="card__bd">
-        <div class="success-box">
-          <div class="ref-line">Reference: <strong id="refCode">—</strong> <button id="copyRef" class="btn ghost small">Copy</button></div>
-          <div id="successSummary" class="muted"></div>
-          <div class="success-actions">
-            <a class="btn ghost" id="newInquiry" href="#">Log another</a>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
+            <!-- Step 2: Details & Review -->
+            <section class="card panel" data-panel="2" aria-labelledby="detailsTitle">
+                <div class="card__hd">
+                    <div>
+                        <div id="detailsTitle" class="card__title">Details & review</div>
+                        <div class="muted" style="font-size:.92rem">Tell us what happened and what outcome you're hoping for. Review before submitting.</div>
+                    </div>
+                </div>
+                <div class="card__bd">
+                    <div class="form__row">
+                        <label for="description">Description <span class="req">*</span></label>
+                        <textarea id="description" name="description" rows="6" placeholder="Provide context, steps taken, and any relevant IDs…" required></textarea>
+                    </div>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-band"><div class="gold-box"></div></div>
-  </footer>
+                    <div class="two-col">
+                        <div class="form__row">
+                            <label for="desired">Desired outcome</label>
+                            <input type="text" id="desired" name="desired" placeholder="E.g. Confirmation of required documents" />
+                        </div>
+                        <div class="form__row">
+                            <label for="relatedDate">Related date (optional)</label>
+                            <input type="date" id="relatedDate" name="relatedDate" />
+                        </div>
+                    </div>
 
-  <!-- Toast -->
-  <div id="toast" class="toast" role="status" aria-live="polite"><span id="toastMsg">Saved</span></div>
+                    <div class="form__row">
+                        <label for="attachment">Attachments (optional)</label>
+                        <input type="file" id="attachment" name="attachment" accept=".pdf,.doc,.docx,.png,.jpg" multiple>
+                        <div class="help-line">Max 5 files, 5&nbsp;MB each. Do not upload sensitive personal data.</div>
+                        <ul id="fileList" class="file-list"></ul>
+                    </div>
 
-  <script src="~/Content/StakeholderView/js/LogAnInquiry.js"></script>
+                    <div class="form__row">
+                        <label class="check"><input type="checkbox" id="callback" name="callback"> I'd like a follow-up call</label>
+                    </div>
+
+                    <div class="review">
+                        <h3>Preview</h3>
+                        <div id="reviewBox" class="review-box"></div>
+                    </div>
+
+                    <div class="actions">
+                        <button type="button" class="btn ghost" data-prev="1">Back</button>
+                        <button type="submit" class="btn">Submit inquiry</button>
+                    </div>
+                </div>
+            </section>
+        </form>
+
+        <!-- Success screen -->
+        <section class="card success-panel" id="successPanel" hidden>
+            <div class="card__hd">
+                <div>
+                    <div class="card__title">Inquiry submitted</div>
+                    <div class="muted" style="font-size:.92rem">Your reference number is below.</div>
+                </div>
+            </div>
+            <div class="card__bd">
+                <div class="success-box">
+                    <div class="ref-line">Reference: <strong id="refCode">—</strong> <button id="copyRef" class="btn ghost small">Copy</button></div>
+                    <div id="successSummary" class="muted"></div>
+                    <div class="success-actions">
+                        <a class="btn ghost" id="newInquiry" href="#">Log another</a>
+                        <a class="btn" id="trackLink" href="#" target="_blank">Track this inquiry</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-band"><div class="gold-box"></div></div>
+    </footer>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite"><span id="toastMsg">Saved</span></div>
+
+    <script src="~/Content/StakeholderView/js/LogAnInquiry.js"></script>
 </body>
 </html>
