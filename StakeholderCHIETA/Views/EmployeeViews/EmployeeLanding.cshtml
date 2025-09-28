@@ -62,8 +62,11 @@
 
                 <a id="link-inquiries" class="summary-card" href="@Url.Action("List", "Inquiry")">
                     <h3>Recent Inquiries</h3>
-                    <ul id="inquiries-list" class="mini-list"><li class="muted">Loading…</li></ul>
+                    <ul id="inquiries-list" class="mini-list">
+                        <li class="muted">Loading…</li>
+                    </ul>
                 </a>
+
             </div>
         </section>
 
@@ -95,7 +98,7 @@
                     <div class="card-hero" aria-hidden="true"></div>
                     <h3><a asp-controller="BookSpace" asp-action="Book">Book an Office Space</a></h3>
                     <p>Book the office that meets the needs of all your meetings</p>
-                    <button class="btn" data-nav="@Url.Action("Book", "BookSpace")">Grab</button>
+                    <button class="btn" data-nav="@Url.Action("Book", "OfficeSpace")">Grab</button>
                 </div>
             </div>
         </section>
@@ -108,5 +111,38 @@
     </footer>
 
     <script src="~/Content/EmployeeView/js/EmployeeLanding.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const inquiriesList = document.getElementById("inquiries-list");
+
+            // 🔑 Replace with actual user ID from your auth/session
+            const userId = "@User.Identity.Name"; // or however you pass it to the view
+
+            try {
+                const response = await fetch(`/api/inquiry/user/${userId}`);
+                const data = await response.json();
+
+                // Clear loading placeholder
+                inquiriesList.innerHTML = "";
+
+                if (data.length === 0) {
+                    inquiriesList.innerHTML = `<li class="muted">No inquiries yet</li>`;
+                    return;
+                }
+
+                data.forEach(inquiry => {
+                    const li = document.createElement("li");
+                    li.textContent = `${inquiry.customId} — ${inquiry.inquiryType} (${inquiry.status})`;
+                    inquiriesList.appendChild(li);
+                });
+
+            } catch (error) {
+                console.error("Error loading inquiries:", error);
+                inquiriesList.innerHTML = `<li class="muted">Failed to load inquiries</li>`;
+            }
+        });
+    </script>
+
 </body>
 </html>
+

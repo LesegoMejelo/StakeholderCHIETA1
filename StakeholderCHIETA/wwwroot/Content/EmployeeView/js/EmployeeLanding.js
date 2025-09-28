@@ -5,11 +5,14 @@
         { date: '2025-08-26T14:00:00', title: 'Grant review', where: 'Online' },
         { date: '2025-08-29T09:30:00', title: 'Onboarding', where: 'Office 2' }
     ];
-    const demoInquiries = [
-        { ref: 'INQ-1051', subject: 'Reporting template', createdAt: '2025-08-20' },
-        { ref: 'INQ-1047', subject: 'Site visit schedule', createdAt: '2025-08-19' },
-        { ref: 'INQ-1042', subject: 'Funding criteria', createdAt: '2025-08-18' }
-    ];
+    async function getUsers() {
+        const snapshot = await db.collection("users").get();
+        const users = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        return users;
+    }
 
     // ---- Helpers ----
     const fmtDate = iso => new Intl.DateTimeFormat(undefined, { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(iso));
@@ -53,3 +56,87 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
 
 });
+
+/* ---------*/
+document.addEventListener("DOMContentLoaded", async () => {
+    const inquiriesList = document.getElementById("inquiries-list");
+
+    // 🔑 Replace with actual user ID from your auth/session
+    const userId = "@firebaseUid"; // or however you pass it to the view
+
+    try {
+        const response = await fetch(`/api/inquiry/user/${userId}`);
+        const data = await response.json();
+
+        // Clear loading placeholder
+        inquiriesList.innerHTML = "";
+
+        if (data.length === 0) {
+            inquiriesList.innerHTML = `<li class="muted">No inquiries yet</li>`;
+            return;
+        }
+
+        data.forEach(inquiry => {
+            const li = document.createElement("li");
+            li.textContent = `${inquiry.customId} — ${inquiry.inquiryType} (${inquiry.status})`;
+            inquiriesList.appendChild(li);
+        });
+
+    /*} catch (error) {
+        console.error("Error loading inquiries:", error);
+        inquiriesList.innerHTML = `<li class="muted">Failed to load inquiries</li>`;
+    }
+});
+*/
+        import { getAuth } from "firebase/auth";
+
+        const auth = getAuth();
+        const user = auth.currentUser;
+
+        if (user) {
+            const uid = user.uid;
+
+            const formData = new FormData();
+            formData.append("name", "Lesego");
+            formData.append("message", "Test message");
+            formData.append("inquiryType", "General");
+            formData.append("userId", uid);  // <-- pass UID here
+
+            await fetch("/api/inquiry", {
+                method: "POST",
+                body: formData
+            });
+        }
+        document.addEventListener("DOMContentLoaded", async () => {
+            const inquiriesList = document.getElementById("inquiries-list");
+            inquiriesList.innerHTML = "<li class='muted'>Loading…</li>";
+
+            const auth = firebase.auth();
+            const user = auth.currentUser;
+            if (!user) {
+                inquiriesList.innerHTML = "<li class='muted'>Not logged in</li>";
+                return;
+            }
+
+            const uid = user.uid;
+
+            try {
+                const response = await fetch(`/api/inquiry/user/${uid}`);
+                if (!response.ok) throw new Error("Failed to load inquiries");
+
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    inquiriesList.innerHTML = "<li class='muted'>No inquiries yet</li>";
+                    return;
+                }
+
+                inquiriesList.innerHTML = "";
+                data.forEach(inq => {
+                    inquiriesList.innerHTML += `<li>${inq.customId} - ${inq.inquiryType} (${inq.status})</li>`;
+                });
+            } catch (err) {
+                console.error(err);
+                inquiriesList.innerHTML = "<li class='muted'>Error loading inquiries</li>";
+            }
+        });

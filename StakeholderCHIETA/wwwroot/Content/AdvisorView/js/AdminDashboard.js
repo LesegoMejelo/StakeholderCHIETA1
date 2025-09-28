@@ -1,6 +1,7 @@
 ﻿/* ------------------ Demo Data ------------------ */
 
 // Users (initial seed)
+/*
 let users = [
     { id: 1, name: "Sipho Dlamini", email: "sipho@example.com", role: "User", status: "Active" },
     { id: 2, name: "Renee McKelvey", email: "renee@company.com", role: "Admin", status: "Active" },
@@ -9,6 +10,16 @@ let users = [
     { id: 5, name: "Lissa Shipsey", email: "lissa@company.com", role: "User", status: "Active" },
     { id: 6, name: "Jerry Mattedi", email: "jerry@company.com", role: "User", status: "Active" },
 ];
+*/
+async function getUsers() {
+    const snapshot = await db.collection("users").get();
+    const users = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }));
+    return users;
+}
+
 
 // Engagement time-series (months aligned)
 const months12 = ["Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May"];
@@ -275,3 +286,8 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(
 drawLineChart(5);
 renderUsers();
 updateKPIs();
+
+/*------------*/
+
+
+

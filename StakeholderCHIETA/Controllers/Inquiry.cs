@@ -1,141 +1,37 @@
 ﻿using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System;
 
 namespace Staekholder_CHIETA_X.Controllers
 {
-    [Authorize]
+    [Authorize] // all endpoints require login by default
     public class InquiryController : Controller
     {
         private readonly FirestoreDb _db;
 
-        public InquiryController(FirestoreDb db)
-        {
-            _db = db;
-        }
-
-        // IMPROVED: Accept structured form data instead of concatenated message
-        [HttpPost]
-        [AllowAnonymous]
-        [Route("api/inquiry")]
-        public async Task<IActionResult> Post(
-    [FromForm] string name,          // will be ignored if user is authenticated
-    [FromForm] string subject,
-    [FromForm] string description,
-    [FromForm] string inquiryType,
-    [FromForm] string desiredOutcome = "",
-    [FromForm] string relatedDate = "",
-    [FromForm] string tags = "",
-    [FromForm] bool followUpCall = false)
-        {
-            try
-            {
-                // Resolve user identity
-                var isAuthed = User?.Identity?.IsAuthenticated == true;
-                var userId = isAuthed
-                    ? (User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity.Name ?? "")
-                    : "";
-                var userEmail = isAuthed ? (User.FindFirstValue(ClaimTypes.Email) ?? "") : "";
-                var displayName = isAuthed
-                    ? (User.Identity?.Name
-                       ?? User.FindFirstValue(ClaimTypes.GivenName)
-                       ?? User.FindFirstValue("name")
-                       ?? userEmail
-                       ?? "Authenticated User")
-                    : (name?.Trim() ?? "Guest");
-
-                // Validation (unchanged apart from no longer trusting client `name`)
-                if (string.IsNullOrWhiteSpace(subject)) return BadRequest(new { error = "Subject is required" });
-                if (string.IsNullOrWhiteSpace(description)) return BadRequest(new { error = "Description is required" });
-                if (string.IsNullOrWhiteSpace(inquiryType)) return BadRequest(new { error = "Inquiry type is required" });
-
-                var tagArray = string.IsNullOrWhiteSpace(tags)
-                    ? new string[0]
-                    : tags.Split(',').Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).ToArray();
-
-                var nowTs = Timestamp.GetCurrentTimestamp();
-
-                var inquiryData = new Dictionary<string, object>
-        {
-            // Keep legacy "name" for backward compatibility:
-            { "name", displayName },
-
-            // New normalized creator block (recommended for all future queries):
-            { "createdBy", new Dictionary<string, object> {
-                { "userId", userId },     // empty string if anonymous
-                { "name", displayName },
-                { "email", userEmail }
-            }},
-
-            { "subject", subject.Trim() },
-            { "description", description.Trim() },
-            { "inquiryType", inquiryType.Trim() },
-            { "desiredOutcome", desiredOutcome?.Trim() ?? "" },
-            { "relatedDate", relatedDate?.Trim() ?? "" },
-            { "tags", tagArray },
-            { "followUpCall", followUpCall },
-            { "assignedAdvisor", "" },
-            { "createdAt", nowTs },
-            { "updatedAt", nowTs },
-            { "updates", new List<object> {
-                new Dictionary<string, object> {
-                    { "status", "Pending" },
-                    { "updatedBy", isAuthed ? (displayName ?? "User") : "System" },
-                    { "timestamp", nowTs },
-                    { "notes", "Inquiry submitted via website" }
-                }
-            } }
-        };
-
-                var docRef = await _db.Collection("inquiries").AddAsync(inquiryData);
-
-                return Ok(new
-                {
-                    id = docRef.Id,
-                    message = "Inquiry submitted successfully",
-                    timestamp = DateTime.UtcNow,
-                    referenceNumber = GenerateReferenceNumber(docRef.Id)
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "Internal server error", details = ex.Message });
-            }
-        }
-
         // Helper method to generate user-friendly reference numbers
         private string GenerateReferenceNumber(string docId)
         {
-            var now = DateTime.UtcNow;
-            var datePart = now.ToString("yyMMdd");
-            var shortId = docId.Substring(Math.Max(0, docId.Length - 4)).ToUpper();
-            return $"INQ-{datePart}-{shortId}";
+            _db = db ;
         }
 
-        // LEGACY: Keep the old endpoint for backward compatibility
+        // SUBMIT INQUIRY (Client)
         [HttpPost]
-        [AllowAnonymous]
-        [Route("api/inquiry/legacy")]
-        public async Task<IActionResult> PostLegacy([FromForm] string name, [FromForm] string message, [FromForm] string inquiryType)
+        [AllowAnonymous] // allow non-auth users to submit
+        [Route("api/inquiry")]
+        public async Task<IActionResult> Post([FromForm] string name, [FromForm] string message, [FromForm] string inquiryType)
         {
             try
             {
-                // Parse the legacy concatenated message format
-                var lines = message.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-
-                string subject = "";
-                string description = "";
-                string tags = "";
-                string desiredOutcome = "";
-                string relatedDate = "";
-                bool followUpCall = false;
-
-                foreach (var line in lines)
+                name = name,
+                message = message,
+                inquiryType = inquiryType,
+                status = "Pending",
+                //assignedAdvisor = "", //  will be set when assigned
+                updates = new List<object>
                 {
                     var trimmed = line.Trim();
                     if (trimmed.StartsWith("Subject: "))
@@ -163,17 +59,10 @@ namespace Staekholder_CHIETA_X.Controllers
                     }
                 }
 
-                // Call the new structured method
-                return await Post(name, subject, description, inquiryType, desiredOutcome, relatedDate, tags, followUpCall);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"ERROR in PostLegacy method: {ex.Message}");
-                return StatusCode(500, new { error = "Internal server error", details = ex.Message });
-            }
+            return Ok(new { id = docRef.Id, message = "Inquiry submitted successfully" });
         }
 
-        // Enhanced view methods with better data structure
+        // CLIENT: View all their inquiries
         [HttpGet]
         [Authorize(Roles = "Client")]
         [Route("api/inquiry/client/{name}")]
@@ -211,6 +100,7 @@ namespace Staekholder_CHIETA_X.Controllers
             }
         }
 
+        // CLIENT: View single inquiry + history
         [HttpGet]
         [Authorize(Roles = "Client")]
         [Route("api/inquiry/{id}")]
@@ -321,6 +211,26 @@ namespace Staekholder_CHIETA_X.Controllers
             }
         }
 
+        // ADVISOR: View inquiries assigned to them
+        [HttpGet]
+        [Authorize(Roles = "Advisor")]
+        [Route("api/inquiry/advisor/{advisorId}")]
+        public async Task<IActionResult> GetAdvisorInquiries(string advisorId)
+        {
+            var snapshot = await _db.Collection("inquiries")
+                                    .WhereEqualTo("assignedAdvisor", advisorId)
+                                    .GetSnapshotAsync();
+
+            var inquiries = snapshot.Documents.Select(doc => new
+            {
+                id = doc.Id,
+                data = doc.ToDictionary()
+            });
+
+            return Ok(inquiries);
+        }
+
+        // ADVISOR/ADMIN: Update inquiry status
         [HttpPost]
         [Authorize(Roles = "Advisor,Admin")]
         [Route("api/inquiry/{id}/status")]
@@ -333,10 +243,10 @@ namespace Staekholder_CHIETA_X.Controllers
 
                 if (!snapshot.Exists) return NotFound("Inquiry not found");
 
-                var inquiry = snapshot.ToDictionary();
-                var updates = inquiry.ContainsKey("updates")
-                    ? ((List<object>)inquiry["updates"]).ToList()
-                    : new List<object>();
+            var inquiry = snapshot.ToDictionary();
+            var updates = inquiry.ContainsKey("updates")
+                ? ((List<object>)inquiry["updates"]).ToList()
+                : new List<object>();
 
                 updates.Add(new Dictionary<string, object>
                 {
@@ -363,15 +273,13 @@ namespace Staekholder_CHIETA_X.Controllers
             }
         }
 
-        // Test endpoint
+        // ADMIN: View all inquiries
         [HttpGet]
-        [AllowAnonymous]
-        [Route("api/inquiry/test")]
-        public async Task<IActionResult> TestFirestore()
+        [Authorize(Roles = "Admin")]
+        [Route("api/inquiry/all")]
+        public async Task<IActionResult> GetAllInquiries()
         {
-            try
-            {
-                Console.WriteLine("Testing Firestore connection...");
+            var snapshot = await _db.Collection("inquiries").GetSnapshotAsync();
 
                 var testData = new Dictionary<string, object>
                 {
@@ -382,34 +290,66 @@ namespace Staekholder_CHIETA_X.Controllers
                 var docRef = await _db.Collection("test").AddAsync(testData);
                 var snapshot = await docRef.GetSnapshotAsync();
 
-                if (snapshot.Exists)
-                {
-                    await docRef.DeleteAsync();
-                    return Ok(new
-                    {
-                        message = "Firestore connection test successful",
-                        testDocId = docRef.Id
-                    });
-                }
-                else
-                {
-                    return StatusCode(500, new { error = "Could not retrieve test document" });
-                }
-            }
-            catch (Exception ex)
+        [HttpGet]
+        [Route("api/inquiry/user/{userId}")]
+        [AllowAnonymous]  // just for debugging, remove when you have auth working
+        public async Task<IActionResult> GetUserInquiries(string userId)
+        {
+            var snapshot = await _db.Collection("inquiries")
+                                    .WhereEqualTo("UserId", userId)
+                                    .OrderByDescending("createdAt")
+                                    .Limit(5)
+                                    .GetSnapshotAsync();
+
+            var inquiries = snapshot.Documents.Select(doc => new
             {
-                Console.WriteLine($"Firestore test failed: {ex.Message}");
-                return StatusCode(500, new
-                {
-                    error = "Firestore connection test failed",
-                    details = ex.Message
-                });
-            }
+                id = doc.Id,
+                customId = doc.ContainsField("customId") ? doc.GetValue<string>("customId") : "N/A",
+                inquiryType = doc.ContainsField("inquiryType") ? doc.GetValue<string>("inquiryType") : "General",
+                status = doc.ContainsField("status") ? doc.GetValue<string>("status") : "Pending",
+                createdAt = doc.ContainsField("createdAt")
+                    ? doc.GetValue<Timestamp>("createdAt").ToDateTime().ToString("yyyy-MM-dd")
+                    : ""
+            });
+
+            return Ok(inquiries);
         }
 
-        // MVC View methods
-        public IActionResult Index() => View();
-        public IActionResult Inquiry() => View("~/Views/StakeholderViews/Inquiry/Inquiry.cshtml");
-        public IActionResult Tracking() => View("~/Views/EmployeeViews/InquiryTracker.cshtml");
+        [HttpPost]
+        [AllowAnonymous]
+        [Route("api/inquiry")]
+        public async Task<IActionResult> Post([FromForm] string name, [FromForm] string message,
+                                      [FromForm] string inquiryType, [FromForm] string userId)
+        {
+            var docRef = await _db.Collection("inquiries").AddAsync(new
+            {
+                UserId = userId,          // <-- Add this
+                name = name,
+                message = message,
+                inquiryType = inquiryType,
+                status = "Pending",
+                updates = new List<object>
+        {
+            new { status = "Pending", updatedBy = "System",
+                  timestamp = Timestamp.GetCurrentTimestamp(),
+                  notes = "Inquiry submitted" }
+        },
+                createdAt = Timestamp.GetCurrentTimestamp()
+            });
+
+            return Ok(new { id = docRef.Id, message = "Inquiry submitted successfully" });
+        }
+
+
+        public IActionResult Inquiry()
+        {
+            return View("~/Views/StakeholderViews/Inquiry/Inquiry.cshtml");
+        }
+
+        public IActionResult Tracking()
+        {
+            return View("~/Views/EmployeeViews/InquiryTracker.cshtml");
+        }
+
     }
 }
