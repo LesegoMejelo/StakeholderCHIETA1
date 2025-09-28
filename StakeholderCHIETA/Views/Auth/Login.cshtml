@@ -1,82 +1,90 @@
-﻿@using Microsoft.AspNetCore.Html
-@using Microsoft.AspNetCore.Mvc.Rendering
+﻿
 @{
-    ViewBag.Title = "Login";
+    Layout = null;
 }
+<html >
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login • CHIETA</title>
+    <link rel="stylesheet" href="~/Content/AdvisorView/Login.css" />
+</head>
+<body class="login-page">
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/logo.png" alt="CHIETA logo" />
 
-<h2>Login</h2>
+            <!-- Settings in header -->
+            <nav class="header-actions">
+                <div class="menu" id="settings">
+                    <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span class="hide-sm">Settings</span>
+                    </button>
 
-<form id="loginForm">
-    <input type="email" id="email" placeholder="Email" required />
-    <br />
-    <input type="password" id="password" placeholder="Password" required />
-    <br />
-    <button type="submit">Login</button>
-</form>
+                    <div class="menu-popover" id="settings-menu" role="menu" hidden>
+                        <a role="menuitem" href="profile.html">Profile</a>
+                        <a role="menuitem" href="notifications.html">Notifications</a>
+                        <div class="menu-sep" role="separator"></div>
+                        <div class="menu-group" role="group" aria-label="Preferences">
+                            <label class="menu-check">
+                                <input id="pref-dark" type="checkbox" />
+                                <span>Dark mode</span>
+                            </label>
+                        </div>
+                        <div class="menu-sep" role="separator"></div>
+                        <a role="menuitem" href="logout.html" class="danger">Sign out</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js";
+    <div class="login-wrap">
+        <!-- Decorative -->
+        <div class="decor blob-right"></div>
+        <div class="decor arc-left"></div>
+        <div class="decor arc-right-bottom"></div>
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyDP43thmAHRibCEbFcBZx2vpA2mEPDByz8",
-        authDomain: "stakeholder-app-57ed0.firebaseapp.com",
-        projectId: "stakeholder-app-57ed0",
-        storageBucket: "stakeholder-app-57ed0.appspot.com",
-        messagingSenderId: "988521434771",
-        appId: "1:988521434771:web:d189e963a8c41909a2c766"
-    };
+        <div class="login-card" role="form" aria-labelledby="loginTitle">
+            <div class="login-head">
+                <h1 id="loginTitle" class="login-title">Sign in</h1>
+                <div class="role-switch" role="tablist" aria-label="Choose role">
+                    <button id="roleAdvisor" class="role-btn" role="tab" aria-selected="true" aria-pressed="true"></button>
+                    <button id="roleStakeholder" class="role-btn" role="tab" aria-selected="false" aria-pressed="false"></button>
+                    <button id="roleAdmin" class="role-btn" role="tab" aria-selected="false" aria-pressed="false"></button>
+                </div>
+            </div>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+            <div class="login-body">
+                <form id="loginForm">
+                <div class="form-row">
+                    <label class="label" for="email">Email</label>
+                    <input class="input" id="email" type="email" placeholder="you@example.com" autocomplete="username" required />
+                </div>
+                <div class="form-row">
+                    <label class="label" for="password">Password</label>
+                    <input class="password" id="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+                </div>
 
-    const loginForm = document.getElementById("loginForm");
-    loginForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
+                <p id="roleHint" class="helper">You are signing in as <strong>Advisor</strong>.</p>
 
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
+                <div class="actions">
+                    <button id="btnSignin" class="btn-primary" type="submit">Continue</button>
+                    <button id="btnCancel" class="btn-ghost" type="button">Cancel</button>
+                </div>
+                </form>
 
-        try {
-            // Show loading state
-            const submitButton = loginForm.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
-            submitButton.textContent = "Logging in...";
-            submitButton.disabled = true;
+                <p id="statusMsg" class="helper" role="status" aria-live="polite"></p>
+            </div>
+        </div>
+    </div>
 
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const token = await userCredential.user.getIdToken();
+    <footer class="footer">
+        <div class="footer-band"></div>
+        <div class="gold-box"></div>
+    </footer>
 
-            console.log("Firebase login successful, UID:", userCredential.user.uid);
+    <script src="~/Content/AdminView/js/Login.js"></script>
+</body>
+</html>
 
-            const response = await fetch("/Auth/Login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Accept": "application/json"
-                },
-                body: new URLSearchParams({ idToken: token })
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                console.log("Backend login successful, redirecting to:", data.redirectUrl);
-                window.location.href = data.redirectUrl;
-            } else {
-                console.error("Backend login failed:", data);
-                alert("Login failed: " + (data.message || "Unknown error"));
-                // Sign out from Firebase if backend login fails
-                await auth.signOut();
-            }
-        } catch (error) {
-            console.error("Login error:", error);
-            alert("Login error: " + error.message);
-        } finally {
-            // Reset button state
-            const submitButton = loginForm.querySelector('button[type="submit"]');
-            submitButton.textContent = originalText;
-            submitButton.disabled = false;
-        }
-    });
-</script>
