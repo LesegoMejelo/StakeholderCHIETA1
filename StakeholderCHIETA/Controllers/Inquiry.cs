@@ -1,6 +1,7 @@
 ﻿using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,74 +24,75 @@ namespace Staekholder_CHIETA_X.Controllers
         [AllowAnonymous]
         [Route("api/inquiry")]
         public async Task<IActionResult> Post(
-            [FromForm] string name,
-            [FromForm] string subject,
-            [FromForm] string description,
-            [FromForm] string inquiryType,
-            [FromForm] string desiredOutcome = "",
-            [FromForm] string relatedDate = "",
-            [FromForm] string tags = "",
-            [FromForm] bool followUpCall = false)
+    [FromForm] string name,          // will be ignored if user is authenticated
+    [FromForm] string subject,
+    [FromForm] string description,
+    [FromForm] string inquiryType,
+    [FromForm] string desiredOutcome = "",
+    [FromForm] string relatedDate = "",
+    [FromForm] string tags = "",
+    [FromForm] bool followUpCall = false)
         {
             try
             {
-                Console.WriteLine($"=== STRUCTURED INQUIRY SUBMISSION ===");
-                Console.WriteLine($"Name: {name}");
-                Console.WriteLine($"Subject: {subject}");
-                Console.WriteLine($"Description: {description}");
-                Console.WriteLine($"InquiryType: {inquiryType}");
-                Console.WriteLine($"DesiredOutcome: {desiredOutcome}");
-                Console.WriteLine($"RelatedDate: {relatedDate}");
-                Console.WriteLine($"Tags: {tags}");
-                Console.WriteLine($"FollowUpCall: {followUpCall}");
+                // Resolve user identity
+                var isAuthed = User?.Identity?.IsAuthenticated == true;
+                var userId = isAuthed
+                    ? (User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity.Name ?? "")
+                    : "";
+                var userEmail = isAuthed ? (User.FindFirstValue(ClaimTypes.Email) ?? "") : "";
+                var displayName = isAuthed
+                    ? (User.Identity?.Name
+                       ?? User.FindFirstValue(ClaimTypes.GivenName)
+                       ?? User.FindFirstValue("name")
+                       ?? userEmail
+                       ?? "Authenticated User")
+                    : (name?.Trim() ?? "Guest");
 
-                // Validation
-                if (string.IsNullOrWhiteSpace(name))
-                    return BadRequest(new { error = "Name is required" });
-                if (string.IsNullOrWhiteSpace(subject))
-                    return BadRequest(new { error = "Subject is required" });
-                if (string.IsNullOrWhiteSpace(description))
-                    return BadRequest(new { error = "Description is required" });
-                if (string.IsNullOrWhiteSpace(inquiryType))
-                    return BadRequest(new { error = "Inquiry type is required" });
+                // Validation (unchanged apart from no longer trusting client `name`)
+                if (string.IsNullOrWhiteSpace(subject)) return BadRequest(new { error = "Subject is required" });
+                if (string.IsNullOrWhiteSpace(description)) return BadRequest(new { error = "Description is required" });
+                if (string.IsNullOrWhiteSpace(inquiryType)) return BadRequest(new { error = "Inquiry type is required" });
 
-                // Process tags into array
                 var tagArray = string.IsNullOrWhiteSpace(tags)
                     ? new string[0]
                     : tags.Split(',').Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).ToArray();
 
-                // Create structured document
-                var inquiryData = new Dictionary<string, object>
-                {
-                    { "name", name.Trim() },
-                    { "subject", subject.Trim() },
-                    { "description", description.Trim() },
-                    { "inquiryType", inquiryType.Trim() },
-                    { "desiredOutcome", desiredOutcome?.Trim() ?? "" },
-                    { "relatedDate", relatedDate?.Trim() ?? "" },
-                    { "tags", tagArray },
-                    { "followUpCall", followUpCall },
-                    { "status", "Pending" },
-                    { "priority", "Normal" },
-                    { "assignedAdvisor", "" }, // Will be set when assigned
-                    { "createdAt", Timestamp.GetCurrentTimestamp() },
-                    { "updatedAt", Timestamp.GetCurrentTimestamp() },
-                    { "updates", new List<object>
-                        {
-                            new Dictionary<string, object>
-                            {
-                                { "status", "Pending" },
-                                { "updatedBy", "System" },
-                                { "timestamp", Timestamp.GetCurrentTimestamp() },
-                                { "notes", "Inquiry submitted via website" }
-                            }
-                        }
-                    }
-                };
+                var nowTs = Timestamp.GetCurrentTimestamp();
 
-                Console.WriteLine("Adding structured document to Firestore...");
+                var inquiryData = new Dictionary<string, object>
+        {
+            // Keep legacy "name" for backward compatibility:
+            { "name", displayName },
+
+            // New normalized creator block (recommended for all future queries):
+            { "createdBy", new Dictionary<string, object> {
+                { "userId", userId },     // empty string if anonymous
+                { "name", displayName },
+                { "email", userEmail }
+            }},
+
+            { "subject", subject.Trim() },
+            { "description", description.Trim() },
+            { "inquiryType", inquiryType.Trim() },
+            { "desiredOutcome", desiredOutcome?.Trim() ?? "" },
+            { "relatedDate", relatedDate?.Trim() ?? "" },
+            { "tags", tagArray },
+            { "followUpCall", followUpCall },
+            { "assignedAdvisor", "" },
+            { "createdAt", nowTs },
+            { "updatedAt", nowTs },
+            { "updates", new List<object> {
+                new Dictionary<string, object> {
+                    { "status", "Pending" },
+                    { "updatedBy", isAuthed ? (displayName ?? "User") : "System" },
+                    { "timestamp", nowTs },
+                    { "notes", "Inquiry submitted via website" }
+                }
+            } }
+        };
+
                 var docRef = await _db.Collection("inquiries").AddAsync(inquiryData);
-                Console.WriteLine($"Document added successfully with ID: {docRef.Id}");
 
                 return Ok(new
                 {
@@ -102,12 +104,7 @@ namespace Staekholder_CHIETA_X.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR in Post method: {ex.Message}");
-                return StatusCode(500, new
-                {
-                    error = "Internal server error",
-                    details = ex.Message
-                });
+                return StatusCode(500, new { error = "Internal server error", details = ex.Message });
             }
         }
 
