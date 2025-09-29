@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Book Appointment — CHIETA</title>
     <link rel="stylesheet" href="~/Content/StakeholderView/AppointmentBooking.css" />
-   
+
 </head>
 <body>
     <!-- Decorative circles as full page background -->
@@ -25,7 +25,6 @@
                 <div class="divider"></div>
                 <div class="page-title">Schedule an Appointment</div>
             </div>
-
 
             <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
                 <span class="hide-sm">Settings</span>
@@ -49,12 +48,10 @@
                     <label class="form-label">Appointment Type</label>
                     <div class="type-selector">
                         <div class="type-option" data-type="online">
-
                             <div class="type-name">Online Meeting</div>
                             <div class="type-desc">Video conference call</div>
                         </div>
                         <div class="type-option" data-type="physical">
-
                             <div class="type-name">In-Person</div>
                             <div class="type-desc">At our offices</div>
                         </div>
@@ -66,53 +63,29 @@
                 <div class="form-group">
                     <label class="form-label">Select Advisor</label>
                     <div id="advisorOptions">
-                        <div class="advisor-option" data-advisor="jsmith">
-                            <div class="advisor-avatar">JS</div>
-                            <div class="advisor-info">
-                                <div class="advisor-name">Jane Smith</div>
-                                <div class="advisor-role">Grants Specialist</div>
-                                <div class="advisor-specialties">
-                                    <span class="specialty-tag">Grants</span>
-                                    <span class="specialty-tag">Funding</span>
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var advisor in Model)
+                            {
+                                <div class="advisor-option" data-advisor="@advisor.Id">
+                                    <div class="advisor-avatar">@(advisor.Name.Split(' ').Select(n => n.FirstOrDefault()).Take(2).Aggregate("", (acc, c) => acc + c))</div>
+                                    <div class="advisor-info">
+                                        <div class="advisor-name">@advisor.Name</div>
+                                        <div class="advisor-role">CHIETA Advisor</div>
+                                        <div class="advisor-specialties">
+                                            <span class="specialty-tag">General</span>
+                                            <span class="specialty-tag">Support</span>
+                                        </div>
+                                    </div>
                                 </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="no-advisors">
+                                <p>No advisors available at the moment. Please try again later.</p>
                             </div>
-                        </div>
-
-                        <div class="advisor-option" data-advisor="mjohnson">
-                            <div class="advisor-avatar">MJ</div>
-                            <div class="advisor-info">
-                                <div class="advisor-name">Mike Johnson</div>
-                                <div class="advisor-role">Bursary Coordinator</div>
-                                <div class="advisor-specialties">
-                                    <span class="specialty-tag">Bursaries</span>
-                                    <span class="specialty-tag">Education</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="advisor-option" data-advisor="swilliams">
-                            <div class="advisor-avatar">SW</div>
-                            <div class="advisor-info">
-                                <div class="advisor-name">Sarah Williams</div>
-                                <div class="advisor-role">Compliance Officer</div>
-                                <div class="advisor-specialties">
-                                    <span class="specialty-tag">Compliance</span>
-                                    <span class="specialty-tag">Regulations</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="advisor-option" data-advisor="tbrown">
-                            <div class="advisor-avatar">TB</div>
-                            <div class="advisor-info">
-                                <div class="advisor-name">Thomas Brown</div>
-                                <div class="advisor-role">Skills Development</div>
-                                <div class="advisor-specialties">
-                                    <span class="specialty-tag">Training</span>
-                                    <span class="specialty-tag">Programs</span>
-                                </div>
-                            </div>
-                        </div>
+                        }
                     </div>
                     <input type="hidden" id="selectedAdvisor" name="selectedAdvisor" required>
                 </div>
