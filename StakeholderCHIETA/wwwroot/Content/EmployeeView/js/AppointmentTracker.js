@@ -1,463 +1,440 @@
-﻿document.addEventListener('DOMContentLoaded', function() {
-  // Sample appointment data
-  const appointments = [
-    {
-      id: 'apt-1',
-      stakeholder: 'John Smith',
-      email: 'john.smith@example.com',
-      date: '2024-04-15',
-      time: '10:00',
-      type: 'online',
-      advisor: 'Jane Smith',
-      status: 'pending',
-      reason: 'Grant Application Assistance',
-      details: 'Need help with completing the mandatory grant application for Q2. Specifically questions about eligible expenses.',
-      timestamp: '2024-04-10T14:30:00'
-    },
-    {
-      id: 'apt-2',
-      stakeholder: 'Sarah Johnson',
-      email: 'sarahj@example.com',
-      date: '2024-04-16',
-      time: '14:30',
-      type: 'physical',
-      advisor: 'Mike Johnson',
-      status: 'pending',
-      reason: 'Bursary Application Review',
-      details: 'Would like to review my bursary application before submission to ensure all documents are in order.',
-      timestamp: '2024-04-11T09:15:00'
-    },
-    {
-      id: 'apt-3',
-      stakeholder: 'Robert Williams',
-      email: 'r.williams@example.com',
-      date: '2024-04-18',
-      time: '11:00',
-      type: 'online',
-      advisor: 'Sarah Williams',
-      status: 'accepted',
-      reason: 'Compliance Query',
-      details: 'Questions about new compliance requirements for skills development programs.',
-      timestamp: '2024-04-05T11:45:00'
-    },
-    {
-      id: 'apt-4',
-      stakeholder: 'Lisa Brown',
-      email: 'lisa.brown@example.com',
-      date: '2024-04-20',
-      time: '15:30',
-      type: 'physical',
-      advisor: 'Thomas Brown',
-      status: 'declined',
-      reason: 'Skills Program Registration',
-      details: 'Need assistance with registering our employees for the electrical engineering learnership program.',
-      timestamp: '2024-04-07T16:20:00'
-    },
-    {
-      id: 'apt-5',
-      stakeholder: 'David Wilson',
-      email: 'dwilson@example.com',
-      date: '2024-04-22',
-      time: '09:30',
-      type: 'online',
-      advisor: 'Jane Smith',
-      status: 'rescheduled',
-      reason: 'Site Visit Request',
-      details: 'Would like to request a site visit to assess our training facilities for accreditation purposes.',
-      timestamp: '2024-04-08T13:10:00',
-      rescheduledTo: '2024-04-25 at 10:00'
+﻿// AppointmentTracker.js
+class AppointmentTracker {
+    constructor() {
+        this.appointments = [];
+        this.filteredAppointments = [];
+        this.currentAppointment = null;
+        this.init();
     }
-  ];
 
-  const appointmentsTable = document.getElementById('appointmentsTableBody');
-  const upcomingAppointments = document.getElementById('upcomingAppointments');
-  const statusFilter = document.getElementById('statusFilter');
-  const typeFilter = document.getElementById('typeFilter');
-  const dateFilter = document.getElementById('dateFilter');
-  const clearFiltersBtn = document.getElementById('clearFilters');
-  const resultsCount = document.getElementById('resultsCount');
-  
-  const infoModal = document.getElementById('infoModal');
-  const decisionModal = document.getElementById('decisionModal');
-  
-  let filteredAppointments = [...appointments];
-  let currentAction = null;
-  let currentAppointmentId = null;
-  
-  // Initial render
-  renderAppointments();
-  renderUpcomingAppointments();
-  
-  // Add event listeners for filters
-  statusFilter.addEventListener('change', filterAppointments);
-  typeFilter.addEventListener('change', filterAppointments);
-  dateFilter.addEventListener('change', filterAppointments);
-  clearFiltersBtn.addEventListener('click', clearAllFilters);
-  
-  // Modal close buttons
-  document.querySelectorAll('.close-modal, #closeInfoModal, #cancelDecision').forEach(btn => {
-    btn.addEventListener('click', function() {
-      infoModal.classList.remove('active');
-      decisionModal.classList.remove('active');
-    });
-  });
-  
-  // Submit decision button
-  document.getElementById('submitDecision').addEventListener('click', function() {
-    if (currentAction === 'accept') {
-      // No reason needed for acceptance
-      handleAppointmentAcceptance();
-    } else {
-      const reason = document.getElementById('responseReason').value.trim();
-      
-      if (!reason) {
-        alert('Please provide a reason for your decision');
-        return;
-      }
-      
-      if (currentAction === 'reschedule') {
-        const newDate = document.getElementById('newDate').value;
-        const newTime = document.getElementById('newTime').value;
-        
-        if (!newDate || !newTime) {
-          alert('Please select both a date and time for the rescheduled appointment');
-          return;
+    async init() {
+        try {
+            await this.loadAppointments();
+            this.setupEventListeners();
+            this.renderUpcomingAppointments();
+            this.renderAppointmentsTable();
+            this.updateResultsCount();
+        } catch (error) {
+            console.error('Error initializing appointment tracker:', error);
+            this.showError('Failed to load appointments');
         }
-      }
-      
-      handleAppointmentDecision(reason);
     }
-  });
-  
-  function handleAppointmentAcceptance() {
-    // Update appointment status (in a real app, this would call an API)
-    const appointmentIndex = appointments.findIndex(a => a.id === currentAppointmentId);
-    if (appointmentIndex !== -1) {
-      appointments[appointmentIndex].status = 'accepted';
-    }
-    
-    // Show success message
-    alert('Appointment accepted successfully!');
-    
-    // Refresh the tables
-    filterAppointments();
-    renderUpcomingAppointments(); // This line was missing - FIXED
-    
-    // Close modal
-    decisionModal.classList.remove('active');
-  }
-  
-  function handleAppointmentDecision(reason) {
-    // Update appointment status (in a real app, this would call an API)
-    const appointmentIndex = appointments.findIndex(a => a.id === currentAppointmentId);
-    if (appointmentIndex !== -1) {
-      if (currentAction === 'decline') {
-        appointments[appointmentIndex].status = 'declined';
-      } else if (currentAction === 'reschedule') {
-        appointments[appointmentIndex].status = 'rescheduled';
-        const newDate = document.getElementById('newDate').value;
-        const newTime = document.getElementById('newTime').value;
-        appointments[appointmentIndex].rescheduledTo = `${newDate} at ${newTime}`;
-      }
-    }
-    
-    // Show success message
-    alert(`Appointment ${currentAction}ed successfully!`);
-    
-    // Refresh the table
-    filterAppointments();
-    renderUpcomingAppointments(); // Also update upcoming appointments for rescheduled ones
-    
-    // Close modal
-    decisionModal.classList.remove('active');
-  }
-  
-  function filterAppointments() {
-    const statusValue = statusFilter.value;
-    const typeValue = typeFilter.value;
-    const dateValue = dateFilter.value;
-    
-    filteredAppointments = appointments.filter(appointment => {
-      // Status filter
-      if (statusValue !== 'all' && appointment.status !== statusValue) {
-        return false;
-      }
-      
-      // Type filter
-      if (typeValue !== 'all' && appointment.type !== typeValue) {
-        return false;
-      }
-      
-      // Date filter
-      if (dateValue !== 'all') {
-        const days = parseInt(dateValue);
-        const cutoffDate = new Date();
-        const appointmentDate = new Date(appointment.date);
-        
-        // For future appointments
-        if (appointmentDate < cutoffDate) {
-          return false;
+
+    async loadAppointments() {
+        try {
+            console.log('Fetching appointments...');
+            const response = await fetch('/AdvisorAppointment/AppointmentTrackerData', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            this.appointments = await response.json();
+            this.filteredAppointments = [...this.appointments];
+            console.log('Appointments loaded:', this.appointments);
+
+        } catch (error) {
+            console.error('Error loading appointments:', error);
+            throw error;
         }
-        
-        const diffTime = Math.abs(appointmentDate - cutoffDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diffDays > days) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
-    
-    renderAppointments();
-  }
-  
-  function renderUpcomingAppointments() {
-    // Get today's date
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // Filter accepted and rescheduled appointments that are in the future
-    const upcoming = appointments.filter(appointment => {
-      const appointmentDate = new Date(appointment.date);
-      return (appointment.status === 'accepted' || appointment.status === 'rescheduled') && 
-             appointmentDate >= today;
-    });
-    
-    // Sort by date
-    upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
-    
-    // Clear current upcoming appointments
-    upcomingAppointments.innerHTML = '';
-    
-    if (upcoming.length === 0) {
-      upcomingAppointments.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--muted)">
-          No upcoming appointments
-        </div>
-      `;
-    } else {
-      upcoming.forEach(appointment => {
-        const card = document.createElement('div');
-        card.className = `upcoming-card ${appointment.status}`;
-        
-        const dateObj = new Date(appointment.date);
-        const formattedDate = dateObj.toLocaleDateString('en-US', { 
-          weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
+    }
+
+    setupEventListeners() {
+        // Filter event listeners
+        document.getElementById('statusFilter').addEventListener('change', () => this.applyFilters());
+        document.getElementById('typeFilter').addEventListener('change', () => this.applyFilters());
+        document.getElementById('dateFilter').addEventListener('change', () => this.applyFilters());
+        document.getElementById('clearFilters').addEventListener('click', () => this.clearFilters());
+
+        // Modal event listeners
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', () => this.closeModals());
         });
-        
-        card.innerHTML = `
-          <div class="upcoming-card-header">
-            <h3 class="upcoming-card-title">${appointment.stakeholder}</h3>
-            <div class="upcoming-card-date">${formattedDate}</div>
-          </div>
-          <div class="upcoming-card-details">
-            <div class="upcoming-card-detail"><b>Time:</b> ${appointment.time}</div>
-            <div class="upcoming-card-detail"><b>Type:</b> ${appointment.type === 'online' ? 'Online' : 'In-Person'}</div>
-            <div class="upcoming-card-detail"><b>Advisor:</b> ${appointment.advisor}</div>
-            <div class="upcoming-card-detail"><b>Reason:</b> ${appointment.reason}</div>
-          </div>
-        `;
-        
-        upcomingAppointments.appendChild(card);
-      });
-    }
-  }
-  
-  function clearAllFilters() {
-    statusFilter.value = 'all';
-    typeFilter.value = 'all';
-    dateFilter.value = 'all';
-    filterAppointments();
-  }
-  
-  function renderAppointments() {
-    appointmentsTable.innerHTML = '';
-    
-    // Update results count
-    resultsCount.textContent = `${filteredAppointments.length} ${filteredAppointments.length === 1 ? 'appointment' : 'appointments'} found`;
-    
-    if (filteredAppointments.length === 0) {
-      appointmentsTable.innerHTML = `
-        <tr>
-          <td colspan="6" style="text-align: center; padding: 30px; color: var(--muted)">
-            No appointments match your current filters
-          </td>
-        </tr>
-      `;
-    } else {
-      filteredAppointments.forEach(appointment => {
-        const row = document.createElement('tr');
-        
-        // Format status badge
-        let statusBadge = '';
-        switch(appointment.status) {
-          case 'pending':
-            statusBadge = `<span class="status-badge status-pending">Pending</span>`;
-            break;
-          case 'accepted':
-            statusBadge = `<span class="status-badge status-accepted">Accepted</span>`;
-            break;
-          case 'declined':
-            statusBadge = `<span class="status-badge status-declined">Declined</span>`;
-            break;
-          case 'rescheduled':
-            statusBadge = `<span class="status-badge status-rescheduled">Rescheduled</span>`;
-            break;
-        }
-        
-        // Format date
-        const dateObj = new Date(appointment.date);
-        const formattedDate = dateObj.toLocaleDateString('en-US', { 
-          weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
+
+        document.getElementById('closeInfoModal').addEventListener('click', () => this.closeModal('infoModal'));
+        document.getElementById('cancelDecision').addEventListener('click', () => this.closeModal('decisionModal'));
+        document.getElementById('submitDecision').addEventListener('click', () => this.submitDecision());
+
+        // Click outside modal to close
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                this.closeModals();
+            }
         });
-        
-        row.innerHTML = `
-          <td>${appointment.stakeholder}<br><small>${appointment.email}</small></td>
-          <td>${formattedDate}<br>${appointment.time}</td>
-          <td>${appointment.type === 'online' ? 'Online' : 'In-Person'}</td>
-          <td>${appointment.advisor}</td>
-          <td>${statusBadge}</td>
-          <td>
-            <div class="action-group">
-              <button class="action-btn btn-info" data-action="info" data-id="${appointment.id}">Info</button>
-              ${appointment.status === 'pending' ? `
-                <button class="action-btn btn-accept" data-action="accept" data-id="${appointment.id}">Accept</button>
-                <button class="action-btn btn-decline" data-action="decline" data-id="${appointment.id}">Decline</button>
-                <button class="action-btn btn-reschedule" data-action="reschedule" data-id="${appointment.id}">Reschedule</button>
-              ` : ''}
+    }
+
+    renderUpcomingAppointments() {
+        const container = document.getElementById('upcomingAppointments');
+
+        // Get upcoming appointments (next 7 days, accepted status)
+        const today = new Date();
+        const nextWeek = new Date();
+        nextWeek.setDate(today.getDate() + 7);
+
+        const upcomingAppointments = this.appointments
+            .filter(apt => {
+                if (apt.Status !== 'Accepted') return false;
+
+                const aptDate = this.parseDate(apt.Date);
+                return aptDate >= today && aptDate <= nextWeek;
+            })
+            .sort((a, b) => {
+                const dateA = this.parseDate(a.Date);
+                const dateB = this.parseDate(b.Date);
+                if (dateA.getTime() !== dateB.getTime()) {
+                    return dateA - dateB;
+                }
+                return a.Time.localeCompare(b.Time);
+            })
+            .slice(0, 3); // Show only next 3
+
+        if (upcomingAppointments.length === 0) {
+            container.innerHTML = '<div class="no-upcoming">No upcoming appointments in the next 7 days</div>';
+            return;
+        }
+
+        container.innerHTML = upcomingAppointments.map(apt => `
+            <div class="upcoming-card">
+                <div class="upcoming-header">
+                    <div class="upcoming-client">${apt.ClientName}</div>
+                    <div class="upcoming-time">${this.formatTime(apt.Time)}</div>
+                </div>
+                <div class="upcoming-date">${this.formatDate(apt.Date)}</div>
+                <div class="upcoming-reason">${apt.Reason || 'No reason specified'}</div>
             </div>
-          </td>
+        `).join('');
+    }
+
+    renderAppointmentsTable() {
+        const tbody = document.getElementById('appointmentsTableBody');
+
+        if (this.filteredAppointments.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="no-appointments">No appointments found matching your filters</td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = this.filteredAppointments.map(apt => `
+            <tr>
+                <td>
+                    <div class="stakeholder-info">
+                        <div class="stakeholder-name">${apt.ClientName}</div>
+                        <div class="stakeholder-id">ID: ${apt.Id.substring(0, 8)}...</div>
+                    </div>
+                </td>
+                <td>
+                    <div class="datetime-info">
+                        <div class="appointment-date">${this.formatDate(apt.Date)}</div>
+                        <div class="appointment-time">${this.formatTime(apt.Time)}</div>
+                    </div>
+                </td>
+                <td>
+                    <span class="appointment-type">${this.determineAppointmentType(apt)}</span>
+                </td>
+                <td>
+                    <div class="advisor-name">${apt.AdvisorName || 'Not assigned'}</div>
+                </td>
+                <td>
+                    <span class="status-badge status-${apt.Status.toLowerCase()}">${apt.Status}</span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn btn-info" onclick="appointmentTracker.showInfo('${apt.Id}')">
+                            Info
+                        </button>
+                        ${apt.Status === 'Pending' ? `
+                            <button class="action-btn btn-success" onclick="appointmentTracker.showDecision('${apt.Id}', 'accept')">
+                                Accept
+                            </button>
+                            <button class="action-btn btn-danger" onclick="appointmentTracker.showDecision('${apt.Id}', 'decline')">
+                                Decline
+                            </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    applyFilters() {
+        const statusFilter = document.getElementById('statusFilter').value;
+        const typeFilter = document.getElementById('typeFilter').value;
+        const dateFilter = document.getElementById('dateFilter').value;
+
+        this.filteredAppointments = this.appointments.filter(apt => {
+            // Status filter
+            if (statusFilter !== 'all' && apt.Status.toLowerCase() !== statusFilter.toLowerCase()) {
+                return false;
+            }
+
+            // Type filter (this is a placeholder - you might need to add type field to your appointments)
+            if (typeFilter !== 'all') {
+                const appointmentType = this.determineAppointmentType(apt).toLowerCase();
+                if (appointmentType !== typeFilter) {
+                    return false;
+                }
+            }
+
+            // Date filter
+            if (dateFilter !== 'all') {
+                const aptDate = this.parseDate(apt.Date);
+                const today = new Date();
+                const filterDate = new Date();
+                filterDate.setDate(today.getDate() + parseInt(dateFilter));
+
+                if (aptDate > filterDate) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
+        this.renderAppointmentsTable();
+        this.updateResultsCount();
+    }
+
+    clearFilters() {
+        document.getElementById('statusFilter').value = 'all';
+        document.getElementById('typeFilter').value = 'all';
+        document.getElementById('dateFilter').value = 'all';
+        this.applyFilters();
+    }
+
+    updateResultsCount() {
+        const count = this.filteredAppointments.length;
+        const total = this.appointments.length;
+        document.getElementById('resultsCount').textContent =
+            `Showing ${count} of ${total} appointment${total !== 1 ? 's' : ''}`;
+    }
+
+    showInfo(appointmentId) {
+        const appointment = this.appointments.find(apt => apt.Id === appointmentId);
+        if (!appointment) return;
+
+        // Populate modal with appointment details
+        document.getElementById('detail-stakeholder').textContent = appointment.ClientName;
+        document.getElementById('detail-date').textContent = this.formatDate(appointment.Date);
+        document.getElementById('detail-time').textContent = this.formatTime(appointment.Time);
+        document.getElementById('detail-type').textContent = this.determineAppointmentType(appointment);
+        document.getElementById('detail-advisor').textContent = appointment.AdvisorName || 'Not assigned';
+        document.getElementById('detail-status').innerHTML = `<span class="status-badge status-${appointment.Status.toLowerCase()}">${appointment.Status}</span>`;
+        document.getElementById('detail-reason').textContent = appointment.Reason || 'No reason specified';
+        document.getElementById('detail-details').textContent = appointment.Details || 'No additional details provided';
+
+        this.showModal('infoModal');
+    }
+
+    showDecision(appointmentId, decision) {
+        this.currentAppointment = this.appointments.find(apt => apt.Id === appointmentId);
+        if (!this.currentAppointment) return;
+
+        // Populate decision modal
+        document.getElementById('decision-stakeholder').textContent = this.currentAppointment.ClientName;
+        document.getElementById('decision-date').textContent = this.formatDate(this.currentAppointment.Date);
+        document.getElementById('decision-time').textContent = this.formatTime(this.currentAppointment.Time);
+
+        const isAccepting = decision === 'accept';
+        document.getElementById('decisionModalTitle').textContent = isAccepting ? 'Accept Appointment' : 'Decline Appointment';
+
+        // Show/hide sections based on decision
+        document.getElementById('acceptMessage').style.display = isAccepting ? 'block' : 'none';
+        document.getElementById('reasonSection').style.display = isAccepting ? 'none' : 'block';
+        document.getElementById('rescheduleSection').style.display = 'none';
+
+        // Set minimum date for rescheduling
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('newDate').min = tomorrow.toISOString().split('T')[0];
+
+        // Store decision type
+        document.getElementById('submitDecision').dataset.decision = decision;
+
+        this.showModal('decisionModal');
+    }
+
+    async submitDecision() {
+        const decision = document.getElementById('submitDecision').dataset.decision;
+        const appointmentId = this.currentAppointment.Id;
+
+        let requestData = {
+            appointmentId: appointmentId,
+            status: decision === 'accept' ? 'accepted' : 'declined'
+        };
+
+        if (decision === 'decline') {
+            const reason = document.getElementById('responseReason').value.trim();
+            if (!reason) {
+                alert('Please provide a reason for declining the appointment.');
+                return;
+            }
+            requestData.declineReason = reason;
+
+            const newDate = document.getElementById('newDate').value;
+            const newTime = document.getElementById('newTime').value;
+            if (newDate && newTime) {
+                requestData.newDate = newDate;
+                requestData.newTime = newTime;
+            }
+        }
+
+        try {
+            const formData = new FormData();
+            Object.keys(requestData).forEach(key => {
+                formData.append(key, requestData[key]);
+            });
+
+            const response = await fetch('/AdvisorAppointment/UpdateStatus', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                this.showSuccess(`Appointment ${decision === 'accept' ? 'accepted' : 'declined'} successfully!`);
+                this.closeModal('decisionModal');
+                await this.loadAppointments();
+                this.renderUpcomingAppointments();
+                this.renderAppointmentsTable();
+                this.updateResultsCount();
+            } else {
+                throw new Error(result.message || 'Failed to update appointment');
+            }
+        } catch (error) {
+            console.error('Error updating appointment:', error);
+            alert('Failed to update appointment. Please try again.');
+        }
+    }
+
+    // Helper methods
+    parseDate(dateString) {
+        // Assuming date format is YYYY-MM-DD or similar
+        return new Date(dateString);
+    }
+
+    formatDate(dateString) {
+        if (!dateString) return 'No date';
+        const date = this.parseDate(dateString);
+        return date.toLocaleDateString('en-US', {
+            weekday: 'short',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
+    formatTime(timeString) {
+        if (!timeString) return 'No time';
+        // Convert 24-hour format to 12-hour format if needed
+        const [hours, minutes] = timeString.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour % 12 || 12;
+        return `${hour12}:${minutes} ${ampm}`;
+    }
+
+    determineAppointmentType(appointment) {
+        // Check if AppointmentType field exists, otherwise default to 'Online'
+        if (appointment.AppointmentType) {
+            return appointment.AppointmentType === 'online' ? 'Online' : 'In-Person';
+        }
+        return appointment.Type || 'Online'; // Fallback for older appointments
+    }
+
+    showModal(modalId) {
+        document.getElementById(modalId).style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+        document.body.style.overflow = 'auto';
+
+        // Clear form fields
+        if (modalId === 'decisionModal') {
+            document.getElementById('responseReason').value = '';
+            document.getElementById('newDate').value = '';
+            document.getElementById('newTime').value = '';
+        }
+    }
+
+    closeModals() {
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.style.display = 'none';
+        });
+        document.body.style.overflow = 'auto';
+    }
+
+    showSuccess(message) {
+        // You can replace this with a proper toast/notification system
+        const notification = document.createElement('div');
+        notification.className = 'success-notification';
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            z-index: 10000;
         `;
-        
-        appointmentsTable.appendChild(row);
-      });
-      
-      // Add event listeners to action buttons
-      document.querySelectorAll('[data-action="info"]').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const appointmentId = this.dataset.id;
-          showAppointmentInfo(appointmentId);
-        });
-      });
-      
-      document.querySelectorAll('[data-action="accept"], [data-action="decline"], [data-action="reschedule"]').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const action = this.dataset.action;
-          const appointmentId = this.dataset.id;
-          showDecisionModal(action, appointmentId);
-        });
-      });
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
     }
-  }
-  
-  function showAppointmentInfo(appointmentId) {
-    const appointment = appointments.find(a => a.id === appointmentId);
-    if (!appointment) return;
-    
-    // Populate info modal
-    document.getElementById('detail-stakeholder').textContent = `${appointment.stakeholder} (${appointment.email})`;
-    
-    const dateObj = new Date(appointment.date);
-    const formattedDate = dateObj.toLocaleDateString('en-US', { 
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-    });
-    document.getElementById('detail-date').textContent = formattedDate;
-    document.getElementById('detail-time').textContent = appointment.time;
-    document.getElementById('detail-type').textContent = appointment.type === 'online' ? 'Online Meeting' : 'In-Person';
-    document.getElementById('detail-advisor').textContent = appointment.advisor;
-    
-    let statusText = '';
-    switch(appointment.status) {
-      case 'pending':
-        statusText = 'Pending Review';
-        break;
-      case 'accepted':
-        statusText = 'Accepted';
-        break;
-      case 'declined':
-        statusText = 'Declined';
-        break;
-      case 'rescheduled':
-        statusText = `Rescheduled to ${appointment.rescheduledTo}`;
-        break;
+
+    showError(message) {
+        // You can replace this with a proper toast/notification system
+        const notification = document.createElement('div');
+        notification.className = 'error-notification';
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #f44336;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            z-index: 10000;
+        `;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
     }
-    document.getElementById('detail-status').textContent = statusText;
-    
-    document.getElementById('detail-reason').textContent = appointment.reason;
-    document.getElementById('detail-details').textContent = appointment.details || 'No additional details provided';
-    
-    // Show modal
-    infoModal.classList.add('active');
-  }
-  
-  function showDecisionModal(action, appointmentId) {
-    const appointment = appointments.find(a => a.id === appointmentId);
-    if (!appointment) return;
-    
-    currentAction = action;
-    currentAppointmentId = appointmentId;
-    
-    // Set modal title based on action
-    let modalTitle = '';
-    switch(action) {
-      case 'accept':
-        modalTitle = 'Accept Appointment';
-        document.getElementById('submitDecision').textContent = 'Accept Appointment';
-        document.getElementById('submitDecision').className = 'action-btn btn-accept';
-        document.getElementById('acceptMessage').style.display = 'block';
-        document.getElementById('reasonSection').style.display = 'none';
-        break;
-      case 'decline':
-        modalTitle = 'Decline Appointment';
-        document.getElementById('submitDecision').textContent = 'Decline Appointment';
-        document.getElementById('submitDecision').className = 'action-btn btn-decline';
-        document.getElementById('acceptMessage').style.display = 'none';
-        document.getElementById('reasonSection').style.display = 'block';
-        break;
-      case 'reschedule':
-        modalTitle = 'Reschedule Appointment';
-        document.getElementById('submitDecision').textContent = 'Propose New Time';
-        document.getElementById('submitDecision').className = 'action-btn btn-reschedule';
-        document.getElementById('acceptMessage').style.display = 'none';
-        document.getElementById('reasonSection').style.display = 'block';
-        break;
-    }
-    document.getElementById('decisionModalTitle').textContent = modalTitle;
-    
-    // Populate appointment details
-    document.getElementById('decision-stakeholder').textContent = `${appointment.stakeholder} (${appointment.email})`;
-    
-    const dateObj = new Date(appointment.date);
-    const formattedDate = dateObj.toLocaleDateString('en-US', { 
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-    });
-    document.getElementById('decision-date').textContent = formattedDate;
-    document.getElementById('decision-time').textContent = appointment.time;
-    
-    // Show/hide reschedule section
-    if (action === 'reschedule') {
-      document.getElementById('rescheduleSection').style.display = 'block';
-      
-      // Set minimum date to tomorrow
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const yyyy = tomorrow.getFullYear();
-      const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
-      const dd = String(tomorrow.getDate()).padStart(2, '0');
-      const tomorrowStr = `${yyyy}-${mm}-${dd}`;
-      document.getElementById('newDate').min = tomorrowStr;
-    } else {
-      document.getElementById('rescheduleSection').style.display = 'none';
-    }
-    
-    // Clear previous inputs
-    document.getElementById('responseReason').value = '';
-    document.getElementById('newDate').value = '';
-    document.getElementById('newTime').value = '';
-    
-    // Show modal
-    decisionModal.classList.add('active');
-  }
+}
+
+// Initialize when page loads
+let appointmentTracker;
+document.addEventListener('DOMContentLoaded', function () {
+    appointmentTracker = new AppointmentTracker();
 });
+
+// Refresh appointments function (can be called externally)
+async function refreshAppointments() {
+    if (appointmentTracker) {
+        try {
+            await appointmentTracker.loadAppointments();
+            appointmentTracker.renderUpcomingAppointments();
+            appointmentTracker.renderAppointmentsTable();
+            appointmentTracker.updateResultsCount();
+        } catch (error) {
+            console.error('Error refreshing appointments:', error);
+        }
+    }
+}

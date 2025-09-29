@@ -9,7 +9,6 @@ namespace StakeholderCHIETA.Controllers
     public class AppointmentController : Controller
     {
         private readonly FirestoreDb _db;
-
         public AppointmentController(FirestoreDb db)
         {
             _db = db;
@@ -18,19 +17,36 @@ namespace StakeholderCHIETA.Controllers
         // GET: Appointment page
         public async Task<IActionResult> Index()
         {
-            var advisorsSnapshot = await _db.Collection("Users")
-                                            .WhereEqualTo("Role", "Advisor")
-                                            .GetSnapshotAsync();
+            try
+            {
+                Console.WriteLine("Loading appointment page...");
 
-            var advisors = advisorsSnapshot.Documents
-                                .Select(d => new AdvisorViewModel
-                                {
-                                    Uid = d.Id,
-                                    Name = d.GetValue<string>("Name")
-                                })
-                                .ToList();
+                var advisorsSnapshot = await _db.Collection("Users")
+                                                .WhereEqualTo("Role", "Advisor")
+                                                .GetSnapshotAsync();
 
-            return View("~/Views/StakeholderViews/Appointment/Appointment.cshtml", advisors);
+                var advisors = advisorsSnapshot.Documents
+                                    .Select(d => new AdvisorViewModel
+                                    {
+                                        Id = d.Id,
+                                        Name = d.GetValue<string>("Name")
+                                    })
+                                    .ToList();
+
+                Console.WriteLine($"Found {advisors.Count} advisors");
+                foreach (var advisor in advisors)
+                {
+                    Console.WriteLine($"Advisor: {advisor.Name} (ID: {advisor.Id})");
+                }
+
+                return View("~/Views/StakeholderViews/Appointment/Appointment.cshtml", advisors);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading advisors: {ex.Message}");
+                // Return empty list if there's an error, so the page still loads
+                return View("~/Views/StakeholderViews/Appointment/Appointment.cshtml", new List<AdvisorViewModel>());
+            }
         }
 
         // POST: Save appointment
@@ -40,26 +56,43 @@ namespace StakeholderCHIETA.Controllers
             [FromForm] string advisorUid,
             [FromForm] string reason,
             [FromForm] string date,
-            [FromForm] string time)
+            [FromForm] string time,
+            [FromForm] string appointmentType = "online", // Default to online if not specified
+            [FromForm] string details = "") // Optional additional details
         {
-            if (string.IsNullOrWhiteSpace(advisorUid) ||
-                string.IsNullOrWhiteSpace(reason) ||
-                string.IsNullOrWhiteSpace(date) ||
-                string.IsNullOrWhiteSpace(time))
-            {
-                return BadRequest(new { message = "All fields are required." });
-            }
-
             try
             {
-                var advisorDoc = await _db.Collection("Users").Document(advisorUid).GetSnapshotAsync();
+                Console.WriteLine("=== Appointment Submission ===");
+                Console.WriteLine($"Advisor: {advisor}");
+                Console.WriteLine($"Reason: {reason}");
+                Console.WriteLine($"Date: {date}");
+                Console.WriteLine($"Time: {time}");
+                Console.WriteLine($"Type: {appointmentType}");
+                Console.WriteLine($"Details: {details}");
+
+                if (string.IsNullOrWhiteSpace(advisor) ||
+                    string.IsNullOrWhiteSpace(reason) ||
+                    string.IsNullOrWhiteSpace(date) ||
+                    string.IsNullOrWhiteSpace(time))
+                {
+                    return BadRequest(new { message = "All required fields must be provided." });
+                }
+
+                // Get advisor information
+                var advisorDoc = await _db.Collection("Users").Document(advisor).GetSnapshotAsync();
                 if (!advisorDoc.Exists)
-                    return BadRequest(new { message = "Advisor not found" });
+                {
+                    Console.WriteLine($"Advisor with ID {advisor} not found");
+                    return BadRequest(new { message = "Selected advisor not found" });
+                }
 
                 var advisorName = advisorDoc.GetValue<string>("Name");
-                var clientName = User.Identity?.Name ?? "Unknown";
+                var clientName = User.Identity?.Name ?? "Anonymous User";
 
-                var docRef = await _db.Collection("appointments").AddAsync(new
+                Console.WriteLine($"Creating appointment for {clientName} with {advisorName}");
+
+                // Create appointment document
+                var appointmentData = new
                 {
                     AdvisorId = advisorUid, // 🔑 will be used on advisor side
                     AdvisorName = advisorName,
@@ -67,14 +100,36 @@ namespace StakeholderCHIETA.Controllers
                     Reason = reason,
                     Date = date,
                     Time = time,
+                    AppointmentType = appointmentType, // Add appointment type
                     Status = "Pending",
-                    CreatedAt = Timestamp.GetCurrentTimestamp()
-                });
+                    CreatedAt = Timestamp.GetCurrentTimestamp(),
+                    Details = !string.IsNullOrEmpty(details) ? details : null // Only include if provided
+                };
 
-                return Ok(new { id = docRef.Id, message = "Appointment booked successfully!" });
+                var docRef = await _db.Collection("appointments").AddAsync(appointmentData);
+
+                Console.WriteLine($"Appointment created successfully with ID: {docRef.Id}");
+
+                return Ok(new
+                {
+                    id = docRef.Id,
+                    message = "Appointment booked successfully!",
+                    appointmentDetails = new
+                    {
+                        id = docRef.Id,
+                        advisorName = advisorName,
+                        clientName = clientName,
+                        date = date,
+                        time = time,
+                        type = appointmentType,
+                        reason = reason
+                    }
+                });
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error creating appointment: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, new { message = $"Failed to book appointment: {ex.Message}" });
             }
         }

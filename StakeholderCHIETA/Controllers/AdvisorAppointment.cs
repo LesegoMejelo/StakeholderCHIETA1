@@ -181,72 +181,89 @@ namespace StakeholderCHIETA.Controllers
             }
         }
 
+        // Alternative: Using a model class for better parameter handling
+        public class UpdateAppointmentStatusRequest
+        {
+            public string AppointmentId { get; set; }
+            public string Status { get; set; }
+            public string DeclineReason { get; set; }
+            public string NewDate { get; set; }
+            public string NewTime { get; set; }
+        }
+
         // POST: Accept or Decline appointment
         [HttpPost]
-        public async Task<IActionResult> UpdateStatus(string appointmentId, string status)
+        public async Task<IActionResult> UpdateStatus([FromBody] UpdateAppointmentStatusRequest request)
         {
-            try
+            var appointmentId = request.AppointmentId;
+            var status = request.Status;
+            var declineReason = request.DeclineReason;
+            var newDate = request.NewDate;
+            var newTime = request.NewTime;
             {
-                Console.WriteLine($"\n=== UpdateStatus called ===");
-                Console.WriteLine($"appointmentId: '{appointmentId}'");
-                Console.WriteLine($"status: '{status}'");
-                Console.WriteLine($"declineReason: '{declineReason}'");
-                Console.WriteLine($"newDate: '{newDate}'");
-                Console.WriteLine($"newTime: '{newTime}'");
-
-                if (string.IsNullOrEmpty(appointmentId) || string.IsNullOrEmpty(status))
+                try
                 {
-                    Console.WriteLine("❌ Missing required parameters");
-                    return BadRequest(new { error = "Missing appointmentId or status" });
+                    Console.WriteLine($"\n=== UpdateStatus called ===");
+                    Console.WriteLine($"appointmentId: '{appointmentId}'");
+                    Console.WriteLine($"status: '{status}'");
+                    Console.WriteLine($"declineReason: '{declineReason}'");
+                    Console.WriteLine($"newDate: '{newDate}'");
+                    Console.WriteLine($"newTime: '{newTime}'");
+
+                    if (string.IsNullOrEmpty(appointmentId) || string.IsNullOrEmpty(status))
+                    {
+                        Console.WriteLine("❌ Missing required parameters");
+                        return BadRequest(new { error = "Missing appointmentId or status" });
+                    }
+
+                    var docRef = _firestoreDb.Collection("appointments").Document(appointmentId);
+
+                    // Verify document exists
+                    var docSnapshot = await docRef.GetSnapshotAsync();
+                    if (!docSnapshot.Exists)
+                    {
+                        Console.WriteLine($"❌ Document {appointmentId} not found");
+                        return NotFound(new { error = "Appointment not found" });
+                    }
+
+                    Console.WriteLine($"✅ Found appointment document");
+
+                    // Prepare update data
+                    var updateData = new Dictionary<string, object>
+                    {
+                        { "Status", char.ToUpper(status[0]) + status.Substring(1).ToLower() } // "Accepted" or "Declined"
+                    };
+
+                    if (status.ToLower() == "declined")
+                    {
+                        updateData["DeclineReason"] = declineReason ?? "";
+                        if (!string.IsNullOrEmpty(newDate))
+                            updateData["ProposedNewDate"] = newDate;
+                        if (!string.IsNullOrEmpty(newTime))
+                            updateData["ProposedNewTime"] = newTime;
+                    }
+
+                    Console.WriteLine("Updating with:");
+                    foreach (var kvp in updateData)
+                    {
+                        Console.WriteLine($"  {kvp.Key}: '{kvp.Value}'");
+                    }
+
+                    await docRef.UpdateAsync(updateData);
+                    Console.WriteLine($"✅ Successfully updated appointment {appointmentId}");
+
+                    return Ok(new { success = true, message = "Appointment updated successfully" });
                 }
-
-                var docRef = _firestoreDb.Collection("appointments").Document(appointmentId);
-
-                // Verify document exists
-                var docSnapshot = await docRef.GetSnapshotAsync();
-                if (!docSnapshot.Exists)
+                catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Document {appointmentId} not found");
-                    return NotFound(new { error = "Appointment not found" });
+                    Console.WriteLine($"❌ Error updating appointment: {ex.Message}");
+                    Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                    return StatusCode(500, new
+                    {
+                        error = "Failed to update appointment",
+                        message = ex.Message
+                    });
                 }
-
-                Console.WriteLine($"✅ Found appointment document");
-
-                // Prepare update data
-                var updateData = new Dictionary<string, object>
-                {
-                    { "Status", char.ToUpper(status[0]) + status.Substring(1).ToLower() } // "Accepted" or "Declined"
-                };
-
-                if (status.ToLower() == "declined")
-                {
-                    updateData["DeclineReason"] = declineReason ?? "";
-                    if (!string.IsNullOrEmpty(newDate))
-                        updateData["ProposedNewDate"] = newDate;
-                    if (!string.IsNullOrEmpty(newTime))
-                        updateData["ProposedNewTime"] = newTime;
-                }
-
-                Console.WriteLine("Updating with:");
-                foreach (var kvp in updateData)
-                {
-                    Console.WriteLine($"  {kvp.Key}: '{kvp.Value}'");
-                }
-
-                await docRef.UpdateAsync(updateData);
-                Console.WriteLine($"✅ Successfully updated appointment {appointmentId}");
-
-                return Ok(new { success = true, message = "Appointment updated successfully" });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error updating appointment: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                return StatusCode(500, new
-                {
-                    error = "Failed to update appointment",
-                    message = ex.Message
-                });
             }
         }
     }
