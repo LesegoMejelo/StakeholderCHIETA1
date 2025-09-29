@@ -209,7 +209,11 @@
                 Array.from(fileInput.files).forEach(f => formData.append("files", f));
             }
 
-            const response = await fetch("/api/inquiry", { method: "POST", body: formData });
+            const response = await fetch("/api/inquiry", {
+                method: "POST",
+                body: formData,
+                credentials: 'include' // Include authentication cookies
+            });
             const responseText = await response.text();
 
             if (!response.ok) throw new Error(`Server error: ${response.status} - ${responseText}`);
