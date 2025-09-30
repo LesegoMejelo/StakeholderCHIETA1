@@ -411,5 +411,9 @@ namespace Staekholder_CHIETA_X.Controllers
         public IActionResult Index() => View();
         public IActionResult Inquiry() => View("~/Views/StakeholderViews/Inquiry/Inquiry.cshtml");
         public IActionResult Tracking() => View("~/Views/EmployeeViews/InquiryTracker.cshtml");
+        public IActionResult Feedback()
+        {
+            return View("~/Views/StakeholderViews/StakeholderFeedback.cshtml");
+        }
     }
 }
