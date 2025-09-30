@@ -19,23 +19,52 @@ namespace Staekholder_CHIETA_X.Controllers
             _db = db;
         }
 
-        // IMPROVED: Accept structured form data instead of concatenated message
+        // GET: Fetch all advisors for dropdown
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("api/inquiry/advisors")]
+        public async Task<IActionResult> GetAdvisors()
+        {
+            try
+            {
+                // Fetch from Users collection where Role = "Advisor"
+                var snapshot = await _db.Collection("Users")
+                                        .WhereEqualTo("Role", "Advisor")
+                                        .GetSnapshotAsync();
+
+                var advisors = snapshot.Documents.Select(doc => new
+                {
+                    id = doc.Id,
+                    name = doc.ContainsField("Name") ? doc.GetValue<string>("Name") : "Unknown"
+                }).ToList();
+
+                return Ok(advisors);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR in GetAdvisors: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        // POST: Create inquiry with advisor assignment
         [HttpPost]
         [AllowAnonymous]
         [Route("api/inquiry")]
         public async Task<IActionResult> Post(
-    [FromForm] string name,          // will be ignored if user is authenticated
-    [FromForm] string subject,
-    [FromForm] string description,
-    [FromForm] string inquiryType,
-    [FromForm] string desiredOutcome = "",
-    [FromForm] string relatedDate = "",
-    [FromForm] string tags = "",
-    [FromForm] bool followUpCall = false)
+            [FromForm] string name,
+            [FromForm] string subject,
+            [FromForm] string description,
+            [FromForm] string inquiryType,
+            [FromForm] string desiredOutcome = "",
+            [FromForm] string relatedDate = "",
+            [FromForm] string tags = "",
+            [FromForm] bool followUpCall = false,
+            [FromForm] string assignedAdvisorId = "",
+            [FromForm] string assignedAdvisorName = "")
         {
             try
             {
-                // Resolve user identity
                 var isAuthed = User?.Identity?.IsAuthenticated == true;
                 var userId = isAuthed
                     ? (User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity.Name ?? "")
@@ -49,7 +78,6 @@ namespace Staekholder_CHIETA_X.Controllers
                        ?? "Authenticated User")
                     : (name?.Trim() ?? "Guest");
 
-                // Validation (unchanged apart from no longer trusting client `name`)
                 if (string.IsNullOrWhiteSpace(subject)) return BadRequest(new { error = "Subject is required" });
                 if (string.IsNullOrWhiteSpace(description)) return BadRequest(new { error = "Description is required" });
                 if (string.IsNullOrWhiteSpace(inquiryType)) return BadRequest(new { error = "Inquiry type is required" });
@@ -61,36 +89,34 @@ namespace Staekholder_CHIETA_X.Controllers
                 var nowTs = Timestamp.GetCurrentTimestamp();
 
                 var inquiryData = new Dictionary<string, object>
-        {
-            // Keep legacy "name" for backward compatibility:
-            { "name", displayName },
-
-            // New normalized creator block (recommended for all future queries):
-            { "createdBy", new Dictionary<string, object> {
-                { "userId", userId },     // empty string if anonymous
-                { "name", displayName },
-                { "email", userEmail }
-            }},
-
-            { "subject", subject.Trim() },
-            { "description", description.Trim() },
-            { "inquiryType", inquiryType.Trim() },
-            { "desiredOutcome", desiredOutcome?.Trim() ?? "" },
-            { "relatedDate", relatedDate?.Trim() ?? "" },
-            { "tags", tagArray },
-            { "followUpCall", followUpCall },
-            { "assignedAdvisor", "" },
-            { "createdAt", nowTs },
-            { "updatedAt", nowTs },
-            { "updates", new List<object> {
-                new Dictionary<string, object> {
+                {
+                    { "name", displayName },
+                    { "createdBy", new Dictionary<string, object> {
+                        { "userId", userId },
+                        { "name", displayName },
+                        { "email", userEmail }
+                    }},
+                    { "subject", subject.Trim() },
+                    { "description", description.Trim() },
+                    { "inquiryType", inquiryType.Trim() },
+                    { "desiredOutcome", desiredOutcome?.Trim() ?? "" },
+                    { "relatedDate", relatedDate?.Trim() ?? "" },
+                    { "tags", tagArray },
+                    { "followUpCall", followUpCall },
+                    { "assignedAdvisorId", assignedAdvisorId?.Trim() ?? "" },
+                    { "assignedAdvisor", assignedAdvisorName?.Trim() ?? "" },
                     { "status", "Pending" },
-                    { "updatedBy", isAuthed ? (displayName ?? "User") : "System" },
-                    { "timestamp", nowTs },
-                    { "notes", "Inquiry submitted via website" }
-                }
-            } }
-        };
+                    { "createdAt", nowTs },
+                    { "updatedAt", nowTs },
+                    { "updates", new List<object> {
+                        new Dictionary<string, object> {
+                            { "status", "Pending" },
+                            { "updatedBy", isAuthed ? (displayName ?? "User") : "System" },
+                            { "timestamp", nowTs },
+                            { "notes", "Inquiry submitted via website" }
+                        }
+                    }}
+                };
 
                 var docRef = await _db.Collection("inquiries").AddAsync(inquiryData);
 
@@ -108,7 +134,6 @@ namespace Staekholder_CHIETA_X.Controllers
             }
         }
 
-        // Helper method to generate user-friendly reference numbers
         private string GenerateReferenceNumber(string docId)
         {
             var now = DateTime.UtcNow;
@@ -117,88 +142,58 @@ namespace Staekholder_CHIETA_X.Controllers
             return $"INQ-{datePart}-{shortId}";
         }
 
-        // LEGACY: Keep the old endpoint for backward compatibility
-        [HttpPost]
-        [AllowAnonymous]
-        [Route("api/inquiry/legacy")]
-        public async Task<IActionResult> PostLegacy([FromForm] string name, [FromForm] string message, [FromForm] string inquiryType)
-        {
-            try
-            {
-                // Parse the legacy concatenated message format
-                var lines = message.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-
-                string subject = "";
-                string description = "";
-                string tags = "";
-                string desiredOutcome = "";
-                string relatedDate = "";
-                bool followUpCall = false;
-
-                foreach (var line in lines)
-                {
-                    var trimmed = line.Trim();
-                    if (trimmed.StartsWith("Subject: "))
-                        subject = trimmed.Substring(9);
-                    else if (trimmed.StartsWith("Description: "))
-                        description = trimmed.Substring(13);
-                    else if (trimmed.StartsWith("Tags: "))
-                        tags = trimmed.Substring(6);
-                    else if (trimmed.StartsWith("Desired outcome: "))
-                        desiredOutcome = trimmed.Substring(17);
-                    else if (trimmed.StartsWith("Related date: "))
-                        relatedDate = trimmed.Substring(14);
-                    else if (trimmed.Contains("Follow-up call requested: Yes"))
-                        followUpCall = true;
-                    else if (!trimmed.StartsWith("Subject:") && !trimmed.StartsWith("Description:") &&
-                             !trimmed.StartsWith("Tags:") && !trimmed.StartsWith("Desired outcome:") &&
-                             !trimmed.StartsWith("Related date:") && !trimmed.Contains("Follow-up call") &&
-                             !string.IsNullOrWhiteSpace(trimmed))
-                    {
-                        // This is probably continuation of description
-                        if (!string.IsNullOrEmpty(description))
-                            description += " " + trimmed;
-                        else
-                            description = trimmed;
-                    }
-                }
-
-                // Call the new structured method
-                return await Post(name, subject, description, inquiryType, desiredOutcome, relatedDate, tags, followUpCall);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"ERROR in PostLegacy method: {ex.Message}");
-                return StatusCode(500, new { error = "Internal server error", details = ex.Message });
-            }
-        }
-
-        // Enhanced view methods with better data structure
+        // GET: Advisor-specific inquiries
         [HttpGet]
-        [Authorize(Roles = "Client")]
-        [Route("api/inquiry/client/{name}")]
-        public async Task<IActionResult> GetClientInquiries(string name)
+        [Authorize(Roles = "Advisor")]
+        [Route("api/inquiry")]
+        public async Task<IActionResult> GetMyInquiries()
         {
             try
             {
+                var advisorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (string.IsNullOrEmpty(advisorId))
+                    return Unauthorized(new { error = "Could not identify advisor" });
+
                 var snapshot = await _db.Collection("inquiries")
-                                        .WhereEqualTo("name", name)
+                                        .WhereEqualTo("assignedAdvisorId", advisorId)
                                         .OrderByDescending("createdAt")
                                         .GetSnapshotAsync();
 
                 var inquiries = snapshot.Documents.Select(doc =>
                 {
                     var data = doc.ToDictionary();
+
+                    // Extract creator info
+                    var createdBy = data.ContainsKey("createdBy")
+                        ? data["createdBy"] as Dictionary<string, object>
+                        : null;
+
+                    string userName = createdBy?.ContainsKey("name") == true
+                        ? createdBy["name"]?.ToString() ?? ""
+                        : (data.ContainsKey("name") ? data["name"]?.ToString() ?? "" : "");
+
+                    string userEmail = createdBy?.ContainsKey("email") == true
+                        ? createdBy["email"]?.ToString() ?? ""
+                        : "";
+
                     return new
                     {
                         id = doc.Id,
-                        referenceNumber = GenerateReferenceNumber(doc.Id),
+                        reference = GenerateReferenceNumber(doc.Id),
+                        category = data.ContainsKey("inquiryType") ? data["inquiryType"] : "N/A",
                         subject = data.ContainsKey("subject") ? data["subject"] : "N/A",
-                        inquiryType = data.ContainsKey("inquiryType") ? data["inquiryType"] : "N/A",
-                        status = data.ContainsKey("status") ? data["status"] : "Unknown",
-                        createdAt = data.ContainsKey("createdAt") ? data["createdAt"] : null,
-                        priority = data.ContainsKey("priority") ? data["priority"] : "Normal",
-                        followUpCall = data.ContainsKey("followUpCall") ? data["followUpCall"] : false
+                        description = data.ContainsKey("description") ? data["description"] : "",
+                        desired = data.ContainsKey("desiredOutcome") ? data["desiredOutcome"] : "",
+                        tags = data.ContainsKey("tags") ? data["tags"] : new string[0],
+                        status = data.ContainsKey("status") ? data["status"] : "Pending",
+                        date = data.ContainsKey("createdAt") ? data["createdAt"] : null,
+                        callback = data.ContainsKey("followUpCall") ? data["followUpCall"] : false,
+                        attachments = data.ContainsKey("attachments") ? data["attachments"] : new List<object>(),
+                        updates = data.ContainsKey("updates") ? data["updates"] : new List<object>(),
+                        userName = userName,
+                        userEmail = userEmail,
+                        assignedTo = data.ContainsKey("assignedAdvisor") ? data["assignedAdvisor"] : ""
                     };
                 }).ToList();
 
@@ -206,51 +201,133 @@ namespace Staekholder_CHIETA_X.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR in GetClientInquiries: {ex.Message}");
+                Console.WriteLine($"ERROR in GetMyInquiries: {ex.Message}");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
 
-        [HttpGet]
-        [Authorize(Roles = "Client")]
-        [Route("api/inquiry/{id}")]
-        public async Task<IActionResult> GetInquiry(string id)
+        // PUT: Update inquiry status
+        [HttpPut]
+        [Authorize(Roles = "Advisor,Admin")]
+        [Route("api/inquiry/{reference}")]
+        public async Task<IActionResult> UpdateInquiry(string reference, [FromBody] Dictionary<string, object> updateData)
         {
             try
             {
-                var docRef = _db.Collection("inquiries").Document(id);
-                var snapshot = await docRef.GetSnapshotAsync();
+                var advisorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var advisorName = User.Identity?.Name ?? "Advisor";
 
-                if (!snapshot.Exists)
-                    return NotFound("Inquiry not found");
+                // Find the inquiry by scanning for matching reference
+                var allInquiries = await _db.Collection("inquiries").GetSnapshotAsync();
+                var doc = allInquiries.Documents.FirstOrDefault(d =>
+                    GenerateReferenceNumber(d.Id) == reference);
 
-                var data = snapshot.ToDictionary();
-                var result = new
+                if (doc == null)
+                    return NotFound(new { error = "Inquiry not found" });
+
+                var docRef = _db.Collection("inquiries").Document(doc.Id);
+                var inquiry = doc.ToDictionary();
+
+                // Verify advisor owns this inquiry (unless admin)
+                var isAdmin = User.IsInRole("Admin");
+                if (!isAdmin)
                 {
-                    id = snapshot.Id,
-                    referenceNumber = GenerateReferenceNumber(snapshot.Id),
-                    name = data.ContainsKey("name") ? data["name"] : "",
-                    subject = data.ContainsKey("subject") ? data["subject"] : "",
-                    description = data.ContainsKey("description") ? data["description"] : "",
-                    inquiryType = data.ContainsKey("inquiryType") ? data["inquiryType"] : "",
-                    desiredOutcome = data.ContainsKey("desiredOutcome") ? data["desiredOutcome"] : "",
-                    relatedDate = data.ContainsKey("relatedDate") ? data["relatedDate"] : "",
-                    tags = data.ContainsKey("tags") ? data["tags"] : new string[0],
-                    followUpCall = data.ContainsKey("followUpCall") ? data["followUpCall"] : false,
-                    status = data.ContainsKey("status") ? data["status"] : "Unknown",
-                    priority = data.ContainsKey("priority") ? data["priority"] : "Normal",
-                    assignedAdvisor = data.ContainsKey("assignedAdvisor") ? data["assignedAdvisor"] : "",
-                    createdAt = data.ContainsKey("createdAt") ? data["createdAt"] : null,
-                    updatedAt = data.ContainsKey("updatedAt") ? data["updatedAt"] : null,
-                    updates = data.ContainsKey("updates") ? data["updates"] : new List<object>()
+                    var assignedAdvisorId = inquiry.ContainsKey("assignedAdvisorId")
+                        ? inquiry["assignedAdvisorId"]?.ToString()
+                        : "";
+
+                    if (assignedAdvisorId != advisorId)
+                        return Forbid();
+                }
+
+                // Prepare update
+                var updates = inquiry.ContainsKey("updates")
+                    ? ((List<object>)inquiry["updates"]).ToList()
+                    : new List<object>();
+
+                var newStatus = updateData.ContainsKey("status")
+                    ? updateData["status"]?.ToString()
+                    : inquiry.ContainsKey("status") ? inquiry["status"]?.ToString() : "Pending";
+
+                var notes = updateData.ContainsKey("internalNotes")
+                    ? updateData["internalNotes"]?.ToString()
+                    : "";
+
+                updates.Add(new Dictionary<string, object>
+                {
+                    { "status", newStatus },
+                    { "updatedBy", advisorName },
+                    { "timestamp", Timestamp.GetCurrentTimestamp() },
+                    { "notes", notes }
+                });
+
+                var updateDict = new Dictionary<string, object>
+                {
+                    { "status", newStatus },
+                    { "updates", updates },
+                    { "updatedAt", Timestamp.GetCurrentTimestamp() }
                 };
 
-                return Ok(result);
+                // Update assignedTo if provided (admin only or reassignment)
+                if (updateData.ContainsKey("assignedTo"))
+                {
+                    var newAssignedId = updateData["assignedTo"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(newAssignedId))
+                    {
+                        // If reassigning, get the new advisor's name
+                        var advisorDoc = await _db.Collection("Users").Document(newAssignedId).GetSnapshotAsync();
+                        if (advisorDoc.Exists)
+                        {
+                            var advisorData = advisorDoc.ToDictionary();
+                            var newAdvisorName = advisorData.ContainsKey("Name")
+                                ? advisorData["Name"]?.ToString()
+                                : "Unknown Advisor";
+
+                            updateDict["assignedAdvisorId"] = newAssignedId;
+                            updateDict["assignedAdvisor"] = newAdvisorName;
+                        }
+                    }
+                }
+
+                await docRef.UpdateAsync(updateDict);
+
+                return Ok(new { message = "Inquiry updated successfully" });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR in GetInquiry: {ex.Message}");
+                Console.WriteLine($"ERROR in UpdateInquiry: {ex.Message}");
                 return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        // LEGACY endpoints for backward compatibility
+        [HttpPost]
+        [AllowAnonymous]
+        [Route("api/inquiry/legacy")]
+        public async Task<IActionResult> PostLegacy([FromForm] string name, [FromForm] string message, [FromForm] string inquiryType)
+        {
+            try
+            {
+                var lines = message.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                string subject = "", description = "", tags = "", desiredOutcome = "", relatedDate = "";
+                bool followUpCall = false;
+
+                foreach (var line in lines)
+                {
+                    var trimmed = line.Trim();
+                    if (trimmed.StartsWith("Subject: ")) subject = trimmed.Substring(9);
+                    else if (trimmed.StartsWith("Description: ")) description = trimmed.Substring(13);
+                    else if (trimmed.StartsWith("Tags: ")) tags = trimmed.Substring(6);
+                    else if (trimmed.StartsWith("Desired outcome: ")) desiredOutcome = trimmed.Substring(17);
+                    else if (trimmed.StartsWith("Related date: ")) relatedDate = trimmed.Substring(14);
+                    else if (trimmed.Contains("Follow-up call requested: Yes")) followUpCall = true;
+                }
+
+                return await Post(name, subject, description, inquiryType, desiredOutcome, relatedDate, tags, followUpCall);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Internal server error", details = ex.Message });
             }
         }
 
@@ -276,14 +353,12 @@ namespace Staekholder_CHIETA_X.Controllers
                         subject = data.ContainsKey("subject") ? data["subject"] : "N/A",
                         inquiryType = data.ContainsKey("inquiryType") ? data["inquiryType"] : "N/A",
                         status = data.ContainsKey("status") ? data["status"] : "Unknown",
-                        priority = data.ContainsKey("priority") ? data["priority"] : "Normal",
                         assignedAdvisor = data.ContainsKey("assignedAdvisor") ? data["assignedAdvisor"] : "",
                         createdAt = data.ContainsKey("createdAt") ? data["createdAt"] : null,
                         followUpCall = data.ContainsKey("followUpCall") ? data["followUpCall"] : false
                     };
                 }).ToList();
 
-                Console.WriteLine($"Found {inquiries.Count} total inquiries");
                 return Ok(inquiries);
             }
             catch (Exception ex)
@@ -293,77 +368,6 @@ namespace Staekholder_CHIETA_X.Controllers
             }
         }
 
-        // Other existing methods remain the same...
-        [HttpGet]
-        [Authorize(Roles = "Advisor")]
-        [Route("api/inquiry/advisor/{advisorId}")]
-        public async Task<IActionResult> GetAdvisorInquiries(string advisorId)
-        {
-            try
-            {
-                var snapshot = await _db.Collection("inquiries")
-                                        .WhereEqualTo("assignedAdvisor", advisorId)
-                                        .OrderByDescending("createdAt")
-                                        .GetSnapshotAsync();
-
-                var inquiries = snapshot.Documents.Select(doc => new
-                {
-                    id = doc.Id,
-                    data = doc.ToDictionary()
-                }).ToList();
-
-                return Ok(inquiries);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"ERROR in GetAdvisorInquiries: {ex.Message}");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Advisor,Admin")]
-        [Route("api/inquiry/{id}/status")]
-        public async Task<IActionResult> UpdateStatus(string id, [FromForm] string status, [FromForm] string updatedBy, [FromForm] string notes)
-        {
-            try
-            {
-                var docRef = _db.Collection("inquiries").Document(id);
-                var snapshot = await docRef.GetSnapshotAsync();
-
-                if (!snapshot.Exists) return NotFound("Inquiry not found");
-
-                var inquiry = snapshot.ToDictionary();
-                var updates = inquiry.ContainsKey("updates")
-                    ? ((List<object>)inquiry["updates"]).ToList()
-                    : new List<object>();
-
-                updates.Add(new Dictionary<string, object>
-                {
-                    { "status", status },
-                    { "updatedBy", updatedBy },
-                    { "timestamp", Timestamp.GetCurrentTimestamp() },
-                    { "notes", notes ?? "" }
-                });
-
-                await docRef.UpdateAsync(new Dictionary<string, object>
-                {
-                    { "status", status },
-                    { "updates", updates },
-                    { "updatedAt", Timestamp.GetCurrentTimestamp() }
-                });
-
-                Console.WriteLine($"Status updated for inquiry {id} to {status}");
-                return Ok(new { message = "Status updated successfully" });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"ERROR in UpdateStatus: {ex.Message}");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        // Test endpoint
         [HttpGet]
         [AllowAnonymous]
         [Route("api/inquiry/test")]
@@ -371,8 +375,6 @@ namespace Staekholder_CHIETA_X.Controllers
         {
             try
             {
-                Console.WriteLine("Testing Firestore connection...");
-
                 var testData = new Dictionary<string, object>
                 {
                     { "test", "This is a test document" },
@@ -385,33 +387,19 @@ namespace Staekholder_CHIETA_X.Controllers
                 if (snapshot.Exists)
                 {
                     await docRef.DeleteAsync();
-                    return Ok(new
-                    {
-                        message = "Firestore connection test successful",
-                        testDocId = docRef.Id
-                    });
+                    return Ok(new { message = "Firestore connection test successful", testDocId = docRef.Id });
                 }
-                else
-                {
-                    return StatusCode(500, new { error = "Could not retrieve test document" });
-                }
+                return StatusCode(500, new { error = "Could not retrieve test document" });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Firestore test failed: {ex.Message}");
-                return StatusCode(500, new
-                {
-                    error = "Firestore connection test failed",
-                    details = ex.Message
-                });
+                return StatusCode(500, new { error = "Firestore connection test failed", details = ex.Message });
             }
         }
 
-        // MVC View methods
         public IActionResult Index() => View();
         public IActionResult Inquiry() => View("~/Views/StakeholderViews/Inquiry/Inquiry.cshtml");
         public IActionResult Tracking() => View("~/Views/EmployeeViews/InquiryTracker.cshtml");
-
         public IActionResult InquiryTracking() => View("~/Views/StakeholderViews/InquiryTracking/Inquiry.cshtml");
     }
 }

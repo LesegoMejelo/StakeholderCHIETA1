@@ -3,185 +3,196 @@
 }
 <html>
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Customer Inquiries — CHIETA Employee Portal</title>
-  <link rel="stylesheet" href="~/Content/EmployeeView/InquiryTracker.css"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Customer Inquiries — CHIETA Employee Portal</title>
+    <link rel="stylesheet" href="~/Content/EmployeeView/InquiryTracker.css" />
 </head>
 <body>
-  <!-- Header -->
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <div class="brand">
-        <div class="logo">CHIETA</div>
-        <div class="divider"></div>
-        <div class="page-title">Customer Inquiries</div>
-      </div>
+    <!-- Header -->
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <div class="brand">
+                <div class="logo">CHIETA</div>
+                <div class="divider"></div>
+                <div class="page-title">My Assigned Inquiries</div>
+            </div>
 
-      <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-        <span class="hide-sm">Settings</span>
-      </button>
-      <nav class="menu-popover" id="settings-menu" role="menu" hidden>
-        <a role="menuitem" href="#">Profile</a>
-        <a role="menuitem" href="#">Notifications</a>
-        <a role="menuitem" href="#">Help</a>
-        <div class="menu-sep" role="separator"></div>
-        <a role="menuitem" href="#" class="danger">Sign out</a>
-      </nav>
+            <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                <span class="hide-sm">Settings</span>
+            </button>
+            <nav class="menu-popover" id="settings-menu" role="menu" hidden>
+                <a role="menuitem" href="#">Profile</a>
+                <a role="menuitem" href="#">Notifications</a>
+                <a role="menuitem" href="#">Help</a>
+                <div class="menu-sep" role="separator"></div>
+                <a role="menuitem" href="#" class="danger">Sign out</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Decorative shapes -->
+    <div class="decor blob-right" aria-hidden="true"></div>
+    <div class="decor arc-left" aria-hidden="true"></div>
+    <div class="decor arc-right-bottom" aria-hidden="true"></div>
+
+    <main class="container">
+        <!-- Info banner -->
+        <section class="info-banner" style="background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 1rem; margin-bottom: 1.5rem; border-radius: 8px;">
+            <p style="margin: 0; color: #0c4a6e;">
+                <strong>👤 Viewing your assigned inquiries</strong> — You can only see and update inquiries that have been assigned to you.
+            </p>
+        </section>
+
+        <!-- Filters and search -->
+        <section class="filters">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search inquiries..." aria-label="Search inquiries">
+                <button class="icon-btn">🔍</button>
+            </div>
+
+            <div class="filter-group">
+                <label for="statusFilter">Status:</label>
+                <select id="statusFilter">
+                    <option value="all">All</option>
+                    <option value="new">New</option>
+                    <option value="Pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="closed">Closed</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="categoryFilter">Category:</label>
+                <select id="categoryFilter">
+                    <option value="all">All</option>
+                    <option value="Grants">Grants</option>
+                    <option value="Bursaries">Bursaries</option>
+                    <option value="Skills Development">Skills Development</option>
+                    <option value="Compliance">Compliance</option>
+                    <option value="Site Visit">Site Visit</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Inquiry list -->
+        <section class="inquiry-list">
+            <div class="list-header">
+                <h2>My Inquiries</h2>
+                <span class="muted" id="inquiryCount">0 inquiries</span>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Subject</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inquiryTableBody">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Inquiry Detail Modal -->
+    <div class="modal" id="detailModal" aria-modal="true" role="dialog" aria-labelledby="modalTitle">
+        <div class="modal__dialog">
+            <div class="modal__header">
+                <div>
+                    <div id="modalTitle" class="modal__title">Inquiry Details</div>
+                    <div class="muted" id="modalSubtitle" style="font-size:.9rem"></div>
+                </div>
+                <button class="close-btn" data-close-modal="true" aria-label="Close">✕</button>
+            </div>
+
+            <div class="modal__body">
+                <div class="detail-grid">
+                    <div class="detail-section">
+                        <h3>Inquiry Information</h3>
+                        <div class="kv"><b>Reference:</b><div id="detailRef"></div></div>
+                        <div class="kv"><b>Category:</b><div id="detailCategory"></div></div>
+                        <div class="kv"><b>Subject:</b><div id="detailSubject"></div></div>
+                        <div class="kv"><b>Status:</b><div id="detailStatus"></div></div>
+                        <div class="kv"><b>Submitted:</b><div id="detailDate"></div></div>
+                        <div class="kv"><b>Tags:</b><div id="detailTags"></div></div>
+                        <div class="kv"><b>Assignment:</b><div id="detailAssignedInfo">Assigned to you</div></div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h3>Description</h3>
+                        <div id="detailDescription" class="description-box"></div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h3>Desired Outcome</h3>
+                        <div id="detailOutcome" class="outcome-box"></div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h3>Attachments</h3>
+                        <ul id="detailAttachments" class="file-list"></ul>
+                    </div>
+
+                    <div class="detail-section">
+                        <h3>Follow-up Preferences</h3>
+                        <div id="detailCallback" class="callback-info"></div>
+                    </div>
+                </div>
+
+                <div class="update-section">
+                    <h3>Update Status</h3>
+                    <form id="updateForm">
+                        <div class="form__row">
+                            <label for="statusUpdate">Status:</label>
+                            <select id="statusUpdate" name="status" required>
+                                <option value="Pending">Pending</option>
+                                <option value="new">New</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                        </div>
+
+                        <div class="form__row">
+                            <label for="internalNotes">Internal Notes:</label>
+                            <textarea id="internalNotes" name="internalNotes" rows="4" placeholder="Add internal notes about this inquiry..."></textarea>
+                        </div>
+
+                        <div class="form__row">
+                            <label for="assignedTo">Reassign To:</label>
+                            <select id="assignedTo" name="assignedTo">
+                                <option value="">Keep current assignment</option>
+                                <option value="john.doe">John Doe</option>
+                                <option value="jane.smith">Jane Smith</option>
+                                <option value="mike.johnson">Mike Johnson</option>
+                                <option value="sarah.williams">Sarah Williams</option>
+                            </select>
+                            <div class="help-line">Leave as "Keep current assignment" to maintain current advisor</div>
+                        </div>
+
+                        <div class="form__actions">
+                            <button type="button" class="btn ghost" data-close-modal="true">Cancel</button>
+                            <button type="submit" class="btn">Update Inquiry</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-  </header>
 
-  <!-- Decorative shapes -->
-  <div class="decor blob-right" aria-hidden="true"></div>
-  <div class="decor arc-left" aria-hidden="true"></div>
-  <div class="decor arc-right-bottom" aria-hidden="true"></div>
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite"><span id="toastMsg"></span></div>
 
-  <main class="container">
-    <!-- Filters and search -->
-    <section class="filters">
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Search inquiries..." aria-label="Search inquiries">
-        <button class="icon-btn">🔍</button>
-      </div>
-      
-      <div class="filter-group">
-        <label for="statusFilter">Status:</label>
-        <select id="statusFilter">
-          <option value="all">All</option>
-          <option value="new">New</option>
-          <option value="in-progress">In Progress</option>
-          <option value="resolved">Resolved</option>
-          <option value="closed">Closed</option>
-        </select>
-      </div>
-      
-      <div class="filter-group">
-        <label for="categoryFilter">Category:</label>
-        <select id="categoryFilter">
-          <option value="all">All</option>
-          <option value="Grants">Grants</option>
-          <option value="Bursaries">Bursaries</option>
-          <option value="Skills Development">Skills Development</option>
-          <option value="Compliance">Compliance</option>
-          <option value="Site Visit">Site Visit</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-    </section>
-
-    <!-- Inquiry list -->
-    <section class="inquiry-list">
-      <div class="list-header">
-        <h2>All Inquiries</h2>
-        <span class="muted" id="inquiryCount">0 inquiries</span>
-      </div>
-      
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Reference</th>
-              <th>Subject</th>
-              <th>Category</th>
-              <th>Status</th>
-              <th>Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="inquiryTableBody">
-            <!-- Will be populated by JavaScript -->
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-
-  <!-- Inquiry Detail Modal -->
-  <div class="modal" id="detailModal" aria-modal="true" role="dialog" aria-labelledby="modalTitle">
-    <div class="modal__dialog">
-      <div class="modal__header">
-        <div>
-          <div id="modalTitle" class="modal__title">Inquiry Details</div>
-          <div class="muted" id="modalSubtitle" style="font-size:.9rem"></div>
-        </div>
-        <button class="close-btn" data-close-modal="true" aria-label="Close">✕</button>
-      </div>
-      
-      <div class="modal__body">
-        <div class="detail-grid">
-          <div class="detail-section">
-            <h3>Inquiry Information</h3>
-            <div class="kv"><b>Reference:</b><div id="detailRef"></div></div>
-            <div class="kv"><b>Category:</b><div id="detailCategory"></div></div>
-            <div class="kv"><b>Subject:</b><div id="detailSubject"></div></div>
-            <div class="kv"><b>Status:</b><div id="detailStatus"></div></div>
-            <div class="kv"><b>Submitted:</b><div id="detailDate"></div></div>
-            <div class="kv"><b>Tags:</b><div id="detailTags"></div></div>
-          </div>
-          
-          <div class="detail-section">
-            <h3>Description</h3>
-            <div id="detailDescription" class="description-box"></div>
-          </div>
-          
-          <div class="detail-section">
-            <h3>Desired Outcome</h3>
-            <div id="detailOutcome" class="outcome-box"></div>
-          </div>
-          
-          <div class="detail-section">
-            <h3>Attachments</h3>
-            <ul id="detailAttachments" class="file-list"></ul>
-          </div>
-          
-          <div class="detail-section">
-            <h3>Follow-up Preferences</h3>
-            <div id="detailCallback" class="callback-info"></div>
-          </div>
-        </div>
-        
-        <div class="update-section">
-          <h3>Update Status</h3>
-          <form id="updateForm">
-            <div class="form__row">
-              <label for="statusUpdate">Status:</label>
-              <select id="statusUpdate" name="status" required>
-                <option value="new">New</option>
-                <option value="in-progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="closed">Closed</option>
-              </select>
-            </div>
-            
-            <div class="form__row">
-              <label for="internalNotes">Internal Notes:</label>
-              <textarea id="internalNotes" name="internalNotes" rows="4" placeholder="Add internal notes about this inquiry..."></textarea>
-            </div>
-            
-            <div class="form__row">
-              <label for="assignedTo">Assign To:</label>
-              <select id="assignedTo" name="assignedTo">
-                <option value="">Unassigned</option>
-                <option value="john.doe">John Doe</option>
-                <option value="jane.smith">Jane Smith</option>
-                <option value="mike.johnson">Mike Johnson</option>
-                <option value="sarah.williams">Sarah Williams</option>
-              </select>
-            </div>
-            
-            <div class="form__actions">
-              <button type="button" class="btn ghost" data-close-modal="true">Cancel</button>
-              <button type="submit" class="btn">Update Inquiry</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast -->
-  <div id="toast" class="toast" role="status" aria-live="polite"><span id="toastMsg"></span></div>
-
-  <script src="~Content/EmployeeView/InquiryTracker.js"></script>
+    <script src="~/Content/EmployeeView/InquiryTracker.js"></script>
 </body>
 </html>
