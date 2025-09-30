@@ -1,13 +1,5 @@
-// LogAnInquiry.js  — vanilla JS (no jQuery)
-// Assumes your HTML has: #inquiryForm, #subject, #description, #desired, #relatedDate,
-// #callback, input[name="category"], #tagChips, #subjectCount, #attachment, #fileList,
-// step UI: .panel[data-panel="1|2"], .step[data-step="1|2"], #progressFill
-// review UI: #reviewBox
-// success UI: #successPanel, #refCode, #successSummary, #trackLink (optional)
-// toast: #toast, #toastMsg
-
+// LogAnInquiry.js — with advisor selection
 (function () {
-    // ---------- Utilities ----------
     const $ = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
@@ -19,6 +11,44 @@
         box.classList.add("show");
         clearTimeout(toast.t);
         toast.t = setTimeout(() => box.classList.remove("show"), 1800);
+    }
+
+    // ---------- Fetch Advisors ----------
+    async function loadAdvisors() {
+        try {
+            console.log("Loading advisors...");
+            const response = await fetch('/api/inquiry/advisors', {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                console.error("Failed to load advisors, status:", response.status);
+                throw new Error('Failed to load advisors');
+            }
+
+            const advisors = await response.json();
+            console.log("Advisors loaded:", advisors);
+
+            const select = $("#advisorSelect");
+
+            if (select) {
+                select.innerHTML = '<option value="">Select an advisor (optional)</option>';
+                advisors.forEach(adv => {
+                    console.log("Adding advisor:", adv.id, adv.name);
+                    const opt = document.createElement("option");
+                    opt.value = adv.id;
+                    opt.textContent = adv.name;
+                    select.appendChild(opt);
+                });
+                console.log("Advisor dropdown populated with", advisors.length, "advisors");
+            } else {
+                console.error("Advisor select element not found!");
+            }
+        } catch (error) {
+            console.error('Error loading advisors:', error);
+            toast('Could not load advisor list');
+        }
     }
 
     // ---------- Tag chips ----------
@@ -44,41 +74,29 @@
 
     // ---------- Stepper / progress ----------
     function setStep(n) {
-        // show the requested panel
         $$(".panel").forEach(p => p.classList.toggle("active", p.dataset.panel === String(n)));
-
-        // update step indicators
         $$(".step").forEach(s => {
             const active = s.dataset.step === String(n);
             s.classList.toggle("current", active);
             s.setAttribute("aria-selected", String(active));
         });
-
-        // progress: 50% (step1) / 100% (step2)
         const fill = $("#progressFill");
         if (fill) fill.style.width = (n === 1 ? 50 : 100) + "%";
-
         if (n === 2) updateReview();
-        // if the second part is further down, ensure it’s visible
         const activePanel = $(`.panel[data-panel="${n}"]`);
         activePanel?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
-    // global click delegation: next/back, settings, copy
     document.addEventListener("click", (e) => {
-        // next
         const nextBtn = e.target.closest("[data-next]");
         if (nextBtn) {
             const step = Number(nextBtn.dataset.next);
-            // validate the current step before advancing
             if (validateStep(step - 1)) setStep(step);
             return;
         }
-        // back
         const prevBtn = e.target.closest("[data-prev]");
         if (prevBtn) { setStep(Number(prevBtn.dataset.prev)); return; }
 
-        // settings menu toggle (optional; safe-guarded)
         const settingsBtn = e.target.closest("#settings-btn");
         if (settingsBtn) {
             const menu = $("#settings-menu");
@@ -88,7 +106,6 @@
             return;
         }
 
-        // copy reference
         const copy = e.target.closest("#copyRef");
         if (copy) {
             const txt = $("#refCode")?.textContent?.trim();
@@ -97,7 +114,6 @@
         }
     });
 
-    // click-away to close settings (optional; safe-guarded)
     document.addEventListener("click", (e) => {
         const menu = $("#settings-menu");
         const btn = $("#settings-btn");
@@ -122,14 +138,12 @@
         return true;
     }
 
-    // subject counter
     $("#subject")?.addEventListener("input", () => {
         const s = $("#subject");
         const c = $("#subjectCount");
         if (s && c) c.textContent = String(s.value.length);
     });
 
-    // attachments list
     $("#attachment")?.addEventListener("change", () => {
         const input = $("#attachment");
         const list = $("#fileList");
@@ -153,9 +167,14 @@
     // ---------- Review ----------
     function updateReview() {
         const formData = readForm();
+        const advisorSelect = $("#advisorSelect");
+        const selectedAdvisor = advisorSelect?.selectedOptions[0];
+        const advisorName = selectedAdvisor && selectedAdvisor.value ? selectedAdvisor.textContent : "Not specified";
+
         const preview = [
             `Category: ${formData.category || "—"}`,
             `Subject: ${formData.subject || "—"}`,
+            `Assigned to: ${advisorName}`,
             `Tags: ${formData.tags.join(", ") || "—"}`,
             "",
             "Description:",
@@ -171,6 +190,15 @@
 
     function readForm() {
         const catInput = document.querySelector('input[name="category"]:checked');
+        const advisorSelect = $("#advisorSelect");
+        const selectedOption = advisorSelect?.selectedOptions[0];
+
+        // Debug logging
+        console.log("Advisor select element:", advisorSelect);
+        console.log("Selected option:", selectedOption);
+        console.log("Selected value:", selectedOption?.value);
+        console.log("Selected text:", selectedOption?.textContent);
+
         return {
             category: catInput?.value || "",
             subject: $("#subject")?.value.trim() || "",
@@ -178,7 +206,9 @@
             description: $("#description")?.value.trim() || "",
             desired: $("#desired")?.value.trim() || "",
             relatedDate: $("#relatedDate")?.value || "",
-            callback: !!$("#callback")?.checked
+            callback: !!$("#callback")?.checked,
+            advisorId: (selectedOption && selectedOption.value !== "") ? selectedOption.value : "",
+            advisorName: (selectedOption && selectedOption.value !== "") ? selectedOption.textContent.trim() : ""
         };
     }
 
@@ -188,13 +218,18 @@
         if (!validateStep(1) || !validateStep(2)) return;
 
         const payload = readForm();
+
+        // Debug logging
+        console.log("Form payload:", payload);
+        console.log("Advisor ID being sent:", payload.advisorId);
+        console.log("Advisor Name being sent:", payload.advisorName);
+
         const submitBtn = $("#inquiryForm button[type='submit']");
         const originalText = submitBtn?.textContent || "Submit";
         if (submitBtn) { submitBtn.textContent = "Submitting..."; submitBtn.disabled = true; }
 
         try {
             const formData = new FormData();
-            // do NOT send name; server gets it from the auth principal
             formData.append("subject", payload.subject);
             formData.append("description", payload.description);
             formData.append("inquiryType", payload.category);
@@ -203,13 +238,25 @@
             formData.append("tags", payload.tags.join(","));
             formData.append("followUpCall", String(payload.callback));
 
-            // (optional) include files if your API accepts them under "files"
+            // Only append if advisor is selected
+            if (payload.advisorId) {
+                formData.append("assignedAdvisorId", payload.advisorId);
+                formData.append("assignedAdvisorName", payload.advisorName);
+                console.log("Advisor data added to form");
+            } else {
+                console.log("No advisor selected");
+            }
+
             const fileInput = $("#attachment");
             if (fileInput && fileInput.files?.length) {
                 Array.from(fileInput.files).forEach(f => formData.append("files", f));
             }
 
-            const response = await fetch("/api/inquiry", { method: "POST", body: formData });
+            const response = await fetch("/api/inquiry", {
+                method: "POST",
+                body: formData,
+                credentials: 'include'
+            });
             const responseText = await response.text();
 
             if (!response.ok) throw new Error(`Server error: ${response.status} - ${responseText}`);
@@ -239,14 +286,10 @@
         const success = $("#successPanel");
         if (success) success.hidden = false;
 
-        // FIX: use $$ here (NodeList → array), not $
         $$(".panel").forEach(p => p.classList.remove("active"));
-
-        // jump to top so the user sees the confirmation immediately
         window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    // ---------- Helpers ----------
     function genRef() {
         const now = new Date();
         const y = String(now.getFullYear()).slice(-2);
@@ -283,13 +326,13 @@
         window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
-    // Global debugging
     window.addEventListener("error", (e) => console.error("JavaScript error:", e.error || e.message || e));
     window.addEventListener("unhandledrejection", (e) => console.error("Unhandled promise rejection:", e.reason));
 
     // ---------- Init ----------
     console.log("Initializing inquiry form...");
     mountChips();
+    loadAdvisors();
     prefillFromURL();
     setStep(1);
     console.log("Inquiry form initialized");
