@@ -102,6 +102,16 @@
         <div class="gold-box"></div>
     </footer>
 
+    <script>
+        // Make advisor info available to JavaScript
+        window.currentUser = {
+            advisorId: '@User.Identity.Name', // This should match the assignedAdvisor field in Firestore
+            name: '@User.Identity.Name'
+        };
+        console.log("Current user:", window.currentUser);
+    </script>
+
+    <script src="~/Content/EmployeeView/js/EmployeeLanding.js"></script>
     <script src="~/Content/EmployeeView/js/EmployeeLanding.js"></script>
 </body>
 </html>

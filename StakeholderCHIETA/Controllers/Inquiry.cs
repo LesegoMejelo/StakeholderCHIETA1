@@ -300,47 +300,83 @@ namespace Staekholder_CHIETA_X.Controllers
             }
         }
 
-        // LEGACY endpoints for backward compatibility
-        [HttpPost]
-        [AllowAnonymous]
-        [Route("api/inquiry/legacy")]
-        public async Task<IActionResult> PostLegacy([FromForm] string name, [FromForm] string message, [FromForm] string inquiryType)
+       /* [HttpGet]
+        [Authorize(Roles = "Advisor")]
+        [Route("api/inquiry/advisor/{advisorId}")]
+        public async Task<IActionResult> GetAdvisorInquiries(string advisorId)
         {
             try
             {
-                var lines = message.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-                string subject = "", description = "", tags = "", desiredOutcome = "", relatedDate = "";
-                bool followUpCall = false;
+                Console.WriteLine($"GetAdvisorInquiries called with advisorId: {advisorId}");
+                Console.WriteLine($"User authenticated: {User.Identity.IsAuthenticated}");
+                Console.WriteLine($"User name: {User.Identity.Name}");
 
-                foreach (var line in lines)
+                // Try to find by assignedAdvisor field
+                var snapshot = await _db.Collection("inquiries")
+                                        .WhereEqualTo("assignedAdvisor", advisorId)
+                                        .OrderByDescending("createdAt")
+                                        .GetSnapshotAsync();
+
+                Console.WriteLine($"Found {snapshot.Documents.Count} documents for advisor: {advisorId}");
+
+                var inquiries = snapshot.Documents.Select(doc =>
                 {
-                    var trimmed = line.Trim();
-                    if (trimmed.StartsWith("Subject: ")) subject = trimmed.Substring(9);
-                    else if (trimmed.StartsWith("Description: ")) description = trimmed.Substring(13);
-                    else if (trimmed.StartsWith("Tags: ")) tags = trimmed.Substring(6);
-                    else if (trimmed.StartsWith("Desired outcome: ")) desiredOutcome = trimmed.Substring(17);
-                    else if (trimmed.StartsWith("Related date: ")) relatedDate = trimmed.Substring(14);
-                    else if (trimmed.Contains("Follow-up call requested: Yes")) followUpCall = true;
-                }
+                    var data = doc.ToDictionary();
+                    return new
+                    {
+                        id = doc.Id,
+                        referenceNumber = GenerateReferenceNumber(doc.Id),
+                        name = data.ContainsKey("name") ? data["name"] : "N/A",
+                        subject = data.ContainsKey("subject") ? data["subject"] : "N/A",
+                        inquiryType = data.ContainsKey("inquiryType") ? data["inquiryType"] : "N/A",
+                        status = GetLatestStatus(data), // Helper method below
+                        priority = data.ContainsKey("priority") ? data["priority"] : "Normal",
+                        assignedAdvisor = data.ContainsKey("assignedAdvisor") ? data["assignedAdvisor"] : "",
+                        createdAt = data.ContainsKey("createdAt") ? data["createdAt"] : null,
+                        followUpCall = data.ContainsKey("followUpCall") ? data["followUpCall"] : false
+                    };
+                }).ToList();
 
-                return await Post(name, subject, description, inquiryType, desiredOutcome, relatedDate, tags, followUpCall);
+                Console.WriteLine($"Returning {inquiries.Count} inquiries");
+                return Ok(inquiries);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = "Internal server error", details = ex.Message });
+                Console.WriteLine($"ERROR in GetAdvisorInquiries: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, new { error = ex.Message, details = ex.StackTrace });
             }
         }
 
+        // Helper method to get the latest status from updates array
+        private string GetLatestStatus(Dictionary<string, object> data)
+        {
+            if (!data.ContainsKey("updates")) return "Unknown";
+
+            var updates = data["updates"] as List<object>;
+            if (updates == null || updates.Count == 0) return "Unknown";
+
+            var latestUpdate = updates[updates.Count - 1] as Dictionary<string, object>;
+            if (latestUpdate != null && latestUpdate.ContainsKey("status"))
+            {
+                return latestUpdate["status"]?.ToString() ?? "Unknown";
+            }
+
+            return "Unknown";
+        }
+       */
+        // Other existing methods remain the same...
         [HttpGet]
-        [Authorize(Roles = "Admin")]
-        [Route("api/inquiry/all")]
-        public async Task<IActionResult> GetAllInquiries()
+        [Authorize(Roles = "Advisor")]
+        [Route("api/inquiry/advisor/{advisorId}")]
+        public async Task<IActionResult> GetAdvisorInquiries(string advisorId)
         {
             try
             {
                 var snapshot = await _db.Collection("inquiries")
-                                       .OrderByDescending("createdAt")
-                                       .GetSnapshotAsync();
+                                        .WhereEqualTo("assignedAdvisor", advisorId)
+                                        .OrderByDescending("createdAt")
+                                        .GetSnapshotAsync();
 
                 var inquiries = snapshot.Documents.Select(doc =>
                 {
@@ -353,21 +389,106 @@ namespace Staekholder_CHIETA_X.Controllers
                         subject = data.ContainsKey("subject") ? data["subject"] : "N/A",
                         inquiryType = data.ContainsKey("inquiryType") ? data["inquiryType"] : "N/A",
                         status = data.ContainsKey("status") ? data["status"] : "Unknown",
-                        assignedAdvisor = data.ContainsKey("assignedAdvisor") ? data["assignedAdvisor"] : "",
+                        priority = data.ContainsKey("priority") ? data["priority"] : "Normal",
                         createdAt = data.ContainsKey("createdAt") ? data["createdAt"] : null,
                         followUpCall = data.ContainsKey("followUpCall") ? data["followUpCall"] : false
                     };
                 }).ToList();
 
+                Console.WriteLine($"Found {inquiries.Count} inquiries for advisor {advisorId}");
                 return Ok(inquiries);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR in GetAllInquiries: {ex.Message}");
+                Console.WriteLine($"ERROR in GetAdvisorInquiries: {ex.Message}");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
 
+        [HttpGet]
+        [Authorize]
+        [Route("api/inquiry/test-advisor")]
+        public async Task<IActionResult> TestAdvisorInquiries()
+        {
+            try
+            {
+                var currentUserName = User.Identity.Name;
+                Console.WriteLine($"Testing for user: {currentUserName}");
+
+                // Get ALL inquiries first to see what we have
+                var allSnapshot = await _db.Collection("inquiries")
+                                           .Limit(10)
+                                           .GetSnapshotAsync();
+
+                Console.WriteLine($"Total inquiries found: {allSnapshot.Documents.Count}");
+
+                var allInquiries = allSnapshot.Documents.Select(doc =>
+                {
+                    var data = doc.ToDictionary();
+                    return new
+                    {
+                        id = doc.Id,
+                        assignedAdvisor = data.ContainsKey("assignedAdvisor") ? data["assignedAdvisor"] : "NOT SET",
+                        subject = data.ContainsKey("subject") ? data["subject"] : "N/A"
+                    };
+                }).ToList();
+
+                return Ok(new
+                {
+                    currentUser = currentUserName,
+                    allInquiries = allInquiries
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+
+        [HttpPost]
+        [Authorize(Roles = "Advisor,Admin")]
+        [Route("api/inquiry/{id}/status")]
+        public async Task<IActionResult> UpdateStatus(string id, [FromForm] string status, [FromForm] string updatedBy, [FromForm] string notes)
+        {
+            try
+            {
+                var docRef = _db.Collection("inquiries").Document(id);
+                var snapshot = await docRef.GetSnapshotAsync();
+
+                if (!snapshot.Exists) return NotFound("Inquiry not found");
+
+                var inquiry = snapshot.ToDictionary();
+                var updates = inquiry.ContainsKey("updates")
+                    ? ((List<object>)inquiry["updates"]).ToList()
+                    : new List<object>();
+
+                updates.Add(new Dictionary<string, object>
+                {
+                    { "status", status },
+                    { "updatedBy", updatedBy },
+                    { "timestamp", Timestamp.GetCurrentTimestamp() },
+                    { "notes", notes ?? "" }
+                });
+
+                await docRef.UpdateAsync(new Dictionary<string, object>
+                {
+                    { "status", status },
+                    { "updates", updates },
+                    { "updatedAt", Timestamp.GetCurrentTimestamp() }
+                });
+
+                Console.WriteLine($"Status updated for inquiry {id} to {status}");
+                return Ok(new { message = "Status updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR in UpdateStatus: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        // Test endpoint
         [HttpGet]
         [AllowAnonymous]
         [Route("api/inquiry/test")]
