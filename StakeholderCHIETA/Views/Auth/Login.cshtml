@@ -1,18 +1,84 @@
-﻿@using Microsoft.AspNetCore.Html
-@using Microsoft.AspNetCore.Mvc.Rendering
+﻿
 @{
-    ViewBag.Title = "Login";
+   Layout = null;
 }
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login • CHIETA</title>
+    <link rel="stylesheet" href="~/Content/AdminView/Login.css" />
+</head>
+<body class="login-page">
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <div class="brand">
+                <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
+                <div class="divider"></div>
+                <div class="page-title">Login</div>
+            </div>
 
-<h2>Login</h2>
+            <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                <span class="hide-sm">Settings</span>
+            </button>
+            <nav class="menu-popover" id="settings-menu" role="menu" hidden>
+                <a role="menuitem" href="#">Profile</a>
+                <a role="menuitem" href="#">Notifications</a>
+                <a role="menuitem" href="#">Help</a>
+            </nav>
+        </div>
+    </header>
 
-<form id="loginForm">
-    <input type="email" id="email" placeholder="Email" required />
-    <br />
-    <input type="password" id="password" placeholder="Password" required />
-    <br />
-    <button type="submit">Login</button>
-</form>
+    <div class="login-wrap">
+        <!-- Decorative -->
+        <div class="decor blob-right"></div>
+        <div class="decor arc-left"></div>
+        <div class="decor arc-right-bottom"></div>
+
+        <div class="login-card" role="form" aria-labelledby="loginTitle">
+            <div class="login-head">
+                <h1 id="loginTitle" class="login-title">Sign in</h1>
+                <div class="role-switch" role="tablist" aria-label="Choose role">
+                    <button id="roleAdvisor" class="role-btn" role="tab" aria-selected="true" aria-pressed="true"></button>
+                    <button id="roleStakeholder" class="role-btn" role="tab" aria-selected="false" aria-pressed="false"></button>
+                    <button id="roleAdmin" class="role-btn" role="tab" aria-selected="false" aria-pressed="false"></button>
+                </div>
+            </div>
+            
+                
+           
+
+            <div class="login-body">
+                <form id="loginForm">
+
+                <div class="form-row">
+                    <label class="label" for="email">Email</label>
+                    <input class="input" id="email" type="email" placeholder="you@example.com" required />
+                </div>
+
+                <div class="form-row">
+                    <label class="label" for="password">Password</label>
+                    <input class="password" id="password" type="password" placeholder="••••••••" required />
+                </div>
+                
+              
+                <div class="actions">
+                    <button id="btnSignin" class="btn-primary" type="submit">Continue</button>
+                </div>
+                </form>
+                <p id="statusMsg" class="helper" role="status" aria-live="polite"></p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-band"></div>
+        <div class="gold-box"></div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";

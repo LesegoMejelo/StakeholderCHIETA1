@@ -25,6 +25,10 @@ namespace StakeholderCHIETA.Controllers
         {
             return View("~/Views/EmployeeViews/AppointmentTracker.cshtml");
         }
+        public IActionResult BoardroomBooking()
+        {
+            return View("~/Views/EmployeeViews/BoardroomBooking.cshtml");
+        }
 
         // GET: Return ALL appointments for this advisor
         [HttpGet]
