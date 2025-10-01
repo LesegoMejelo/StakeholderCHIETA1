@@ -76,13 +76,16 @@
                         <div class="help-line"><span id="subjectCount">0</span>/120</div>
                     </div>
 
+                    <!-- In your Inquiry.cshtml, update the advisor select section: -->
+
                     <div class="form__row">
-                        <label for="advisorSelect">Assign to Advisor (optional)</label>
-                        <select id="advisorSelect" name="advisorSelect">
-                            <option value="">Select an advisor (optional)</option>
+                        <label for="advisorSelect">Assign to Advisor <span class="req">*</span></label>
+                        <!-- Change name="advisorSelect" to name="assignedAdvisorId" -->
+                        <select id="advisorSelect" name="assignedAdvisorId" required>
+                            <option value="">Select an advisor</option>
                             <!-- Will be populated by JavaScript -->
                         </select>
-                        <div class="help-line">Choose a specific advisor or leave blank for general assignment</div>
+                        <div class="help-line">Choose which advisor should handle this inquiry</div>
                     </div>
 
                     <div class="form__row">
