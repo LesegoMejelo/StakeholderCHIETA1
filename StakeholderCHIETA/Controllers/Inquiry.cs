@@ -378,6 +378,7 @@ namespace Staekholder_CHIETA_X.Controllers
                                         .OrderByDescending("createdAt")
                                         .GetSnapshotAsync();
 
+
                 var inquiries = snapshot.Documents.Select(doc =>
                 {
                     var data = doc.ToDictionary();

@@ -1,116 +1,104 @@
-﻿/*document.addEventListener('DOMContentLoaded', () => {
-    // ---- Demo data (replace with API) ----
-    async function loadRecentInquiries() {
-        const list = document.getElementById("inquiries-list");
+﻿document.addEventListener('DOMContentLoaded', () => {
+    console.log('=== Employee Landing Page Initialized ===');
+
+    // ---- Load Upcoming Appointments ----
+    async function loadUpcomingAppointments() {
+        const list = document.getElementById("upcoming-list");
+        if (!list) return;
+
         list.innerHTML = "<li class='muted'>Loading…</li>";
 
         try {
-            // Fetch recent inquiries for the advisor
-            const res = await fetch("/api/inquiry/recent", {
-                method: "GET",
-                headers: { "Accept": "application/json" }
-            });
-
-            if (!res.ok) throw new Error("Failed to load inquiries");
-
-            const inquiries = await res.json();
-
-            list.innerHTML = "";
-
-            if (inquiries.length === 0) {
-                list.innerHTML = "<li class='muted'>No recent inquiries</li>";
-                return;
-            }
-
-            inquiries.forEach(q => {
-                const li = document.createElement("li");
-                li.textContent = `${q.customId} – ${q.name} (${q.inquiryType}) [${q.status}]`;
-                list.appendChild(li);
-            });
-
-        } catch (err) {
-            console.error("Error loading inquiries:", err);
-            list.innerHTML = "<li class='muted'>Failed to load inquiries</li>";
-        }
-    }
-
-    // Load when the page is ready
-    document.addEventListener("DOMContentLoaded", loadRecentInquiries);
-
-
-    // ---- Helpers ----
-    const fmtDate = iso => new Intl.DateTimeFormat(undefined, { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(iso));
-    const fmtTime = iso => new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
-    const escapeHTML = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-    // ---- Render summaries ----
- /*   const apptUL = document.getElementById('upcoming-list');
-    if (apptUL) apptUL.innerHTML = demoAppointments.map(a => `
-      <li><span>${fmtDate(a.date)} • ${fmtTime(a.date)}</span><span>${escapeHTML(a.title)}</span></li>
-    `).join('');
-
-    const inqUL = document.getElementById('inquiries-list');
-    if (inqUL) inqUL.innerHTML = demoInquiries.map(i => `
-      <li><span>${escapeHTML(i.ref)}</span><span>${escapeHTML(i.subject)}</span></li>
-    `).join('');
-    */
-   /*
-    // ---- Buttons navigate ----
-    document.querySelectorAll('.btn[data-nav]').forEach(btn => {
-        btn.addEventListener('click', () => location.href = btn.dataset.nav);
-    });
-
-    // ---- Settings dropdown ----
-    const settingsBtn = document.getElementById('settings-btn');
-    const settingsMenu = document.getElementById('settings-menu');
-    const prefDark = document.getElementById('pref-dark');
-    const DARK_KEY = 'prefers-dark';
-
-    const closeMenu = () => { if (settingsMenu) { settingsMenu.hidden = true; settingsBtn?.setAttribute('aria-expanded', 'false'); } };
-    const openMenu = () => { if (settingsMenu) { settingsMenu.hidden = false; settingsBtn?.setAttribute('aria-expanded', 'true'); } };
-
-    settingsBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const expanded = settingsBtn.getAttribute('aria-expanded') === 'true';
-        expanded ? closeMenu() : openMenu();
-    });
-    document.addEventListener('click', (e) => {
-        if (!settingsMenu || settingsMenu.hidden) return;
-        if (!settingsMenu.contains(e.target) && e.target !== settingsBtn) closeMenu();
-    });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
-
-});
-*/
-document.addEventListener('DOMContentLoaded', () => {
-    // ---- Load Recent Inquiries from API ----
-    async function loadRecentInquiries() {
-        const list = document.getElementById("inquiries-list");
-        list.innerHTML = "<li class='muted'>Loading…</li>";
-
-        try {
-            // Get advisor ID from window object (set in view)
-            const advisorId = window.currentUser?.advisorId;
-
-            if (!advisorId) {
-                list.innerHTML = "<li class='muted'>Unable to load inquiries</li>";
-                console.error("Advisor ID not found");
-                return;
-            }
-
-            const res = await fetch(`/api/inquiry/advisor/${advisorId}`, {
+            console.log('Fetching upcoming appointments...');
+            const res = await fetch('/AdvisorAppointment/AppointmentTrackerData', {
                 method: "GET",
                 headers: {
-                    "Accept": "application/json"
+                    "Accept": "application/json",
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: "include"
             });
+
+            console.log('Appointments response status:', res.status);
+
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }
+
+            const appointments = await res.json();
+            console.log('Received appointments:', appointments.length);
+
+            // Filter for accepted appointments that are upcoming
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+
+            const upcomingAccepted = appointments
+                .filter(apt => {
+                    const status = (apt.Status || '').toLowerCase();
+                    const appointmentDate = new Date(apt.Date);
+                    return (status === 'accepted' || status === 'rescheduled') && appointmentDate >= now;
+                })
+                .sort((a, b) => new Date(a.Date) - new Date(b.Date))
+                .slice(0, 5); // Show only 5 most recent
+
+            console.log('Filtered upcoming accepted appointments:', upcomingAccepted.length);
+
+            list.innerHTML = "";
+
+            if (upcomingAccepted.length === 0) {
+                list.innerHTML = "<li class='muted'>No upcoming appointments</li>";
+                return;
+            }
+
+            upcomingAccepted.forEach(appt => {
+                const li = document.createElement("li");
+                const dateObj = new Date(appt.Date);
+                const dateStr = dateObj.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+                const timeStr = formatTime(appt.Time);
+                const clientName = appt.ClientName || 'Unknown';
+
+                li.innerHTML = `
+                    <span>${escapeHTML(dateStr)} • ${escapeHTML(timeStr)}</span>
+                    <span>${escapeHTML(clientName)}</span>
+                `;
+                list.appendChild(li);
+            });
+        } catch (err) {
+            console.error("Error loading appointments:", err);
+            list.innerHTML = "<li class='muted'>Failed to load appointments</li>";
+        }
+    }
+
+    // ---- Load Recent Inquiries ----
+    async function loadRecentInquiries() {
+        const list = document.getElementById("inquiries-list");
+        if (!list) return;
+
+        list.innerHTML = "<li class='muted'>Loading…</li>";
+
+        try {
+            console.log('Fetching recent inquiries...');
+            const res = await fetch('/api/inquiry', {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json",
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: "include"
+            });
+
+            console.log('Inquiries response status:', res.status);
 
             if (!res.ok) {
                 throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             }
 
             const inquiries = await res.json();
+            console.log('Received inquiries:', inquiries.length);
 
             list.innerHTML = "";
 
@@ -122,18 +110,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Show only the 5 most recent
             inquiries.slice(0, 5).forEach(inquiry => {
                 const li = document.createElement("li");
+                const ref = inquiry.reference || 'N/A';
+                const subject = inquiry.subject || 'No subject';
+                const status = inquiry.status || 'Pending';
 
-                // If using the improved controller format
-                if (inquiry.referenceNumber) {
-                    li.innerHTML = `<span>${escapeHTML(inquiry.referenceNumber)}</span><span>${escapeHTML(inquiry.subject)}</span>`;
-                }
-                // If using the original controller format
-                else {
-                    const data = inquiry.data;
-                    const refNum = generateReferenceNumber(inquiry.id);
-                    li.innerHTML = `<span>${escapeHTML(refNum)}</span><span>${escapeHTML(data.subject || 'N/A')}</span>`;
-                }
-
+                li.innerHTML = `
+                    <span>${escapeHTML(ref)}</span>
+                    <span>${escapeHTML(subject)} <small class="status-${status.toLowerCase()}">(${escapeHTML(status)})</small></span>
+                `;
                 list.appendChild(li);
             });
         } catch (err) {
@@ -142,118 +126,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Helper to generate reference number (matches your C# logic)
-    function generateReferenceNumber(docId) {
-        const now = new Date();
-        const year = now.getFullYear().toString().slice(-2);
-        const month = (now.getMonth() + 1).toString().padStart(2, '0');
-        const day = now.getDate().toString().padStart(2, '0');
-        const datePart = `${year}${month}${day}`;
-        const shortId = docId.substring(Math.max(0, docId.length - 4)).toUpperCase();
-        return `INQ-${datePart}-${shortId}`;
+    // ---- Helper Functions ----
+    function formatTime(timeString) {
+        if (!timeString) return 'No time';
+        const parts = timeString.split(':');
+        if (parts.length < 2) return timeString;
+
+        const hours = parseInt(parts[0]);
+        const minutes = parts[1];
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const hour12 = hours % 12 || 12;
+        return `${hour12}:${minutes} ${ampm}`;
     }
 
-    // ---- Load Upcoming Appointments (you'll need this too) ----
-    async function loadUpcomingAppointments() {
-        const list = document.getElementById("upcoming-list");
-        list.innerHTML = "<li class='muted'>Loading…</li>";
-
-        try {
-            const advisorId = window.currentUser?.advisorId;
-
-            if (!advisorId) {
-                list.innerHTML = "<li class='muted'>Unable to load appointments</li>";
-                return;
-            }
-
-            // Replace with your actual appointment endpoint
-            const res = await fetch(`/api/appointment/advisor/${advisorId}`, {
-                method: "GET",
-                headers: { "Accept": "application/json" },
-                credentials: "include"
-            });
-
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-            const appointments = await res.json();
-
-            list.innerHTML = "";
-
-            if (appointments.length === 0) {
-                list.innerHTML = "<li class='muted'>No upcoming appointments</li>";
-                return;
-            }
-
-            // Show only the 5 most recent/upcoming
-            appointments.slice(0, 5).forEach(appt => {
-                const li = document.createElement("li");
-                const dateStr = fmtDate(appt.date);
-                const timeStr = fmtTime(appt.date);
-                li.innerHTML = `<span>${dateStr} • ${timeStr}</span><span>${escapeHTML(appt.title)}</span>`;
-                list.appendChild(li);
-            });
-        } catch (err) {
-            console.error("Error loading appointments:", err);
-            list.innerHTML = "<li class='muted'>Failed to load appointments</li>";
-        }
+    function escapeHTML(str) {
+        if (str == null) return '';
+        return String(str).replace(/[&<>"']/g, c => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[c]));
     }
 
-    // Temporary test function
-    async function testInquiries() {
-        try {
-            const res = await fetch('/api/inquiry/test-advisor', {
-                method: "GET",
-                headers: { "Accept": "application/json" },
-                credentials: "include"
-            });
-            const data = await res.json();
-            console.log("Test data:", data);
-        } catch (err) {
-            console.error("Test failed:", err);
-        }
-    }
-
-    // Call it
-    testInquiries();
-    //---------
-    // Load data when page is ready
-    loadRecentInquiries();
+    // ---- Load data when page is ready ----
     loadUpcomingAppointments();
+    loadRecentInquiries();
 
-    // ---- Helpers ----
-    const fmtDate = iso => new Intl.DateTimeFormat(undefined, {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-    }).format(new Date(iso));
-
-    const fmtTime = iso => new Intl.DateTimeFormat(undefined, {
-        hour: '2-digit',
-        minute: '2-digit'
-    }).format(new Date(iso));
-
-    const escapeHTML = s => String(s).replace(/[&<>"']/g, c => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-    }[c]));
+    // Auto-refresh every 60 seconds
+    setInterval(() => {
+        console.log('Auto-refreshing dashboard data...');
+        loadUpcomingAppointments();
+        loadRecentInquiries();
+    }, 60000);
 
     // ---- Buttons navigate ----
     document.querySelectorAll('.btn[data-nav]').forEach(btn => {
-        btn.addEventListener('click', () => location.href = btn.dataset.nav);
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const nav = btn.dataset.nav;
+            if (nav) location.href = nav;
+        });
     });
 
     // ---- Settings dropdown ----
     const settingsBtn = document.getElementById('settings-btn');
     const settingsMenu = document.getElementById('settings-menu');
+
     const closeMenu = () => {
         if (settingsMenu) {
             settingsMenu.hidden = true;
             settingsBtn?.setAttribute('aria-expanded', 'false');
         }
     };
+
     const openMenu = () => {
         if (settingsMenu) {
             settingsMenu.hidden = false;
@@ -261,15 +188,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    settingsBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const expanded = settingsBtn.getAttribute('aria-expanded') === 'true';
-        expanded ? closeMenu() : openMenu();
-    });
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const expanded = settingsBtn.getAttribute('aria-expanded') === 'true';
+            expanded ? closeMenu() : openMenu();
+        });
+    }
 
     document.addEventListener('click', (e) => {
         if (!settingsMenu || settingsMenu.hidden) return;
-        if (!settingsMenu.contains(e.target) && e.target !== settingsBtn) closeMenu();
+        if (!settingsMenu.contains(e.target) && e.target !== settingsBtn) {
+            closeMenu();
+        }
     });
 
     document.addEventListener('keydown', (e) => {

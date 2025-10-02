@@ -1,22 +1,26 @@
-﻿(function () {
+﻿// InquiryTracker.js - Fixed Version
+(function () {
     const $ = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
     function toast(msg) {
         const box = $("#toast");
+        if (!box) return;
         const msgEl = $("#toastMsg");
-        msgEl.textContent = msg;
+        if (msgEl) msgEl.textContent = msg;
         box.classList.add("show");
         clearTimeout(toast.t);
         toast.t = setTimeout(() => box.classList.remove("show"), 3000);
     }
 
     let inquiries = [];
+    let advisors = []; // Store advisors for reassignment dropdown
 
-    // Fetch only inquiries assigned to the logged-in advisor
-    async function fetchInquiries() {
+    // Fetch advisors for reassignment dropdown
+    async function fetchAdvisors() {
         try {
-            const response = await fetch('/api/inquiry', {
+            console.log('Fetching advisors for reassignment...');
+            const response = await fetch('/api/inquiry/advisors', {
                 method: 'GET',
                 credentials: 'include'
             });
@@ -25,39 +29,113 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
+            advisors = await response.json();
+            console.log('Advisors loaded:', advisors.length);
+
+            // Populate the reassignment dropdown
+            populateAdvisorDropdown();
+        } catch (error) {
+            console.error('Error fetching advisors:', error);
+        }
+    }
+
+    // Populate advisor dropdown in the modal
+    function populateAdvisorDropdown() {
+        const assignedToSelect = $("#assignedTo");
+        if (!assignedToSelect || advisors.length === 0) return;
+
+        // Keep the first option (Keep current assignment)
+        const firstOption = assignedToSelect.querySelector('option[value=""]');
+        assignedToSelect.innerHTML = '';
+        if (firstOption) {
+            assignedToSelect.appendChild(firstOption);
+        } else {
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Keep current assignment';
+            assignedToSelect.appendChild(defaultOption);
+        }
+
+        // Add all advisors
+        advisors.forEach(advisor => {
+            const option = document.createElement('option');
+            option.value = advisor.id;
+            option.textContent = advisor.name;
+            assignedToSelect.appendChild(option);
+        });
+    }
+
+    // Fetch only inquiries assigned to the logged-in advisor
+    async function fetchInquiries() {
+        try {
+            console.log('Fetching inquiries assigned to current advisor...');
+            const response = await fetch('/api/inquiry', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'include'
+            });
+
+            console.log('Response status:', response.status);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
+            console.log('Received inquiry data:', data);
+            console.log('Number of inquiries:', data.length);
+
             inquiries = data.map(inq => ({
                 id: inq.id,
                 ref: inq.reference,
-                category: inq.category,
-                subject: inq.subject,
-                description: inq.description,
-                desired: inq.desired,
-                tags: inq.tags || [],
-                status: inq.status,
+                category: inq.category || 'N/A',
+                subject: inq.subject || 'N/A',
+                description: inq.description || '',
+                desired: inq.desired || '',
+                tags: Array.isArray(inq.tags) ? inq.tags : [],
+                status: inq.status || 'Pending',
                 date: inq.date,
-                callback: inq.callback,
-                attachments: inq.attachments || [],
-                updates: inq.updates || [],
-                userName: inq.userName,
-                userEmail: inq.userEmail,
-                assignedTo: inq.assignedTo
+                callback: inq.callback || false,
+                attachments: Array.isArray(inq.attachments) ? inq.attachments : [],
+                updates: Array.isArray(inq.updates) ? inq.updates : [],
+                userName: inq.userName || 'Unknown',
+                userEmail: inq.userEmail || 'No email',
+                assignedTo: inq.assignedTo || 'You'
             }));
 
+            console.log('Processed inquiries:', inquiries.length);
             renderInquiryTable();
         } catch (error) {
             console.error('Error fetching inquiries:', error);
             toast('Error loading inquiries: ' + error.message);
+
+            // Show error in the table
+            const tbody = $("#inquiryTableBody");
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 30px; color: #dc2626;">
+                            Failed to load inquiries. Please refresh the page.<br>
+                            <small>Error: ${error.message}</small>
+                        </td>
+                    </tr>
+                `;
+            }
         }
     }
 
     // Update inquiry status via API
     async function updateInquiry(inquiryRef, updateData) {
         try {
+            console.log('Updating inquiry:', inquiryRef, updateData);
             const response = await fetch(`/api/inquiry/${inquiryRef}`, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'include',
                 body: JSON.stringify(updateData)
@@ -68,6 +146,7 @@
             }
 
             const result = await response.json();
+            console.log('Update result:', result);
             return result;
         } catch (error) {
             console.error('Error updating inquiry:', error);
@@ -81,12 +160,14 @@
 
         tbody.innerHTML = "";
 
-        const statusFilter = $("#statusFilter").value;
-        const categoryFilter = $("#categoryFilter").value;
-        const searchTerm = $("#searchInput").value.toLowerCase();
+        const statusFilter = $("#statusFilter")?.value || 'all';
+        const categoryFilter = $("#categoryFilter")?.value || 'all';
+        const searchTerm = $("#searchInput")?.value?.toLowerCase() || '';
+
+        console.log('Applying filters - Status:', statusFilter, 'Category:', categoryFilter, 'Search:', searchTerm);
 
         const filteredInquiries = inquiries.filter(inq => {
-            const matchesStatus = statusFilter === 'all' || inq.status === statusFilter;
+            const matchesStatus = statusFilter === 'all' || inq.status.toLowerCase() === statusFilter.toLowerCase();
             const matchesCategory = categoryFilter === 'all' || inq.category === categoryFilter;
             const matchesSearch = searchTerm === '' ||
                 inq.ref.toLowerCase().includes(searchTerm) ||
@@ -98,24 +179,41 @@
             return matchesStatus && matchesCategory && matchesSearch;
         });
 
-        $("#inquiryCount").textContent = `${filteredInquiries.length} inquiries`;
+        console.log('Filtered inquiries:', filteredInquiries.length);
+
+        const inquiryCount = $("#inquiryCount");
+        if (inquiryCount) {
+            inquiryCount.textContent = `${filteredInquiries.length} inquir${filteredInquiries.length === 1 ? 'y' : 'ies'}`;
+        }
+
+        if (filteredInquiries.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 30px; color: #6b7280;">
+                        ${inquiries.length === 0 ? 'No inquiries assigned to you yet' : 'No inquiries match your filters'}
+                    </td>
+                </tr>
+            `;
+            return;
+        }
 
         filteredInquiries.forEach(inq => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-          <td>${inq.ref}</td>
-          <td>${inq.subject}</td>
-          <td>${inq.category}</td>
-          <td><span class="status-badge status-${inq.status}">${formatStatus(inq.status)}</span></td>
-          <td>${formatDate(inq.date)}</td>
-          <td>
-            <button class="btn small view-btn" data-id="${inq.id}">View</button>
-          </td>
-        `;
+                <td>${escapeHtml(inq.ref)}</td>
+                <td>${escapeHtml(inq.subject)}</td>
+                <td>${escapeHtml(inq.category)}</td>
+                <td><span class="status-badge status-${normalizeStatus(inq.status)}">${formatStatus(inq.status)}</span></td>
+                <td>${formatDate(inq.date)}</td>
+                <td>
+                    <button class="btn small view-btn" data-id="${inq.id}">View</button>
+                </td>
+            `;
             tbody.appendChild(tr);
         });
 
-        $(".view-btn").forEach(btn => {
+        // Attach event listeners to view buttons
+        $$(".view-btn").forEach(btn => {
             btn.addEventListener("click", () => {
                 const inquiryId = btn.dataset.id;
                 showInquiryDetails(inquiryId);
@@ -123,26 +221,49 @@
         });
     }
 
+    function normalizeStatus(status) {
+        return status.toLowerCase().replace(/\s+/g, '-');
+    }
+
     function formatStatus(status) {
         const statusMap = {
             'new': 'New',
-            'Pending': 'Pending',
+            'pending': 'Pending',
             'in-progress': 'In Progress',
             'resolved': 'Resolved',
             'closed': 'Closed'
         };
-        return statusMap[status] || status;
+        return statusMap[status.toLowerCase()] || status;
     }
 
-    function formatDate(dateString) {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleDateString();
+    function formatDate(dateValue) {
+        if (!dateValue) return 'N/A';
+
+        try {
+            // Handle Firestore Timestamp object
+            if (dateValue._seconds) {
+                const date = new Date(dateValue._seconds * 1000);
+                return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            }
+
+            // Handle regular date string
+            const date = new Date(dateValue);
+            if (isNaN(date.getTime())) return 'Invalid date';
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        } catch (error) {
+            console.error('Error formatting date:', error, dateValue);
+            return 'N/A';
+        }
     }
 
     function showInquiryDetails(inquiryId) {
         const inquiry = inquiries.find(i => i.id === inquiryId);
-        if (!inquiry) return;
+        if (!inquiry) {
+            console.error('Inquiry not found:', inquiryId);
+            return;
+        }
+
+        console.log('Showing details for inquiry:', inquiry);
 
         $("#modalTitle").textContent = `Inquiry: ${inquiry.ref}`;
         $("#modalSubtitle").textContent = `Submitted by: ${inquiry.userName} (${inquiry.userEmail}) on ${formatDate(inquiry.date)}`;
@@ -151,35 +272,50 @@
         $("#detailSubject").textContent = inquiry.subject;
         $("#detailStatus").textContent = formatStatus(inquiry.status);
         $("#detailDate").textContent = formatDate(inquiry.date);
-        $("#detailTags").textContent = Array.isArray(inquiry.tags) ? inquiry.tags.join(", ") : (inquiry.tags || "None");
+        $("#detailTags").textContent = inquiry.tags.length > 0 ? inquiry.tags.join(", ") : "None";
         $("#detailDescription").textContent = inquiry.description;
         $("#detailOutcome").textContent = inquiry.desired || "Not specified";
         $("#detailCallback").textContent = inquiry.callback ? "Customer requested a follow-up call" : "No callback requested";
 
         const attachmentsList = $("#detailAttachments");
-        attachmentsList.innerHTML = "";
-        if (inquiry.attachments && inquiry.attachments.length > 0) {
-            inquiry.attachments.forEach(att => {
+        if (attachmentsList) {
+            attachmentsList.innerHTML = "";
+            if (inquiry.attachments && inquiry.attachments.length > 0) {
+                inquiry.attachments.forEach(att => {
+                    const li = document.createElement("li");
+                    li.textContent = `${att.name || 'File'} ${att.size ? '(' + formatFileSize(att.size) + ')' : ''}`;
+                    attachmentsList.appendChild(li);
+                });
+            } else {
                 const li = document.createElement("li");
-                li.textContent = `${att.name} (${formatFileSize(att.size)})`;
+                li.textContent = "No attachments";
                 attachmentsList.appendChild(li);
-            });
-        } else {
-            const li = document.createElement("li");
-            li.textContent = "No attachments";
-            attachmentsList.appendChild(li);
+            }
         }
 
-        $("#statusUpdate").value = inquiry.status;
-
-        if (inquiry.assignedTo) {
-            $("#assignedTo").value = inquiry.assignedTo;
-        } else {
-            $("#assignedTo").value = "";
+        // Set current status
+        const statusUpdate = $("#statusUpdate");
+        if (statusUpdate) {
+            statusUpdate.value = inquiry.status;
         }
 
-        $("#internalNotes").value = "";
-        $("#updateForm").dataset.inquiryRef = inquiry.ref;
+        // Set assigned advisor (for reassignment)
+        const assignedTo = $("#assignedTo");
+        if (assignedTo) {
+            assignedTo.value = "";
+        }
+
+        // Clear notes
+        const internalNotes = $("#internalNotes");
+        if (internalNotes) {
+            internalNotes.value = "";
+        }
+
+        // Store inquiry reference for update
+        const updateForm = $("#updateForm");
+        if (updateForm) {
+            updateForm.dataset.inquiryRef = inquiry.ref;
+        }
 
         openModal("#detailModal");
     }
@@ -192,12 +328,14 @@
 
     function openModal(selector) {
         const modal = $(selector);
+        if (!modal) return;
         modal.classList.add("show");
         trapFocus(modal);
     }
 
     function closeModal(selector) {
         const modal = $(selector);
+        if (!modal) return;
         modal.classList.remove("show");
         releaseFocus();
     }
@@ -234,6 +372,17 @@
         }
     }
 
+    function escapeHtml(unsafe) {
+        if (unsafe == null) return '';
+        return String(unsafe)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Event listeners
     document.addEventListener("click", (e) => {
         const settingsBtn = e.target.closest("#settings-btn");
         if (settingsBtn) {
@@ -257,42 +406,72 @@
         }
     });
 
-    $("#statusFilter").addEventListener("change", renderInquiryTable);
-    $("#categoryFilter").addEventListener("change", renderInquiryTable);
-    $("#searchInput").addEventListener("input", renderInquiryTable);
+    // Filter event listeners
+    const statusFilter = $("#statusFilter");
+    const categoryFilter = $("#categoryFilter");
+    const searchInput = $("#searchInput");
 
-    $("#updateForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
+    if (statusFilter) statusFilter.addEventListener("change", renderInquiryTable);
+    if (categoryFilter) categoryFilter.addEventListener("change", renderInquiryTable);
+    if (searchInput) searchInput.addEventListener("input", renderInquiryTable);
 
-        const inquiryRef = $("#updateForm").dataset.inquiryRef;
-        if (!inquiryRef) return;
+    // Form submission
+    const updateForm = $("#updateForm");
+    if (updateForm) {
+        updateForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-        const newStatus = $("#statusUpdate").value;
-        const notes = $("#internalNotes").value.trim();
-        const assignedTo = $("#assignedTo").value;
+            const inquiryRef = updateForm.dataset.inquiryRef;
+            if (!inquiryRef) {
+                toast("No inquiry selected");
+                return;
+            }
 
-        try {
-            const updateData = {
-                status: newStatus,
-                internalNotes: notes,
-                assignedTo: assignedTo
-            };
+            const newStatus = $("#statusUpdate")?.value;
+            const notes = $("#internalNotes")?.value.trim() || '';
+            const assignedTo = $("#assignedTo")?.value || '';
 
-            await updateInquiry(inquiryRef, updateData);
-            await fetchInquiries();
+            try {
+                const updateData = {
+                    status: newStatus,
+                    internalNotes: notes
+                };
 
-            toast("Inquiry updated successfully");
-            closeModal("#detailModal");
-        } catch (error) {
-            toast("Failed to update inquiry: " + error.message);
-        }
-    });
+                // Only include assignedTo if a new advisor was selected
+                if (assignedTo) {
+                    updateData.assignedTo = assignedTo;
+                }
+
+                console.log('Submitting update:', updateData);
+
+                await updateInquiry(inquiryRef, updateData);
+                await fetchInquiries();
+
+                toast("Inquiry updated successfully");
+                closeModal("#detailModal");
+            } catch (error) {
+                console.error('Update error:', error);
+                toast("Failed to update inquiry: " + error.message);
+            }
+        });
+    }
 
     function init() {
-        fetchInquiries();
+        console.log('Initializing InquiryTracker...');
+        fetchAdvisors(); // Fetch advisors for dropdown
+        fetchInquiries(); // Fetch inquiries
+
+        // Auto-refresh every 30 seconds
         setInterval(() => {
+            console.log('Auto-refreshing inquiries...');
             fetchInquiries();
         }, 30000);
     }
 
-    init();
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();

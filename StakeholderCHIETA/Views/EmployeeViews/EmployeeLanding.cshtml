@@ -1,5 +1,8 @@
-﻿@{
+﻿@using System.Security.Claims
+@{
     Layout = null;
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var userName = User.Identity?.Name ?? "User";
 }
 <html>
 <head>
@@ -7,7 +10,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Advisor Landing Page</title>
     <link rel="stylesheet" href="~/Content/EmployeeView/EmployeeLandingPage.css" />
-
 </head>
 
 <body>
@@ -27,11 +29,9 @@
                         <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
                         <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
                         <div class="menu-sep" role="separator"></div>
-                        <div class="menu-sep" role="separator"></div>
                         <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
                             <button type="submit" class="danger">Sign out</button>
                         </form>
-
                     </div>
                 </div>
             </nav>
@@ -46,16 +46,16 @@
 
         <!-- Welcome -->
         <section class="welcome">
-            <h1>Welcome @User.Identity.Name</h1>
-            <p class="tagline">This is your personalised landing page, equipt for your every need</p>
+            <h1>Welcome @userName</h1>
+            <p class="tagline">This is your personalised landing page, equipped for your every need</p>
 
             <div class="summary-grid">
-                <a id="link-appointments" class="summary-card" href="@Url.Action("List", "Appointment")">
+                <a id="link-appointments" class="summary-card" href="@Url.Action("AppointmentTracker", "AdvisorAppointment")">
                     <h3>Upcoming Appointments</h3>
-                    <ul id="upcoming-list" class="mini-list"><li class="muted">Loading..</li></ul>
+                    <ul id="upcoming-list" class="mini-list"><li class="muted">Loading…</li></ul>
                 </a>
 
-                <a id="link-inquiries" class="summary-card" href="@Url.Action("List", "Inquiry")">
+                <a id="link-inquiries" class="summary-card" href="@Url.Action("Tracking", "Inquiry")">
                     <h3>Recent Inquiries</h3>
                     <ul id="inquiries-list" class="mini-list"><li class="muted">Loading…</li></ul>
                 </a>
@@ -68,7 +68,7 @@
         <section class="actions">
             <h2>Select your desired action</h2>
             <p class="sub">
-                You can choose from the following depending on what you want to do. Each action allows you to interact with your advisor in an easier manner and you can see the progress of each.
+                You can choose from the following depending on what you want to do. Each action allows you to interact with stakeholders in an easier manner and you can see the progress of each.
             </p>
 
             <div class="actions-grid">
@@ -76,21 +76,21 @@
                     <div class="card-hero" aria-hidden="true"></div>
                     <h3><a asp-controller="AdvisorAppointment" asp-action="AppointmentTracker">Check your appointments</a></h3>
                     <p>You can check all the appointments made with you. Each appointment will have the option to accept or decline.</p>
-                    <button class="btn" data-nav="@Url.Action("Booking", "Appointment")">Book</button>
+                    <button class="btn" data-nav="@Url.Action("AppointmentTracker", "AdvisorAppointment")">View</button>
                 </div>
 
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
                     <h3><a asp-controller="Inquiry" asp-action="Tracking">Track Your Inquiries</a></h3>
-                    <p>All the inquiries sent to you can be accessed via this page and updates can be made.</p>
-                    <button class="btn" data-nav="@Url.Action("Update", "Inquiry")">Track</button>
+                    <p>All the inquiries assigned to you can be accessed via this page and updates can be made.</p>
+                    <button class="btn" data-nav="@Url.Action("Tracking", "Inquiry")">Track</button>
                 </div>
 
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
                     <h3><a asp-controller="AdvisorAppointment" asp-action="BoardroomBooking">Book an Office Space</a></h3>
                     <p>Book the office that meets the needs of all your meetings</p>
-                    <button class="btn" data-nav="@Url.Action("Book", "OfficeSpace")">Grab</button>
+                    <button class="btn" data-nav="@Url.Action("BoardroomBooking", "AdvisorAppointment")">Book</button>
                 </div>
             </div>
         </section>
@@ -103,15 +103,16 @@
     </footer>
 
     <script>
-        // Make advisor info available to JavaScript
+        // Make advisor info available to JavaScript for debugging
         window.currentUser = {
-            advisorId: '@User.Identity.Name', // This should match the assignedAdvisor field in Firestore
-            name: '@User.Identity.Name'
+            userId: '@userId',
+            name: '@userName'
         };
-        console.log("Current user:", window.currentUser);
+        console.log("=== Current User Info ===");
+        console.log("User ID:", window.currentUser.userId);
+        console.log("User Name:", window.currentUser.name);
     </script>
 
-    <script src="~/Content/EmployeeView/js/EmployeeLanding.js"></script>
     <script src="~/Content/EmployeeView/js/EmployeeLanding.js"></script>
 </body>
 </html>
