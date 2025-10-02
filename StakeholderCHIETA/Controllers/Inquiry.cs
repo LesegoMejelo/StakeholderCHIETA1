@@ -52,16 +52,16 @@ namespace Staekholder_CHIETA_X.Controllers
         [AllowAnonymous]
         [Route("api/inquiry")]
         public async Task<IActionResult> Post(
-            [FromForm] string name,
-            [FromForm] string subject,
-            [FromForm] string description,
-            [FromForm] string inquiryType,
-            [FromForm] string desiredOutcome = "",
-            [FromForm] string relatedDate = "",
-            [FromForm] string tags = "",
-            [FromForm] bool followUpCall = false,
-            [FromForm] string assignedAdvisorId = "",
-            [FromForm] string assignedAdvisorName = "")
+     [FromForm] string name,
+     [FromForm] string subject,
+     [FromForm] string description,
+     [FromForm] string inquiryType,
+     [FromForm] string desiredOutcome = "",
+     [FromForm] string relatedDate = "",
+     [FromForm] string tags = "",
+     [FromForm] bool followUpCall = false,
+     [FromForm] string assignedAdvisorId = "",
+     [FromForm] string assignedAdvisorName = "")
         {
             try
             {
@@ -83,40 +83,82 @@ namespace Staekholder_CHIETA_X.Controllers
                 if (string.IsNullOrWhiteSpace(inquiryType)) return BadRequest(new { error = "Inquiry type is required" });
 
                 var tagArray = string.IsNullOrWhiteSpace(tags)
-                    ? new string[0]
+                    ? Array.Empty<string>()
                     : tags.Split(',').Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).ToArray();
+
+                // ---- Resolve advisor email/name from Users ----
+                string assignedAdvisorEmail = "";
+                assignedAdvisorId = (assignedAdvisorId ?? "").Trim();
+                assignedAdvisorName = (assignedAdvisorName ?? "").Trim();
+
+                if (!string.IsNullOrEmpty(assignedAdvisorId))
+                {
+                    var advDoc = await _db.Collection("Users").Document(assignedAdvisorId).GetSnapshotAsync();
+                    if (advDoc.Exists)
+                    {
+                        var adv = advDoc.ToDictionary();
+                        if (string.IsNullOrWhiteSpace(assignedAdvisorName) && adv.TryGetValue("Name", out var nm))
+                            assignedAdvisorName = nm?.ToString() ?? assignedAdvisorName;
+
+                        if (adv.TryGetValue("Email", out var ev))
+                            assignedAdvisorEmail = ev?.ToString() ?? "";
+                    }
+                }
+                else if (!string.IsNullOrEmpty(assignedAdvisorName))
+                {
+                    // Optional fallback: if only name is provided, try to find the user by Name to get Id/Email
+                    var byNameSnap = await _db.Collection("Users")
+                                              .WhereEqualTo("Name", assignedAdvisorName)
+                                              .Limit(1)
+                                              .GetSnapshotAsync();
+
+                    var match = byNameSnap.Documents.FirstOrDefault();
+                    if (match != null)
+                    {
+                        assignedAdvisorId = match.Id;
+                        var adv = match.ToDictionary();
+                        if (adv.TryGetValue("Email", out var ev))
+                            assignedAdvisorEmail = ev?.ToString() ?? "";
+                    }
+                }
+
+                assignedAdvisorEmail = (assignedAdvisorEmail ?? "").Trim().ToLowerInvariant();
 
                 var nowTs = Timestamp.GetCurrentTimestamp();
 
                 var inquiryData = new Dictionary<string, object>
-                {
-                    { "name", displayName },
-                    { "createdBy", new Dictionary<string, object> {
-                        { "userId", userId },
-                        { "name", displayName },
-                        { "email", userEmail }
-                    }},
-                    { "subject", subject.Trim() },
-                    { "description", description.Trim() },
-                    { "inquiryType", inquiryType.Trim() },
-                    { "desiredOutcome", desiredOutcome?.Trim() ?? "" },
-                    { "relatedDate", relatedDate?.Trim() ?? "" },
-                    { "tags", tagArray },
-                    { "followUpCall", followUpCall },
-                    { "assignedAdvisorId", assignedAdvisorId?.Trim() ?? "" },
-                    { "assignedAdvisor", assignedAdvisorName?.Trim() ?? "" },
+        {
+            { "name", displayName },
+            { "createdBy", new Dictionary<string, object> {
+                { "userId", userId },
+                { "name", displayName },
+                { "email", userEmail }
+            }},
+            { "subject", subject.Trim() },
+            { "description", description.Trim() },
+            { "inquiryType", inquiryType.Trim() },
+            { "desiredOutcome", desiredOutcome?.Trim() ?? "" },
+            { "relatedDate", relatedDate?.Trim() ?? "" },
+            { "tags", tagArray },
+            { "followUpCall", followUpCall },
+
+            // Advisor fields (now with email too)
+            { "assignedAdvisorId", assignedAdvisorId },
+            { "assignedAdvisor", assignedAdvisorName },
+            { "assignedAdvisorEmail", assignedAdvisorEmail },
+
+            { "status", "Pending" },
+            { "createdAt", nowTs },
+            { "updatedAt", nowTs },
+            { "updates", new List<object> {
+                new Dictionary<string, object> {
                     { "status", "Pending" },
-                    { "createdAt", nowTs },
-                    { "updatedAt", nowTs },
-                    { "updates", new List<object> {
-                        new Dictionary<string, object> {
-                            { "status", "Pending" },
-                            { "updatedBy", isAuthed ? (displayName ?? "User") : "System" },
-                            { "timestamp", nowTs },
-                            { "notes", "Inquiry submitted via website" }
-                        }
-                    }}
-                };
+                    { "updatedBy", isAuthed ? (displayName ?? "User") : "System" },
+                    { "timestamp", nowTs },
+                    { "notes", "Inquiry submitted via website" }
+                }
+            }}
+        };
 
                 var docRef = await _db.Collection("inquiries").AddAsync(inquiryData);
 

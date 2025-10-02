@@ -86,7 +86,7 @@
                 method: "GET",
                 headers: {
                     "Accept": "application/json",
-                    'X-Requested-With': 'XMLHttpRequest'
+                    "X-Requested-With": "XMLHttpRequest"
                 },
                 credentials: "include"
             });
@@ -98,26 +98,34 @@
             }
 
             const inquiries = await res.json();
-            console.log('Received inquiries:', inquiries.length);
+            console.log('Received inquiries:', Array.isArray(inquiries) ? inquiries.length : '(not an array)');
+
+            // Sort newest first using 'date' if present; otherwise leave order
+            const sorted = (Array.isArray(inquiries) ? inquiries : [])
+                .slice()
+                .sort((a, b) => {
+                    const ad = a.date ? new Date(a.date) : new Date(0);
+                    const bd = b.date ? new Date(b.date) : new Date(0);
+                    return bd - ad; // desc
+                })
+                .slice(0, 5); // Show only 5 most recent
 
             list.innerHTML = "";
 
-            if (inquiries.length === 0) {
+            if (sorted.length === 0) {
                 list.innerHTML = "<li class='muted'>No recent inquiries</li>";
                 return;
             }
 
-            // Show only the 5 most recent
-            inquiries.slice(0, 5).forEach(inquiry => {
-                const li = document.createElement("li");
-                const ref = inquiry.reference || 'N/A';
-                const subject = inquiry.subject || 'No subject';
-                const status = inquiry.status || 'Pending';
+            sorted.forEach(inq => {
+                const ref = inq.reference || inq.referenceNumber || generateReferenceNumber(inq.id || '');
+                const subj = inq.subject || 'No Subject';
 
+                const li = document.createElement("li");
                 li.innerHTML = `
-                    <span>${escapeHTML(ref)}</span>
-                    <span>${escapeHTML(subject)} <small class="status-${status.toLowerCase()}">(${escapeHTML(status)})</small></span>
-                `;
+        <span>${escapeHTML(ref)}</span>
+        <span>${escapeHTML(subj)}</span>
+      `;
                 list.appendChild(li);
             });
         } catch (err) {
@@ -125,6 +133,24 @@
             list.innerHTML = "<li class='muted'>Failed to load inquiries</li>";
         }
     }
+
+    // Fallback (matches your existing logic) in case API doesn’t provide a reference number
+    function generateReferenceNumber(docId) {
+        const now = new Date();
+        const yy = String(now.getFullYear()).slice(-2);
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const shortId = (docId || '').slice(-4).toUpperCase();
+        return `INQ-${yy}${mm}${dd}-${shortId}`;
+    }
+
+    // simple HTML escaper (reuse your existing if you already have one)
+    function escapeHTML(s) {
+        return String(s).replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+
 
     // ---- Helper Functions ----
     function formatTime(timeString) {
