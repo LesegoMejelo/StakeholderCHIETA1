@@ -143,71 +143,60 @@ namespace Staekholder_CHIETA_X.Controllers
         }
 
         // GET: Advisor-specific inquiries
-        [HttpGet]
-        [Authorize(Roles = "Advisor")]
-        [Route("api/inquiry")]
+        [HttpGet("my")]
+        [Authorize] // authenticated stakeholder/advisor both allowed; we filter by identity
         public async Task<IActionResult> GetMyInquiries()
         {
             try
             {
-                var advisorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var email = User.FindFirstValue(ClaimTypes.Email);
+                var name = User.Identity?.Name;
 
-                if (string.IsNullOrEmpty(advisorId))
-                    return Unauthorized(new { error = "Could not identify advisor" });
+                if (string.IsNullOrWhiteSpace(userId) && string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(name))
+                    return Unauthorized(new { message = "User not authenticated" });
 
-                var snapshot = await _db.Collection("inquiries")
-                                        .WhereEqualTo("assignedAdvisorId", advisorId)
-                                        .OrderByDescending("createdAt")
-                                        .GetSnapshotAsync();
+                var col = _db.Collection("inquiries");
 
-                var inquiries = snapshot.Documents.Select(doc =>
+                // Prefer stable ID, then email, then (legacy) display name
+                Query q;
+                if (!string.IsNullOrWhiteSpace(userId))
+                    q = col.WhereEqualTo("StakeholderUserId", userId);
+                else if (!string.IsNullOrWhiteSpace(email))
+                    q = col.WhereEqualTo("StakeholderEmail", email);
+                else
+                    q = col.WhereEqualTo("ClientName", name);
+
+                var snap = await q.GetSnapshotAsync();
+
+                var list = snap.Documents.Select(d =>
                 {
-                    var data = doc.ToDictionary();
-
-                    // Extract creator info
-                    var createdBy = data.ContainsKey("createdBy")
-                        ? data["createdBy"] as Dictionary<string, object>
-                        : null;
-
-                    string userName = createdBy?.ContainsKey("name") == true
-                        ? createdBy["name"]?.ToString() ?? ""
-                        : (data.ContainsKey("name") ? data["name"]?.ToString() ?? "" : "");
-
-                    string userEmail = createdBy?.ContainsKey("email") == true
-                        ? createdBy["email"]?.ToString() ?? ""
-                        : "";
-
+                    var data = d.ToDictionary();
                     return new
                     {
-                        id = doc.Id,
-                        reference = GenerateReferenceNumber(doc.Id),
-                        category = data.ContainsKey("inquiryType") ? data["inquiryType"] : "N/A",
-                        subject = data.ContainsKey("subject") ? data["subject"] : "N/A",
-                        description = data.ContainsKey("description") ? data["description"] : "",
-                        desired = data.ContainsKey("desiredOutcome") ? data["desiredOutcome"] : "",
-                        tags = data.ContainsKey("tags") ? data["tags"] : new string[0],
-                        status = data.ContainsKey("status") ? data["status"] : "Pending",
-                        date = data.ContainsKey("createdAt") ? data["createdAt"] : null,
-                        callback = data.ContainsKey("followUpCall") ? data["followUpCall"] : false,
-                        attachments = data.ContainsKey("attachments") ? data["attachments"] : new List<object>(),
-                        updates = data.ContainsKey("updates") ? data["updates"] : new List<object>(),
-                        userName = userName,
-                        userEmail = userEmail,
-                        assignedTo = data.ContainsKey("assignedAdvisor") ? data["assignedAdvisor"] : ""
+                        id = d.Id,
+                        reference = data.TryGetValue("Reference", out var r) ? r?.ToString() : d.Id,
+                        subject = data.TryGetValue("Subject", out var s) ? s?.ToString() : "(No subject)",
+                        status = (data.TryGetValue("Status", out var st) ? st?.ToString() : "Pending"),
+                        createdAt = d.ContainsField("CreatedAt")
+                            ? (d.GetValue<object>("CreatedAt") is Timestamp ts ? ts.ToDateTime() : (DateTime?)null)
+                            : null
                     };
-                }).ToList();
+                })
+                // newest first (UI slices top 5 anyway)
+                .OrderByDescending(x => x.createdAt ?? DateTime.MinValue)
+                .ToList();
 
-                return Ok(inquiries);
+                return Ok(list);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR in GetMyInquiries: {ex.Message}");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { message = $"Failed to fetch inquiries: {ex.Message}" });
             }
         }
 
-        // PUT: Update inquiry status
-        [HttpPut]
+            // PUT: Update inquiry status
+            [HttpPut]
         [Authorize(Roles = "Advisor,Admin")]
         [Route("api/inquiry/{reference}")]
         public async Task<IActionResult> UpdateInquiry(string reference, [FromBody] Dictionary<string, object> updateData)
