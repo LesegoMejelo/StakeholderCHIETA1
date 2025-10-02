@@ -52,16 +52,16 @@ namespace Staekholder_CHIETA_X.Controllers
         [AllowAnonymous]
         [Route("api/inquiry")]
         public async Task<IActionResult> Post(
-            [FromForm] string name,
-            [FromForm] string subject,
-            [FromForm] string description,
-            [FromForm] string inquiryType,
-            [FromForm] string desiredOutcome = "",
-            [FromForm] string relatedDate = "",
-            [FromForm] string tags = "",
-            [FromForm] bool followUpCall = false,
-            [FromForm] string assignedAdvisorId = "",
-            [FromForm] string assignedAdvisorName = "")
+     [FromForm] string name,
+     [FromForm] string subject,
+     [FromForm] string description,
+     [FromForm] string inquiryType,
+     [FromForm] string desiredOutcome = "",
+     [FromForm] string relatedDate = "",
+     [FromForm] string tags = "",
+     [FromForm] bool followUpCall = false,
+     [FromForm] string assignedAdvisorId = "",
+     [FromForm] string assignedAdvisorName = "")
         {
             try
             {
@@ -83,40 +83,82 @@ namespace Staekholder_CHIETA_X.Controllers
                 if (string.IsNullOrWhiteSpace(inquiryType)) return BadRequest(new { error = "Inquiry type is required" });
 
                 var tagArray = string.IsNullOrWhiteSpace(tags)
-                    ? new string[0]
+                    ? Array.Empty<string>()
                     : tags.Split(',').Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).ToArray();
+
+                // ---- Resolve advisor email/name from Users ----
+                string assignedAdvisorEmail = "";
+                assignedAdvisorId = (assignedAdvisorId ?? "").Trim();
+                assignedAdvisorName = (assignedAdvisorName ?? "").Trim();
+
+                if (!string.IsNullOrEmpty(assignedAdvisorId))
+                {
+                    var advDoc = await _db.Collection("Users").Document(assignedAdvisorId).GetSnapshotAsync();
+                    if (advDoc.Exists)
+                    {
+                        var adv = advDoc.ToDictionary();
+                        if (string.IsNullOrWhiteSpace(assignedAdvisorName) && adv.TryGetValue("Name", out var nm))
+                            assignedAdvisorName = nm?.ToString() ?? assignedAdvisorName;
+
+                        if (adv.TryGetValue("Email", out var ev))
+                            assignedAdvisorEmail = ev?.ToString() ?? "";
+                    }
+                }
+                else if (!string.IsNullOrEmpty(assignedAdvisorName))
+                {
+                    // Optional fallback: if only name is provided, try to find the user by Name to get Id/Email
+                    var byNameSnap = await _db.Collection("Users")
+                                              .WhereEqualTo("Name", assignedAdvisorName)
+                                              .Limit(1)
+                                              .GetSnapshotAsync();
+
+                    var match = byNameSnap.Documents.FirstOrDefault();
+                    if (match != null)
+                    {
+                        assignedAdvisorId = match.Id;
+                        var adv = match.ToDictionary();
+                        if (adv.TryGetValue("Email", out var ev))
+                            assignedAdvisorEmail = ev?.ToString() ?? "";
+                    }
+                }
+
+                assignedAdvisorEmail = (assignedAdvisorEmail ?? "").Trim().ToLowerInvariant();
 
                 var nowTs = Timestamp.GetCurrentTimestamp();
 
                 var inquiryData = new Dictionary<string, object>
-                {
-                    { "name", displayName },
-                    { "createdBy", new Dictionary<string, object> {
-                        { "userId", userId },
-                        { "name", displayName },
-                        { "email", userEmail }
-                    }},
-                    { "subject", subject.Trim() },
-                    { "description", description.Trim() },
-                    { "inquiryType", inquiryType.Trim() },
-                    { "desiredOutcome", desiredOutcome?.Trim() ?? "" },
-                    { "relatedDate", relatedDate?.Trim() ?? "" },
-                    { "tags", tagArray },
-                    { "followUpCall", followUpCall },
-                    { "assignedAdvisorId", assignedAdvisorId?.Trim() ?? "" },
-                    { "assignedAdvisor", assignedAdvisorName?.Trim() ?? "" },
+        {
+            { "name", displayName },
+            { "createdBy", new Dictionary<string, object> {
+                { "userId", userId },
+                { "name", displayName },
+                { "email", userEmail }
+            }},
+            { "subject", subject.Trim() },
+            { "description", description.Trim() },
+            { "inquiryType", inquiryType.Trim() },
+            { "desiredOutcome", desiredOutcome?.Trim() ?? "" },
+            { "relatedDate", relatedDate?.Trim() ?? "" },
+            { "tags", tagArray },
+            { "followUpCall", followUpCall },
+
+            // Advisor fields (now with email too)
+            { "assignedAdvisorId", assignedAdvisorId },
+            { "assignedAdvisor", assignedAdvisorName },
+            { "assignedAdvisorEmail", assignedAdvisorEmail },
+
+            { "status", "Pending" },
+            { "createdAt", nowTs },
+            { "updatedAt", nowTs },
+            { "updates", new List<object> {
+                new Dictionary<string, object> {
                     { "status", "Pending" },
-                    { "createdAt", nowTs },
-                    { "updatedAt", nowTs },
-                    { "updates", new List<object> {
-                        new Dictionary<string, object> {
-                            { "status", "Pending" },
-                            { "updatedBy", isAuthed ? (displayName ?? "User") : "System" },
-                            { "timestamp", nowTs },
-                            { "notes", "Inquiry submitted via website" }
-                        }
-                    }}
-                };
+                    { "updatedBy", isAuthed ? (displayName ?? "User") : "System" },
+                    { "timestamp", nowTs },
+                    { "notes", "Inquiry submitted via website" }
+                }
+            }}
+        };
 
                 var docRef = await _db.Collection("inquiries").AddAsync(inquiryData);
 
@@ -142,7 +184,6 @@ namespace Staekholder_CHIETA_X.Controllers
             return $"INQ-{datePart}-{shortId}";
         }
 
-        // GET: Advisor-specific inquiries
         [HttpGet]
         [Authorize(Roles = "Advisor")]
         [Route("api/inquiry")]
@@ -150,61 +191,94 @@ namespace Staekholder_CHIETA_X.Controllers
         {
             try
             {
-                var advisorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                // Collect possible advisor identifiers from claims
+                var advisorId = User.FindFirstValue(ClaimTypes.NameIdentifier)?.Trim();
+                var advisorEmail = User.FindFirstValue(ClaimTypes.Email)?.Trim()?.ToLowerInvariant();
+                var advisorName = (User.Identity?.Name ?? "").Trim();
 
-                if (string.IsNullOrEmpty(advisorId))
+                if (string.IsNullOrEmpty(advisorId) && string.IsNullOrEmpty(advisorEmail) && string.IsNullOrEmpty(advisorName))
                     return Unauthorized(new { error = "Could not identify advisor" });
 
-                var snapshot = await _db.Collection("inquiries")
-                                        .WhereEqualTo("assignedAdvisorId", advisorId)
-                                        .OrderByDescending("createdAt")
-                                        .GetSnapshotAsync();
+                var col = _db.Collection("inquiries");
 
-                var inquiries = snapshot.Documents.Select(doc =>
+                // Run up to three queries (Firestore has no OR), then merge & dedupe
+                var tasks = new List<Task<QuerySnapshot>>();
+
+                // 1) By stored advisorId
+                if (!string.IsNullOrEmpty(advisorId))
+                    tasks.Add(col.WhereEqualTo("assignedAdvisorId", advisorId).Limit(200).GetSnapshotAsync());
+
+                // 2) By stored advisor email (normalize lowercase)
+                if (!string.IsNullOrEmpty(advisorEmail))
+                    tasks.Add(col.WhereEqualTo("assignedAdvisorEmail", advisorEmail).Limit(200).GetSnapshotAsync());
+
+                // 3) By display name (only if present)
+                if (!string.IsNullOrEmpty(advisorName))
+                    tasks.Add(col.WhereEqualTo("assignedAdvisor", advisorName).Limit(200).GetSnapshotAsync());
+
+                var snaps = await Task.WhenAll(tasks);
+
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var items = new List<dynamic>();
+
+                foreach (var snap in snaps)
                 {
-                    var data = doc.ToDictionary();
-
-                    // Extract creator info
-                    var createdBy = data.ContainsKey("createdBy")
-                        ? data["createdBy"] as Dictionary<string, object>
-                        : null;
-
-                    string userName = createdBy?.ContainsKey("name") == true
-                        ? createdBy["name"]?.ToString() ?? ""
-                        : (data.ContainsKey("name") ? data["name"]?.ToString() ?? "" : "");
-
-                    string userEmail = createdBy?.ContainsKey("email") == true
-                        ? createdBy["email"]?.ToString() ?? ""
-                        : "";
-
-                    return new
+                    foreach (var doc in snap.Documents)
                     {
-                        id = doc.Id,
-                        reference = GenerateReferenceNumber(doc.Id),
-                        category = data.ContainsKey("inquiryType") ? data["inquiryType"] : "N/A",
-                        subject = data.ContainsKey("subject") ? data["subject"] : "N/A",
-                        description = data.ContainsKey("description") ? data["description"] : "",
-                        desired = data.ContainsKey("desiredOutcome") ? data["desiredOutcome"] : "",
-                        tags = data.ContainsKey("tags") ? data["tags"] : new string[0],
-                        status = data.ContainsKey("status") ? data["status"] : "Pending",
-                        date = data.ContainsKey("createdAt") ? data["createdAt"] : null,
-                        callback = data.ContainsKey("followUpCall") ? data["followUpCall"] : false,
-                        attachments = data.ContainsKey("attachments") ? data["attachments"] : new List<object>(),
-                        updates = data.ContainsKey("updates") ? data["updates"] : new List<object>(),
-                        userName = userName,
-                        userEmail = userEmail,
-                        assignedTo = data.ContainsKey("assignedAdvisor") ? data["assignedAdvisor"] : ""
-                    };
-                }).ToList();
+                        if (!seen.Add(doc.Id)) continue;
 
-                return Ok(inquiries);
+                        var data = doc.ToDictionary();
+
+                        // createdAt -> DateTime?
+                        DateTime? createdAt = null;
+                        if (data.TryGetValue("createdAt", out var ca))
+                        {
+                            if (ca is Timestamp ts) createdAt = ts.ToDateTime();
+                            else if (ca is DateTime dt) createdAt = dt;
+                        }
+
+                        // status: prefer last update
+                        string status = "Pending";
+                        if (data.TryGetValue("updates", out var u) && u is IEnumerable<object> arr)
+                        {
+                            Dictionary<string, object>? last = null;
+                            foreach (var itm in arr) last = itm as Dictionary<string, object>;
+                            if (last != null && last.TryGetValue("status", out var s)) status = s?.ToString() ?? status;
+                        }
+                        if (status == "Pending" && data.TryGetValue("status", out var stTop))
+                            status = stTop?.ToString() ?? status;
+
+                        items.Add(new
+                        {
+                            id = doc.Id,
+                            reference = GenerateReferenceNumber(doc.Id),
+                            subject = data.TryGetValue("subject", out var subj) ? subj?.ToString() ?? "N/A" : "N/A",
+                            inquiryType = data.TryGetValue("inquiryType", out var it) ? it?.ToString() ?? "N/A" : "N/A",
+                            status,
+                            priority = data.TryGetValue("priority", out var pr) ? pr?.ToString() ?? "Normal" : "Normal",
+                            date = createdAt,
+                            followUpCall = data.TryGetValue("followUpCall", out var f) && f is bool b && b,
+                            userName = (data.TryGetValue("createdBy", out var cb) && cb is Dictionary<string, object> cbd && cbd.TryGetValue("name", out var nm))
+                                       ? nm?.ToString() ?? "" : (data.TryGetValue("name", out var nm2) ? nm2?.ToString() ?? "" : ""),
+                            assignedTo = data.TryGetValue("assignedAdvisor", out var aa) ? aa?.ToString() ?? "" : ""
+                        });
+                    }
+                }
+
+                // Sort newest first server-side (no Firestore index needed)
+                var ordered = items.OrderByDescending(x => (DateTime?)(x.date) ?? DateTime.MinValue)
+                                   .Take(50)
+                                   .ToList();
+
+                return Ok(ordered);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR in GetMyInquiries: {ex.Message}");
-                return StatusCode(500, new { error = ex.Message });
+                Console.WriteLine($"ERROR in GetMyInquiries (flex): {ex.Message}");
+                return StatusCode(500, new { error = "Failed to load inquiries" });
             }
         }
+
 
         // PUT: Update inquiry status
         [HttpPut]
