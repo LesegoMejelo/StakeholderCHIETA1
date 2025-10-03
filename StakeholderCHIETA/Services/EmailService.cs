@@ -31,8 +31,40 @@ namespace StakeholderCHIETA.Services
             message.Body = builder.ToMessageBody();
 
             using var client = new SmtpClient();
-            await client.ConnectAsync(_config["Email:SmtpServer"],
-                int.Parse(_config["Email:SmtpPort"]), SecureSocketOptions.StartTls);
+            var smtpPortStr = _config["Email:SmtpPort"];
+            int smtpPort = !string.IsNullOrEmpty(smtpPortStr) ? int.Parse(smtpPortStr) : 587;
+            await client.ConnectAsync(_config["Email:SmtpServer"], smtpPort, SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(_config["Email:Username"], _config["Email:Password"]);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
+        }
+
+        public async Task SendAsync(string to, string subject, string htmlBody,
+            string? attachmentFileName = null,
+            byte[]? attachmentBytes = null,
+            string? attachmentContentType = null)
+        {
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(_config["Email:SenderName"], _config["Email:SenderEmail"]));
+            message.To.Add(new MailboxAddress("", to));
+            message.Subject = subject;
+
+            var builder = new BodyBuilder();
+            builder.HtmlBody = htmlBody;
+
+            if (attachmentBytes != null && !string.IsNullOrEmpty(attachmentFileName))
+            {
+                builder.Attachments.Add(attachmentFileName, attachmentBytes,
+                    !string.IsNullOrEmpty(attachmentContentType) ?
+                        ContentType.Parse(attachmentContentType) : null);
+            }
+
+            message.Body = builder.ToMessageBody();
+
+            using var client = new SmtpClient();
+            var smtpPortStr = _config["Email:SmtpPort"];
+            int smtpPort = !string.IsNullOrEmpty(smtpPortStr) ? int.Parse(smtpPortStr) : 587;
+            await client.ConnectAsync(_config["Email:SmtpServer"], smtpPort, SecureSocketOptions.StartTls);
             await client.AuthenticateAsync(_config["Email:Username"], _config["Email:Password"]);
             await client.SendAsync(message);
             await client.DisconnectAsync(true);

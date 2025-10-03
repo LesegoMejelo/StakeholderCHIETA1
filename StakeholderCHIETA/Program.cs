@@ -1,88 +1,60 @@
-﻿using StakeholderCHIETA.Models;
-using Microsoft.EntityFrameworkCore;
-using Google.Cloud.Firestore;
+﻿using Google.Cloud.Firestore;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
-using Microsoft.AspNetCore.Identity;
 using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using StakeholderCHIETA.Services;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔹 Get path from environment variable instead of hardcoding
-var serviceAccountPath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
-
-if (string.IsNullOrEmpty(serviceAccountPath) || !File.Exists(serviceAccountPath))
+// --- Firebase / Firestore ---
+var credsPath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS")
+    ?? throw new FileNotFoundException("Set GOOGLE_APPLICATION_CREDENTIALS to your service account JSON path.");
+var firebaseApp = FirebaseApp.DefaultInstance ?? FirebaseApp.Create(new AppOptions
 {
-    throw new FileNotFoundException(
-        "Firebase service account key file not found. " +
-        "Set the GOOGLE_APPLICATION_CREDENTIALS environment variable to a valid path."
-    );
-}
-
-// 🔹 Initialize Firebase (only once, reuse if already created)
-FirebaseApp app;
-if (FirebaseApp.DefaultInstance == null)
-{
-    app = FirebaseApp.Create(new AppOptions()
-    {
-        Credential = GoogleCredential.FromFile(serviceAccountPath)
-    });
-}
-else
-{
-    app = FirebaseApp.DefaultInstance;
-}
-
-// 🔹 Register FirestoreDb for Dependency Injection
-builder.Services.AddSingleton(provider =>
-{
-    return FirestoreDb.Create("stakeholder-app-57ed0"); // your project ID
+    Credential = GoogleCredential.FromFile(credsPath)
 });
+builder.Services.AddSingleton(_ => FirestoreDb.Create("stakeholder-app-57ed0"));
+builder.Services.AddSingleton(FirebaseAuth.GetAuth(firebaseApp));
 
-// Register FirebaseAuth for Dependency Injection
-builder.Services.AddSingleton(FirebaseAuth.GetAuth(app));
-
-// Add services to the container
+// --- Framework services ---
 builder.Services.AddControllersWithViews();
-
 builder.Services.AddMemoryCache();
-
-builder.Services.AddScoped<IAppointmentQRService, AppointmentQRService>();
-builder.Services.AddScoped<IQRCodeGenerator, QRCodeService>();
-
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+    .AddCookie(o =>
     {
-        options.LoginPath = "/Auth/Login";
-        options.AccessDeniedPath = "/Auth/Login";
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        o.LoginPath = "/Auth/Login";
+        o.AccessDeniedPath = "/Auth/Login";
+        o.ExpireTimeSpan = TimeSpan.FromMinutes(30);
     });
 
-var appInstance = builder.Build();
+// --- App services ---
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IQRCodeGenerator, QRCodeService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IAppointmentQRService, AppointmentQRService>();
 
-// Configure the HTTP request pipeline
-if (!appInstance.Environment.IsDevelopment())
+var app = builder.Build();
+
+// --- Pipeline ---
+if (!app.Environment.IsDevelopment())
 {
-    appInstance.UseExceptionHandler("/Home/Error");
-    appInstance.UseHsts();
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
 }
 
-appInstance.UseHttpsRedirection();
-appInstance.UseStaticFiles();
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
 
-appInstance.UseRouting();
-
-appInstance.UseAuthentication();
-appInstance.UseAuthorization();
-
-appInstance.MapControllerRoute(
+app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Auth}/{action=Login}/{id?}"
-);
+    pattern: "{controller=Auth}/{action=Login}/{id?}");
 
-appInstance.Run();
+app.Run();
+

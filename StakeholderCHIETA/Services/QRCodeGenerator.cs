@@ -4,13 +4,13 @@ namespace StakeholderCHIETA.Services
 {
     public class QRCodeService : IQRCodeGenerator
     {
-        public async Task<byte[]> GenerateQRCodeAsync(string data)
+        public byte[] GeneratePng(string payload, int pixelsPerModule = 6)
         {
-            using var qrGenerator = new QRCoder.QRCodeGenerator(); // explicitly use QRCoder’s class
-            var qrCodeData = qrGenerator.CreateQrCode(data, QRCoder.QRCodeGenerator.ECCLevel.Q);
+            using var qrGenerator = new QRCoder.QRCodeGenerator();
+            var qrCodeData = qrGenerator.CreateQrCode(payload, QRCoder.QRCodeGenerator.ECCLevel.Q);
 
             using var qrCode = new PngByteQRCode(qrCodeData);
-            return qrCode.GetGraphic(20);
+            return qrCode.GetGraphic(pixelsPerModule);
         }
     }
 }

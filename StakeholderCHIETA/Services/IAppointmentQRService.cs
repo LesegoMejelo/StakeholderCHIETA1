@@ -1,11 +1,10 @@
-﻿using StakeholderCHIETA.Models;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace StakeholderCHIETA.Services
 {
     public interface IAppointmentQRService
     {
-        /*Task GenerateAppointmentQrAsync(string appointmentID);
-        Task SendAppointmentQREmailAsync(Appointment appointment, string userEmail);
-        bool ValidateQRCode(string qrData);*/ 
+        Task SendAppointmentQRAsync(string appointmentId, string stakeholderEmail, TimeSpan ttl);
     }
 }

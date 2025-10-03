@@ -1,63 +1,93 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿
+using Google.Cloud.Firestore;
 using System.Security.Cryptography;
+using System.Text;
 
-namespace StakeholderCHIETA.Services
+namespace StakeholderCHIETA.Services;
+
+public class TokenService : ITokenService
 {
-    public class TokenService : ITokenService
+    private readonly FirestoreDb _db;
+
+    public TokenService(FirestoreDb db) => _db = db;
+
+    private static string Sha256(string input)
     {
-        private readonly IMemoryCache _cache;
+        using var sha = SHA256.Create();
+        var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
+        return Convert.ToHexString(bytes);
+    }
 
-        public TokenService(IMemoryCache cache)
+    public async Task<(string RawToken, string TokenId)> CreateOneTimeTokenAsync(string appointmentId, TimeSpan ttl)
+    {
+        var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)); // 256-bit
+        var tokenId = Guid.NewGuid().ToString("N");
+
+        var tokenDoc = _db.Collection("appointmentTokens").Document(tokenId);
+        var payload = new Dictionary<string, object>
         {
-            _cache = cache;
-        }
+            ["appointmentId"] = appointmentId,
+            ["tokenHash"] = Sha256(rawToken),
+            ["createdAt"] = Timestamp.FromDateTime(DateTime.UtcNow),
+            ["expiresAt"] = Timestamp.FromDateTime(DateTime.UtcNow.Add(ttl)),
+            ["usedAt"] = null
+        };
 
-        public string GenerateSecureToken()
+        await tokenDoc.SetAsync(payload);
+        return (rawToken, tokenId);
+    }
+
+    public async Task<bool> ValidateAndConsumeAsync(string rawToken, string appointmentId)
+    {
+        // Expect "<raw>|<tokenId>"
+        var parts = rawToken.Split('|', 2);
+        if (parts.Length != 2) return false;
+
+        var raw = parts[0];
+        var tokenId = parts[1];
+
+        var docRef = _db.Collection("appointmentTokens").Document(tokenId);
+        var snap = await docRef.GetSnapshotAsync();
+        if (!snap.Exists) return false;
+
+        var data = snap.ToDictionary();
+        var hash = data["tokenHash"] as string;
+        var apptId = data["appointmentId"] as string;
+        var expiresAt = (Timestamp)data["expiresAt"];
+        var usedAt = data.ContainsKey("usedAt") ? data["usedAt"] as Timestamp? : null;
+
+        if (apptId != appointmentId) return false;
+        if (usedAt != null) return false;
+        if (expiresAt.ToDateTime() < DateTime.UtcNow) return false;
+        if (!string.Equals(hash, Sha256(raw), StringComparison.OrdinalIgnoreCase)) return false;
+
+        // Mark token used + appointment checked-in atomically
+        var apptRef = _db.Collection("appointments").Document(appointmentId);
+        var batch = _db.StartBatch();
+        batch.Update(docRef, new Dictionary<string, object> { ["usedAt"] = Timestamp.FromDateTime(DateTime.UtcNow) });
+        batch.Update(apptRef, new Dictionary<string, object>
         {
-            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-        }
+            ["status"] = "CheckedIn",
+            ["checkedInAt"] = Timestamp.FromDateTime(DateTime.UtcNow)
+        });
+        await batch.CommitAsync();
 
-        public async Task StoreTokenAsync(string token, int appointmentId, DateTime expiry)
-        {
-            var cacheKey = $"qr_token_{token}";
-            _cache.Set(cacheKey, appointmentId, new MemoryCacheEntryOptions
-            {
-                AbsoluteExpiration = expiry
-            });
-        }
-
-        public Task StoreTokenAsync(string validationToken, object id, DateTime expiryTime)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool ValidateToken(string token, int appointmentId)
-        {
-            var cacheKey = $"qr_token_{token}";
-            if (_cache.TryGetValue(cacheKey, out int storedAppointmentId))
-            {
-                return storedAppointmentId == appointmentId;
-            }
-            return false;
-        }
-
-        public bool ValidateToken(string validationToken, string appointmentId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<string> GetUserEmailAsync(string userId)
-        {
-            // Example: Try to get from cache
-            var cacheKey = $"user_email_{userId}";
-            if (_cache.TryGetValue(cacheKey, out string email))
-            {
-                return email;
-            }
-
-            // TODO: Replace with actual DB/Firebase lookup
-            return null;
-        }
-
+        return true;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
