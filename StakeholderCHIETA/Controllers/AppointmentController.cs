@@ -42,6 +42,11 @@ namespace Staekholder_CHIETA_X.Controllers
             }
         }
 
+        public IActionResult TrackAppointment()
+        {
+            return View("~/Views/StakeholderViews/AppointmentTracker.cshtml");
+        }
+
         // -----------------------------
         // API: Get the current stakeholder's appointments
         // Prefiltered to accepted/rescheduled & upcoming (toggle FILTER_ONLY_UPCOMING below)
