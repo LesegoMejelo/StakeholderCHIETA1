@@ -162,7 +162,9 @@
                     <div id="successSummary" class="muted"></div>
                     <div class="success-actions">
                         <a class="btn ghost" id="newInquiry" href="#">Log another</a>
-                        <a class="btn" id="trackLink" href="#" target="_blank">Track this inquiry</a>
+                        <a class="btn">
+                        <a asp-controller="Inquiry" asp-action="InquiryTracking"> Track an Inquiry </a>
+                        </a>
                     </div>
                 </div>
             </div>
