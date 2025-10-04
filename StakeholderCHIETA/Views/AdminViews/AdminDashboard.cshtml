@@ -7,37 +7,26 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Admin Dashboard — Users & Engagement</title>
-    <link rel="stylesheet" href="~/Content/AdvisorView/AdminDashboard.css" />
-    <style>
-        /* Ensure modal displays when JS toggles .open */
-        .modal[aria-hidden="true"] {
-            display: none;
-        }
-
-        .modal.open {
-            display: block;
-        }
-    </style>
+    <link rel="stylesheet" href="~/Content/AdminView/AdminDashboard.css" />
 </head>
 
 <body>
-    <!-- Top Bar -->
+    <!-- Header -->
     <header class="topbar">
         <div class="container topbar-inner">
-            <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo" />
+            <div class="brand">
+                <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
+                <div class="divider"></div>
+                <div class="page-title">Log an Inquiry</div>
+            </div>
 
-            <nav class="header-actions">
-                <div class="menu" id="settings">
-                    <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-                        <span class="hide-sm">Settings</span>
-                    </button>
-                    <div class="menu-popover" id="settings-menu" role="menu" hidden>
-                        <a role="menuitem" href="profile.html">Profile</a>
-                        <a role="menuitem" href="notifications.html">Notifications</a>
-                        <div class="menu-sep" role="separator"></div>
-                        <a role="menuitem" href="logout.html" class="danger">Sign out</a>
-                    </div>
-                </div>
+            <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                <span class="hide-sm">Settings</span>
+            </button>
+            <nav class="menu-popover" id="settings-menu" role="menu" hidden>
+                <a role="menuitem" href="#">Profile</a>
+                <a role="menuitem" href="#">Notifications</a>
+                <a role="menuitem" href="#">Help</a>
             </nav>
         </div>
     </header>
