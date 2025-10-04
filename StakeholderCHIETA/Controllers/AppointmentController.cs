@@ -37,27 +37,30 @@ namespace Staekholder_CHIETA_X.Controllers
             }
             catch
             {
-                // Return empty list so page still loads gracefully
                 return View("~/Views/StakeholderViews/Appointment/Appointment.cshtml", new List<AdvisorViewModel>());
             }
         }
 
         // -----------------------------
         // API: Get the current stakeholder's appointments
-        // Prefiltered to accepted/rescheduled & upcoming (toggle FILTER_ONLY_UPCOMING below)
+        // Returns ALL appointments and lets client-side JavaScript filter
         // -----------------------------
         [HttpGet]
         [Authorize]
         [Route("api/appointment/my-appointments")]
         public async Task<IActionResult> GetMyAppointments()
         {
-            const bool FILTER_ONLY_UPCOMING = true; // set false to return all and let UI filter
-
             try
             {
+                Console.WriteLine("=== GetMyAppointments called ===");
+
                 var stakeholderUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 var stakeholderEmail = User.FindFirstValue(ClaimTypes.Email);
                 var currentUserName = User.Identity?.Name;
+
+                Console.WriteLine($"StakeholderUserId: {stakeholderUserId}");
+                Console.WriteLine($"StakeholderEmail: {stakeholderEmail}");
+                Console.WriteLine($"UserName: {currentUserName}");
 
                 if (string.IsNullOrWhiteSpace(stakeholderUserId) &&
                     string.IsNullOrWhiteSpace(stakeholderEmail) &&
@@ -66,93 +69,117 @@ namespace Staekholder_CHIETA_X.Controllers
                     return Unauthorized(new { message = "User not authenticated" });
                 }
 
-                // Prefer StakeholderUserId, then Email, then ClientName (for legacy records)
                 var col = _db.Collection("appointments");
-                Query query;
+                Query query = null;
 
+                // Try to match by StakeholderUserId first
                 if (!string.IsNullOrWhiteSpace(stakeholderUserId))
+                {
+                    Console.WriteLine($"Querying by StakeholderUserId: {stakeholderUserId}");
                     query = col.WhereEqualTo("StakeholderUserId", stakeholderUserId);
+                }
                 else if (!string.IsNullOrWhiteSpace(stakeholderEmail))
+                {
+                    Console.WriteLine($"Querying by StakeholderEmail: {stakeholderEmail}");
                     query = col.WhereEqualTo("StakeholderEmail", stakeholderEmail);
+                }
                 else
+                {
+                    Console.WriteLine($"Querying by ClientName: {currentUserName}");
                     query = col.WhereEqualTo("ClientName", currentUserName);
-
-                var snap = await query.GetSnapshotAsync();
-
-                // Map documents to response shape used by your JS
-                var items = snap.Documents.Select(doc =>
-                {
-                    var d = doc.ToDictionary();
-
-                    // Date can be ISO string (yyyy-MM-dd) or Firestore Timestamp
-                    string dateStr = null;
-                    if (d.TryGetValue("Date", out var dateVal) && dateVal is string s)
-                    {
-                        dateStr = s;
-                    }
-                    else if (doc.ContainsField("Date"))
-                    {
-                        try
-                        {
-                            var ts = doc.GetValue<Timestamp>("Date");
-                            dateStr = ts.ToDateTime().ToString("yyyy-MM-dd");
-                        }
-                        catch { /* ignore if not a Timestamp */ }
-                    }
-
-                    var timeStr = d.TryGetValue("Time", out var t) ? t?.ToString() : null;
-
-                    return new
-                    {
-                        Id = doc.Id,
-                        AdvisorId = d.TryGetValue("AdvisorId", out var aid) ? aid?.ToString() : "",
-                        AdvisorName = d.TryGetValue("AdvisorName", out var an) ? an?.ToString() : "Advisor",
-                        ClientName = d.TryGetValue("ClientName", out var cn) ? cn?.ToString() : "",
-                        StakeholderUserId = d.TryGetValue("StakeholderUserId", out var su) ? su?.ToString() : "",
-                        StakeholderEmail = d.TryGetValue("StakeholderEmail", out var se) ? se?.ToString() : "",
-                        Reason = d.TryGetValue("Reason", out var rs) ? rs?.ToString() : "",
-                        Date = dateStr,
-                        Time = timeStr,
-                        AppointmentType = d.TryGetValue("AppointmentType", out var at) ? at?.ToString() : "online",
-                        Status = (d.TryGetValue("Status", out var st) ? st?.ToString() : "pending")?.ToLowerInvariant(),
-                        Details = d.TryGetValue("Details", out var de) ? de?.ToString() : ""
-                    };
-                }).ToList();
-
-                // Helper to combine Date + Time
-                DateTime ToDateTime(string ds, string ts)
-                {
-                    if (string.IsNullOrWhiteSpace(ds)) return DateTime.MaxValue;
-                    if (!DateTime.TryParse(ds, out var d)) return DateTime.MaxValue;
-                    if (!string.IsNullOrWhiteSpace(ts) && TimeSpan.TryParse(ts, out var t))
-                        return d.Date + t;
-                    return d.Date;
                 }
 
-                var today = DateTime.Today;
+                var snap = await query.GetSnapshotAsync();
+                Console.WriteLine($"Found {snap.Documents.Count} appointments");
 
-                var result = FILTER_ONLY_UPCOMING
-                    ? items
-                        .Where(a =>
-                            (a.Status == "accepted" || a.Status == "rescheduled") &&
-                            ToDateTime(a.Date, a.Time) >= today)
-                        .OrderBy(a => ToDateTime(a.Date, a.Time))
-                        .ToList()
-                    : items
-                        .OrderBy(a => ToDateTime(a.Date, a.Time))
-                        .ToList();
+                var items = new List<object>();
 
-                return Json(result);
+                foreach (var doc in snap.Documents)
+                {
+                    try
+                    {
+                        var d = doc.ToDictionary();
+
+                        // Helper to get string value safely
+                        string GetString(string fieldName, string defaultValue = "")
+                        {
+                            if (d.TryGetValue(fieldName, out var val) && val != null)
+                                return val.ToString();
+                            return defaultValue;
+                        }
+
+                        // Parse date - handle both string and Timestamp
+                        string dateStr = null;
+                        if (d.TryGetValue("Date", out var dateVal))
+                        {
+                            if (dateVal is string s)
+                            {
+                                dateStr = s;
+                            }
+                            else if (doc.ContainsField("Date"))
+                            {
+                                try
+                                {
+                                    var ts = doc.GetValue<Timestamp>("Date");
+                                    dateStr = ts.ToDateTime().ToString("yyyy-MM-dd");
+                                }
+                                catch { }
+                            }
+                        }
+
+                        var status = GetString("Status", "pending").ToLowerInvariant();
+                        var timeStr = GetString("Time");
+
+                        var appointment = new
+                        {
+                            Id = doc.Id,
+                            AdvisorId = GetString("AdvisorId"),
+                            AdvisorName = GetString("AdvisorName", "Advisor"),
+                            ClientName = GetString("ClientName"),
+                            StakeholderUserId = GetString("StakeholderUserId"),
+                            StakeholderEmail = GetString("StakeholderEmail"),
+                            Reason = GetString("Reason"),
+                            Date = dateStr,
+                            Time = timeStr,
+                            AppointmentType = GetString("AppointmentType", "online"),
+                            Status = status,
+                            Details = GetString("Details"),
+                            Email = GetString("StakeholderEmail", GetString("Email"))
+                        };
+
+                        Console.WriteLine($"Appointment: {appointment.ClientName} on {appointment.Date} at {appointment.Time} - Status: {appointment.Status}");
+                        items.Add(appointment);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error processing document {doc.Id}: {ex.Message}");
+                    }
+                }
+
+                // Sort by date ascending
+                var sorted = items
+                    .OrderBy(a => {
+                        var apt = (dynamic)a;
+                        DateTime dt;
+                        if (DateTime.TryParse(apt.Date, out dt))
+                            return dt;
+                        return DateTime.MaxValue;
+                    })
+                    .ToList();
+
+                Console.WriteLine($"Returning {items.Count} appointments");
+                return Json(sorted);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"ERROR in GetMyAppointments: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, new { message = $"Failed to fetch appointments: {ex.Message}" });
             }
         }
 
         // -----------------------------
         // API: Create a new appointment (stakeholder)
-        // Stores StakeholderUserId + StakeholderEmail and normalizes Status casing
         // -----------------------------
         [HttpPost]
         [Authorize]
@@ -185,7 +212,6 @@ namespace Staekholder_CHIETA_X.Controllers
                 var stakeholderEmail = User.FindFirstValue(ClaimTypes.Email) ?? "";
                 var clientName = User.Identity?.Name ?? "Anonymous User";
 
-                // Store as strings (ISO for Date "yyyy-MM-dd", "HH:mm" for Time), or switch Date to Timestamp if preferred
                 var appointmentData = new Dictionary<string, object>
                 {
                     ["AdvisorId"] = advisor,
@@ -193,16 +219,19 @@ namespace Staekholder_CHIETA_X.Controllers
                     ["ClientName"] = clientName,
                     ["StakeholderUserId"] = stakeholderUserId,
                     ["StakeholderEmail"] = stakeholderEmail,
+                    ["Email"] = stakeholderEmail,
                     ["Reason"] = reason,
-                    ["Date"] = date,  // If you want Timestamp: Timestamp.FromDateTime(DateTime.Parse(date).ToUniversalTime())
-                    ["Time"] = time,  // "HH:mm"
+                    ["Date"] = date,
+                    ["Time"] = time,
                     ["AppointmentType"] = appointmentType,
-                    ["Status"] = "pending", // normalized lowercase
+                    ["Status"] = "pending",
                     ["CreatedAt"] = Timestamp.GetCurrentTimestamp(),
-                    ["Details"] = string.IsNullOrWhiteSpace(details) ? null : details
+                    ["Details"] = string.IsNullOrWhiteSpace(details) ? "" : details
                 };
 
                 var docRef = await _db.Collection("appointments").AddAsync(appointmentData);
+
+                Console.WriteLine($"Created appointment: {docRef.Id} for {clientName}");
 
                 return Ok(new
                 {
@@ -222,6 +251,7 @@ namespace Staekholder_CHIETA_X.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error creating appointment: {ex.Message}");
                 return StatusCode(500, new { message = $"Failed to book appointment: {ex.Message}" });
             }
         }
