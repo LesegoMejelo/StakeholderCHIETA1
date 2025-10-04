@@ -943,5 +943,9 @@ namespace Staekholder_CHIETA_X.Controllers
         {
             return View("~/Views/StakeholderViews/StakeholderFeedback.cshtml");
         }
+        public IActionResult TrackAppointment()
+        {
+            return View("~/Views/StakeholderViews/StakeholderAppointmentTracker.cshtml");
+        }
     }
 }

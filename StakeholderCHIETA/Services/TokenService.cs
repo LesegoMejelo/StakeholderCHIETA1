@@ -1,63 +1,76 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using Google.Cloud.Firestore;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace StakeholderCHIETA.Services
 {
     public class TokenService : ITokenService
     {
-        private readonly IMemoryCache _cache;
+        private readonly FirestoreDb _db;
 
-        public TokenService(IMemoryCache cache)
+        public TokenService(FirestoreDb db)
         {
-            _cache = cache;
+            _db = db;
         }
 
-        public string GenerateSecureToken()
+        private static string Sha256(string input)
         {
-            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            using var sha = SHA256.Create();
+            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
+            return Convert.ToHexString(bytes);
         }
 
-        public async Task StoreTokenAsync(string token, int appointmentId, DateTime expiry)
+        // ✅ Required by the interface
+        public async Task<(string RawToken, string TokenId)> CreateOneTimeTokenAsync(string appointmentId, TimeSpan ttl)
         {
-            var cacheKey = $"qr_token_{token}";
-            _cache.Set(cacheKey, appointmentId, new MemoryCacheEntryOptions
+            var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)); // 256-bit token
+            var tokenId = Guid.NewGuid().ToString("N");
+            var tokenHash = Sha256(rawToken);
+
+            var expiresAt = Timestamp.FromDateTime(DateTime.UtcNow.Add(ttl));
+
+            var tokenDoc = _db.Collection("appointmentTokens").Document(tokenId);
+            await tokenDoc.SetAsync(new
             {
-                AbsoluteExpiration = expiry
+                AppointmentId = appointmentId,
+                TokenHash = tokenHash,
+                ExpiresAt = expiresAt,
+                UsedAt = (Timestamp?)null
             });
+
+            return (rawToken, tokenId);
         }
 
-        public Task StoreTokenAsync(string validationToken, object id, DateTime expiryTime)
+        public async Task<bool> ValidateAndConsumeAsync(string rawToken, string appointmentId)
         {
-            throw new NotImplementedException();
-        }
+            var hash = Sha256(rawToken);
 
-        public bool ValidateToken(string token, int appointmentId)
-        {
-            var cacheKey = $"qr_token_{token}";
-            if (_cache.TryGetValue(cacheKey, out int storedAppointmentId))
+            var query = _db.Collection("appointmentTokens")
+                           .WhereEqualTo("AppointmentId", appointmentId)
+                           .WhereEqualTo("TokenHash", hash);
+
+            var snapshot = await query.GetSnapshotAsync();
+            if (snapshot.Count == 0) return false;
+
+            var tokenDoc = snapshot.Documents.First();
+            var data = tokenDoc.ToDictionary();
+
+            // Expiry check
+            if (data.TryGetValue("ExpiresAt", out var expObj) &&
+                expObj is Timestamp expTs &&
+                expTs.ToDateTime() < DateTime.UtcNow)
+                return false;
+
+            // Already used check
+            if (data.ContainsKey("UsedAt") && data["UsedAt"] is Timestamp) return false;
+
+            // Mark token as used
+            await tokenDoc.Reference.UpdateAsync(new Dictionary<string, object>
             {
-                return storedAppointmentId == appointmentId;
-            }
-            return false;
+                { "UsedAt", Timestamp.FromDateTime(DateTime.UtcNow) }
+            });
+
+            return true;
         }
-
-        public bool ValidateToken(string validationToken, string appointmentId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<string> GetUserEmailAsync(string userId)
-        {
-            // Example: Try to get from cache
-            var cacheKey = $"user_email_{userId}";
-            if (_cache.TryGetValue(cacheKey, out string email))
-            {
-                return email;
-            }
-
-            // TODO: Replace with actual DB/Firebase lookup
-            return null;
-        }
-
     }
 }

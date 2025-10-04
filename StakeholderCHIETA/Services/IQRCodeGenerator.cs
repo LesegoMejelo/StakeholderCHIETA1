@@ -2,11 +2,7 @@
 {
     public interface IQRCodeGenerator
     {
-        Task<byte[]> GenerateQRCodeAsync(string qrDataJson);
-
-        public interface IQRCodeGenerator
-        {
-            Task<byte[]> GenerateQRCodeAsync(string data);
-        }
+        // pixelsPerModule default of 8 gives a crisp QR without being huge
+        byte[] GeneratePng(string text, int pixelsPerModule = 8);
     }
 }

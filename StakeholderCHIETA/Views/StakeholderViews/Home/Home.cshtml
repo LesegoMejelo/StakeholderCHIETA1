@@ -13,7 +13,7 @@
     <!-- Top Bar -->
     <header class="topbar">
         <div class="container topbar-inner">
-            <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo" />
+            <img class="logo" src="~/Content/StakeholderView/StakeholderLandingImages/LandingPageLogo.jpeg" alt="CHIETA logo" />
 
             <!-- Settings in header -->
             <nav class="header-actions">
@@ -77,13 +77,15 @@
                     <!-- Book an appointment-->
                  <h3> <a asp-controller="Appointment" asp-action="Index">Book an Appointment</a> </h3>
                     <p>You can make an appointment with your Skills Advisor while communicating any specific information. From the booking, a confirmation will be sent along with an invite, depending on specifics.</p>
-                    <button class="btn" data-nav="appointment-booking.html">Go</button>
+                    <button class="btn">
+                        <a asp-controller="Appointment" asp-action="Index">Book</a>
+                    </button>
                 </div>
 
                  <!--Track Appointments-->
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a asp-controller="Appointment" asp-action="AppointmentTracker">Track your appointments</a></h3>
+                    <h3><a asp-controller="Inquiry" asp-action="TrackAppointment">Track your appointments</a></h3>
                     <p>You can track the status of all your appointments with the option of cancelling, if necessary</p>
                     <button class="btn" data-nav="inquiry-track.html">Go</button>
                 </div>
@@ -93,7 +95,9 @@
                     <div class="card-hero" aria-hidden="true"></div>
                     <h3> <a asp-controller="Inquiry"  asp-action="Inquiry" > Log an Inquiry </a></h3>
                     <p>If you have any questions regarding your advisory, you can log an inquiry with your advisor.</p>
-                    <button class="btn" data-nav="InquiryTracking.cshtml">Go</button>
+                    <button class="btn">
+                        <a asp-controller="Inquiry" asp-action="Inquiry">Log</a>
+                    </button>
                 </div>
 
                 <!-- Track an Inquiry -->
@@ -101,7 +105,9 @@
                     <div class="card-hero" aria-hidden="true"></div>
                     <h3> <a asp-controller="Inquiry" asp-action="InquiryTracking"> Track an Inquiry </a></h3>
                     <p>If you have logged an inquiry, you can now track it.</p>
-                    <button class="btn" data-nav="inquiry-create.html">Go</button>
+                    <button class="btn">
+                        <a asp-controller="Inquiry" asp-action="Tracking">Track</a>
+                    </button>
                 </div>
                 
                 <!--Provide Feedback-->
@@ -109,7 +115,9 @@
                     <div class="card-hero" aria-hidden="true"></div>
                     <h3><a asp-controller="Inquiry" asp-action="Feedback">Rate your Advisor</a></h3>
                     <p>You can rate the service provided in your inquiries and appointments.</p>
-                    <button class="btn" data-nav="inquiry-track.html">Go</button>
+                    <button class="btn">
+                        <a asp-controller="Inquiry" asp-action="Feedback">Rate</a>
+                    </button>
                 </div>
 
                 
