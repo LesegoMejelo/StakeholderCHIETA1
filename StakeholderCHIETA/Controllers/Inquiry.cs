@@ -70,6 +70,8 @@ namespace Staekholder_CHIETA_X.Controllers
                     ? (User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity.Name ?? "")
                     : "";
                 var userEmail = isAuthed ? (User.FindFirstValue(ClaimTypes.Email) ?? "") : "";
+                var userEmailLower = (userEmail ?? "").Trim().ToLowerInvariant();
+
                 var displayName = isAuthed
                     ? (User.Identity?.Name
                        ?? User.FindFirstValue(ClaimTypes.GivenName)
@@ -134,6 +136,8 @@ namespace Staekholder_CHIETA_X.Controllers
                 { "name", displayName },
                 { "email", userEmail }
             }},
+            { "createdByEmailLower", userEmailLower }, // <-- NEW, flat field for easy querying
+
             { "subject", subject.Trim() },
             { "description", description.Trim() },
             { "inquiryType", inquiryType.Trim() },
@@ -276,6 +280,89 @@ namespace Staekholder_CHIETA_X.Controllers
             {
                 Console.WriteLine($"ERROR in GetMyInquiries (flex): {ex.Message}");
                 return StatusCode(500, new { error = "Failed to load inquiries" });
+            }
+        }
+        [HttpGet]
+        [Authorize] // stakeholder must be signed in 
+        [Route("api/inquiry/stakeholder")]
+        public async Task<IActionResult> GetMyStakeholderInquiries()
+        {
+            try
+            {
+                var stakeUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)?.Trim();
+                var stakeEmail = User.FindFirstValue(ClaimTypes.Email)?.Trim();
+                var stakeEmailLow = (stakeEmail ?? "").ToLowerInvariant();
+                var stakeName = (User.Identity?.Name ?? "").Trim();
+
+                if (string.IsNullOrEmpty(stakeUserId) && string.IsNullOrEmpty(stakeEmailLow) && string.IsNullOrEmpty(stakeName))
+                    return Unauthorized(new { error = "Could not identify stakeholder" });
+
+                var col = _db.Collection("inquiries");
+                var jobs = new List<Task<QuerySnapshot>>();
+
+                // 1) Prefer normalized email
+                if (!string.IsNullOrEmpty(stakeEmailLow))
+                    jobs.Add(col.WhereEqualTo("createdByEmailLower", stakeEmailLow).Limit(200).GetSnapshotAsync());
+
+                // 2) Fallback: createdBy.userId (nested)
+                if (!string.IsNullOrEmpty(stakeUserId))
+                    jobs.Add(col.WhereEqualTo(new FieldPath("createdBy", "userId"), stakeUserId).Limit(200).GetSnapshotAsync());
+
+                // 3) Fallback: top-level 'name' (legacy)
+                if (!string.IsNullOrEmpty(stakeName))
+                    jobs.Add(col.WhereEqualTo("name", stakeName).Limit(200).GetSnapshotAsync());
+
+                var snaps = await Task.WhenAll(jobs);
+
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var items = new List<object>();
+
+                foreach (var snap in snaps)
+                {
+                    foreach (var doc in snap.Documents)
+                    {
+                        if (!seen.Add(doc.Id)) continue;
+                        var data = doc.ToDictionary();
+
+                        DateTime? createdAt = null;
+                        if (data.TryGetValue("createdAt", out var ca))
+                        {
+                            if (ca is Timestamp ts) createdAt = ts.ToDateTime();
+                            else if (ca is DateTime dt) createdAt = dt;
+                        }
+
+                        // status: prefer last update
+                        string status = data.TryGetValue("status", out var stTop) ? stTop?.ToString() ?? "Pending" : "Pending";
+                        if (data.TryGetValue("updates", out var u) && u is IEnumerable<object> arr)
+                        {
+                            Dictionary<string, object>? last = null;
+                            foreach (var itm in arr) last = itm as Dictionary<string, object>;
+                            if (last != null && last.TryGetValue("status", out var s)) status = s?.ToString() ?? status;
+                        }
+
+                        items.Add(new
+                        {
+                            id = doc.Id,
+                            reference = GenerateReferenceNumber(doc.Id),
+                            subject = data.TryGetValue("subject", out var subj) ? subj?.ToString() ?? "N/A" : "N/A",
+                            inquiryType = data.TryGetValue("inquiryType", out var it) ? it?.ToString() ?? "N/A" : "N/A",
+                            status,
+                            date = createdAt,
+                            assignedTo = data.TryGetValue("assignedAdvisor", out var aa) ? aa?.ToString() ?? "" : "",
+                        });
+                    }
+                }
+
+                var ordered = items.OrderByDescending(x => (DateTime?)(x.GetType().GetProperty("date")?.GetValue(x) ?? DateTime.MinValue))
+                                   .Take(50)
+                                   .ToList();
+
+                return Ok(ordered);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR in GetMyStakeholderInquiries: {ex.Message}");
+                return StatusCode(500, new { error = "Failed to load stakeholder inquiries" });
             }
         }
 

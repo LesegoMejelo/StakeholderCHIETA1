@@ -77,7 +77,8 @@
     }
 
     // ---- Load Stakeholder's Recent Inquiries ----
-    async function loadRecentInquiries() {
+    // ---- Load My Inquiries (Stakeholder) ----
+    async function loadMyStakeholderInquiries() {
         const list = document.getElementById("inquiries-list");
         if (!list) return;
 
@@ -85,50 +86,70 @@
 
         try {
             console.log('Fetching stakeholder inquiries...');
-
-            const res = await fetch('/api/inquiry/my', {
+            const res = await fetch('/api/inquiry/stakeholder', {
                 method: "GET",
                 headers: {
                     "Accept": "application/json",
-                    'X-Requested-With': 'XMLHttpRequest'
+                    "X-Requested-With": "XMLHttpRequest"
                 },
                 credentials: "include"
             });
 
-            console.log('Inquiries response status:', res.status);
-
-            if (!res.ok) {
-                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            }
+            console.log('Stakeholder inquiries response status:', res.status);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
 
             const inquiries = await res.json();
-            console.log('Received inquiries:', inquiries.length);
+            console.log('Received stakeholder inquiries:', Array.isArray(inquiries) ? inquiries.length : '(not an array)');
+
+            // Sort newest first if server didn’t already (safe either way)
+            const sorted = (Array.isArray(inquiries) ? inquiries : [])
+                .slice()
+                .sort((a, b) => {
+                    const ad = a.date ? new Date(a.date) : new Date(0);
+                    const bd = b.date ? new Date(b.date) : new Date(0);
+                    return bd - ad;
+                })
+                .slice(0, 5);
 
             list.innerHTML = "";
 
-            if (inquiries.length === 0) {
+            if (sorted.length === 0) {
                 list.innerHTML = "<li class='muted'>No recent inquiries</li>";
                 return;
             }
 
-            // Show only the 5 most recent
-            inquiries.slice(0, 5).forEach(inquiry => {
+            sorted.forEach(inq => {
+                const ref = inq.reference || inq.referenceNumber || generateReferenceNumber(inq.id || '');
+                const subj = inq.subject || 'No Subject';
                 const li = document.createElement("li");
-                const ref = inquiry.reference || 'N/A';
-                const subject = inquiry.subject || 'No subject';
-                const status = inquiry.status || 'Pending';
-
                 li.innerHTML = `
-                    <span>${escapeHTML(ref)}</span>
-                    <span>${escapeHTML(subject)} <small class="status-${status.toLowerCase()}">(${escapeHTML(status)})</small></span>
-                `;
+        <span>${escapeHTML(ref)}</span>
+        <span>${escapeHTML(subj)}</span>
+      `;
                 list.appendChild(li);
             });
         } catch (err) {
-            console.error("Error loading inquiries:", err);
+            console.error("Error loading stakeholder inquiries:", err);
             list.innerHTML = "<li class='muted'>Failed to load inquiries</li>";
         }
     }
+
+    // Fallback reference if server didn’t include one
+    function generateReferenceNumber(docId) {
+        const now = new Date();
+        const yy = String(now.getFullYear()).slice(-2);
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const shortId = (docId || '').slice(-4).toUpperCase();
+        return `INQ-${yy}${mm}${dd}-${shortId}`;
+    }
+
+    function escapeHTML(s) {
+        return String(s).replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+
 
     // ---- Helper Functions ----
     function formatTime(timeString) {
@@ -156,7 +177,7 @@
 
     // ---- Load data when page is ready ----
     loadUpcomingAppointments();
-    loadRecentInquiries();
+    loadMyStakeholderInquiries();
 
     // Auto-refresh every 60 seconds
     setInterval(() => {

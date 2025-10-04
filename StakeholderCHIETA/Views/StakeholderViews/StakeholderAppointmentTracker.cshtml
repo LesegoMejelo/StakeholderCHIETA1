@@ -1,0 +1,74 @@
+@{
+    Layout = null;
+}
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>My Appointments — CHIETA</title>
+  <link rel="stylesheet" href="~/Content/StakeholderView/AppointmentTracker.css"/>
+</head>
+<body>
+  <!-- Decorative circles as full page background -->
+  <div class="decor blob-right" aria-hidden="true"></div>
+  <div class="decor arc-left" aria-hidden="true"></div>
+  <div class="decor arc-right-bottom" aria-hidden="true"></div>
+
+  <!-- Header -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <img class="logo" src="/logo.png" alt="CHIETA logo" />
+        <div class="divider"></div>
+        <div class="page-title">My Appointments</div>
+      </div>
+
+      <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+        <span>Settings</span>
+      </button>
+      <nav class="menu-popover" id="settings-menu" role="menu" hidden>
+        <a role="menuitem" href="index.html">Book New Appointment</a>
+        <a role="menuitem" href="#">Profile</a>
+        <a role="menuitem" href="#">Help</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="dashboard-header">
+      <h1>My Appointments</h1>
+      <p>View and manage your scheduled appointments</p>
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">All Appointments</button>
+      <button class="filter-btn" data-filter="upcoming">Upcoming</button>
+      <button class="filter-btn" data-filter="pending">Pending</button>
+      <button class="filter-btn" data-filter="completed">Completed</button>
+      <button class="filter-btn" data-filter="cancelled">Cancelled</button>
+    </div>
+
+    <div class="appointments-grid" id="appointmentsContainer">
+      <!-- Appointments will be loaded here dynamically -->
+    </div>
+  </main>
+
+  <!-- Cancel Appointment Modal -->
+  <div class="modal" id="cancelModal">
+    <div class="modal-content">
+      <h3 class="modal-title">Cancel Appointment</h3>
+      <p class="modal-message" id="modalMessage">Are you sure you want to cancel this appointment? This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="closeModal">Keep Appointment</button>
+        <button class="modal-btn confirm" id="confirmCancel">Yes, Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-band"><div class="gold-box"></div></div>
+  </footer>
+   <script src="~/Content/StakeholderView/js/StakeholderAppointmentTracker.js"></script>
+</body>
+</html>

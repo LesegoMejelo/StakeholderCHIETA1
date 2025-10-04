@@ -2,8 +2,7 @@
     Layout = null;
 }
 
-<!DOCTYPE html>
-<html lang="en">
+<html >
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -276,14 +275,14 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    alert("✅ " + (data.message || "User deleted"));
+                    alert("" + (data.message || "User deleted"));
                     await loadUsers();
                 } else {
-                    alert("❌ " + (data.message || "Error deleting user"));
+                    alert("" + (data.message || "Error deleting user"));
                 }
             } catch (err) {
                 console.error("Error deleting user:", err);
-                alert("❌ Failed to delete user");
+                alert(" Failed to delete user");
             }
         }
 
