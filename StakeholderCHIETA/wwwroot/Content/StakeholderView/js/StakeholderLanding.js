@@ -1,7 +1,7 @@
 ﻿document.addEventListener('DOMContentLoaded', () => {
-    console.log('=== Employee Landing Page Initialized ===');
+    console.log('=== Stakeholder Landing Page Initialized ===');
 
-    // ---- Load Upcoming Appointments ----
+    // ---- Load Stakeholder's Upcoming Appointments ----
     async function loadUpcomingAppointments() {
         const list = document.getElementById("upcoming-list");
         if (!list) return;
@@ -9,8 +9,10 @@
         list.innerHTML = "<li class='muted'>Loading…</li>";
 
         try {
-            console.log('Fetching upcoming appointments...');
-            const res = await fetch('/AdvisorAppointment/AppointmentTrackerData', {
+            console.log('Fetching stakeholder appointments...');
+
+            // Fetch stakeholder's own appointments
+            const res = await fetch('/api/appointment/my-appointments', {
                 method: "GET",
                 headers: {
                     "Accept": "application/json",
@@ -28,14 +30,15 @@
             const appointments = await res.json();
             console.log('Received appointments:', appointments.length);
 
-            // Filter for accepted appointments that are upcoming
+            // Filter for accepted appointments that are upcoming and belong to this stakeholder
             const now = new Date();
             now.setHours(0, 0, 0, 0);
 
             const upcomingAccepted = appointments
                 .filter(apt => {
-                    const status = (apt.Status || '').toLowerCase();
+                    const status = (apt.Status || '').toLowerCase().trim();
                     const appointmentDate = new Date(apt.Date);
+                    appointmentDate.setHours(0, 0, 0, 0);
                     return (status === 'accepted' || status === 'rescheduled') && appointmentDate >= now;
                 })
                 .sort((a, b) => new Date(a.Date) - new Date(b.Date))
@@ -59,11 +62,11 @@
                     year: 'numeric'
                 });
                 const timeStr = formatTime(appt.Time);
-                const clientName = appt.ClientName || 'Unknown';
+                const advisorName = appt.AdvisorName || 'Advisor';
 
                 li.innerHTML = `
                     <span>${escapeHTML(dateStr)} • ${escapeHTML(timeStr)}</span>
-                    <span>${escapeHTML(clientName)}</span>
+                    <span>with ${escapeHTML(advisorName)}</span>
                 `;
                 list.appendChild(li);
             });
@@ -73,16 +76,17 @@
         }
     }
 
-    // ---- Load Recent Inquiries ----
-    async function loadRecentInquiries() {
+    // ---- Load Stakeholder's Recent Inquiries ----
+    // ---- Load My Inquiries (Stakeholder) ----
+    async function loadMyStakeholderInquiries() {
         const list = document.getElementById("inquiries-list");
         if (!list) return;
 
         list.innerHTML = "<li class='muted'>Loading…</li>";
 
         try {
-            console.log('Fetching recent inquiries...');
-            const res = await fetch('/api/inquiry', {
+            console.log('Fetching stakeholder inquiries...');
+            const res = await fetch('/api/inquiry/stakeholder', {
                 method: "GET",
                 headers: {
                     "Accept": "application/json",
@@ -91,24 +95,21 @@
                 credentials: "include"
             });
 
-            console.log('Inquiries response status:', res.status);
-
-            if (!res.ok) {
-                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            }
+            console.log('Stakeholder inquiries response status:', res.status);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
 
             const inquiries = await res.json();
-            console.log('Received inquiries:', Array.isArray(inquiries) ? inquiries.length : '(not an array)');
+            console.log('Received stakeholder inquiries:', Array.isArray(inquiries) ? inquiries.length : '(not an array)');
 
-            // Sort newest first using 'date' if present; otherwise leave order
+            // Sort newest first if server didn’t already (safe either way)
             const sorted = (Array.isArray(inquiries) ? inquiries : [])
                 .slice()
                 .sort((a, b) => {
                     const ad = a.date ? new Date(a.date) : new Date(0);
                     const bd = b.date ? new Date(b.date) : new Date(0);
-                    return bd - ad; // desc
+                    return bd - ad;
                 })
-                .slice(0, 5); // Show only 5 most recent
+                .slice(0, 5);
 
             list.innerHTML = "";
 
@@ -120,7 +121,6 @@
             sorted.forEach(inq => {
                 const ref = inq.reference || inq.referenceNumber || generateReferenceNumber(inq.id || '');
                 const subj = inq.subject || 'No Subject';
-
                 const li = document.createElement("li");
                 li.innerHTML = `
         <span>${escapeHTML(ref)}</span>
@@ -129,12 +129,12 @@
                 list.appendChild(li);
             });
         } catch (err) {
-            console.error("Error loading inquiries:", err);
+            console.error("Error loading stakeholder inquiries:", err);
             list.innerHTML = "<li class='muted'>Failed to load inquiries</li>";
         }
     }
 
-    // Fallback (matches your existing logic) in case API doesn’t provide a reference number
+    // Fallback reference if server didn’t include one
     function generateReferenceNumber(docId) {
         const now = new Date();
         const yy = String(now.getFullYear()).slice(-2);
@@ -144,7 +144,6 @@
         return `INQ-${yy}${mm}${dd}-${shortId}`;
     }
 
-    // simple HTML escaper (reuse your existing if you already have one)
     function escapeHTML(s) {
         return String(s).replace(/[&<>"']/g, c => ({
             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -178,7 +177,7 @@
 
     // ---- Load data when page is ready ----
     loadUpcomingAppointments();
-    loadRecentInquiries();
+    loadMyStakeholderInquiries();
 
     // Auto-refresh every 60 seconds
     setInterval(() => {
@@ -191,8 +190,12 @@
     document.querySelectorAll('.btn[data-nav]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            const nav = btn.dataset.nav;
-            if (nav) location.href = nav;
+            // Get the parent action-card to find the link
+            const card = btn.closest('.action-card');
+            const link = card?.querySelector('a');
+            if (link) {
+                location.href = link.href;
+            }
         });
     });
 

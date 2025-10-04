@@ -21,12 +21,13 @@ namespace StakeholderCHIETA.Services
             message.To.Add(new MailboxAddress("", to));
             message.Subject = subject;
 
-            var builder = new BodyBuilder();
-            builder.HtmlBody = htmlBody;
+            var builder = new BodyBuilder { HtmlBody = htmlBody };
 
-            // Add QR code as embedded image
-            var image = builder.LinkedResources.Add(attachmentName, attachmentBytes);
-            image.ContentId = contentId;
+            if (attachmentBytes != null)
+            {
+                var image = builder.LinkedResources.Add(attachmentName, attachmentBytes);
+                image.ContentId = contentId; // reference this as <img src="cid:contentId" />
+            }
 
             message.Body = builder.ToMessageBody();
 
@@ -37,6 +38,23 @@ namespace StakeholderCHIETA.Services
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
         }
-    }
 
+        public async Task SendEmailAsync(string to, string subject, string htmlBody)
+        {
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(_config["Email:SenderName"], _config["Email:SenderEmail"]));
+            message.To.Add(new MailboxAddress("", to));
+            message.Subject = subject;
+
+            var builder = new BodyBuilder { HtmlBody = htmlBody };
+            message.Body = builder.ToMessageBody();
+
+            using var client = new SmtpClient();
+            await client.ConnectAsync(_config["Email:SmtpServer"],
+                int.Parse(_config["Email:SmtpPort"]), SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(_config["Email:Username"], _config["Email:Password"]);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
+        }
+    }
 }

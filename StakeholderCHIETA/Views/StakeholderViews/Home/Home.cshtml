@@ -1,5 +1,4 @@
-﻿
-@{
+﻿@{
     Layout = null;
 }
 
@@ -83,6 +82,14 @@
                     </button>
                 </div>
 
+                 <!--Track Appointments-->
+                <div class="action-card">
+                    <div class="card-hero" aria-hidden="true"></div>
+                    <h3><a asp-controller="Appointment" asp-action="AppointmentTracker">Track your appointments</a></h3>
+                    <p>You can track the status of all your appointments with the option of cancelling, if necessary</p>
+                    <button class="btn" data-nav="inquiry-track.html">Go</button>
+                </div>
+
                 <!-- Log an Inquiry -->
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
@@ -112,6 +119,8 @@
                         <a asp-controller="Inquiry" asp-action="Feedback">Rate</a>
                     </button>
                 </div>
+
+                
             </div>
         </section>
     </main>
@@ -122,6 +131,6 @@
         <div class="gold-box"></div>
     </footer>
 
-    <script src="~/Content/EmployeeView/js/EmployeeLanding.js"></script>
+    <script src="~/Content/StakeholderView/js/StakeholderLanding.js"></script>
 </body>
 </html>

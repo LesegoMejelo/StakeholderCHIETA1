@@ -1,4 +1,4 @@
-﻿// AppointmentTracker.js
+﻿// AppointmentTracker.js - Fixed Version
 class AppointmentTracker {
     constructor() {
         this.appointments = [];
@@ -17,11 +17,13 @@ class AppointmentTracker {
 
     async init() {
         try {
+            console.log('Initializing AppointmentTracker...');
             this.setLoadingState(true);
             await this.loadAppointments();
             this.setupEventListeners();
             this.setupSearch();
             this.renderAll();
+            console.log('AppointmentTracker initialized successfully');
         } catch (error) {
             console.error('Error initializing appointment tracker:', error);
             this.showNotification('Failed to load appointments. Please refresh the page.', 'error', 5000);
@@ -29,6 +31,7 @@ class AppointmentTracker {
             // Retry logic
             if (this.retryCount < this.maxRetries) {
                 this.retryCount++;
+                console.log(`Retrying initialization (attempt ${this.retryCount}/${this.maxRetries})...`);
                 setTimeout(() => this.init(), 2000 * this.retryCount);
             }
         } finally {
@@ -44,25 +47,31 @@ class AppointmentTracker {
                 this.cache.has('appointments');
 
             if (shouldUseCache) {
+                console.log('Using cached appointment data');
                 this.appointments = this.cache.get('appointments');
                 this.filteredAppointments = [...this.appointments];
                 return;
             }
 
-            console.log('Fetching appointments...');
+            console.log('Fetching appointments from server...');
             const response = await fetch('/AdvisorAppointment/AppointmentTrackerData', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
-                }
+                },
+                credentials: 'include' // Include cookies for authentication
             });
+
+            console.log('Response status:', response.status);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
+            console.log('Received data:', data);
+            console.log('Number of appointments:', data.length);
 
             // Validate and filter appointments
             this.appointments = data.filter(apt => this.validateAppointmentData(apt));
@@ -76,11 +85,14 @@ class AppointmentTracker {
                 console.warn(`Filtered out ${data.length - this.appointments.length} invalid appointments`);
             }
 
+            console.log('Valid appointments loaded:', this.appointments.length);
+
         } catch (error) {
             console.error('Error loading appointments:', error);
 
             // Try to use cached data if available
             if (this.cache.has('appointments')) {
+                console.log('Using cached data due to error');
                 this.appointments = this.cache.get('appointments');
                 this.filteredAppointments = [...this.appointments];
                 this.showNotification('Using cached data - connection issue', 'warning', 5000);
@@ -91,11 +103,18 @@ class AppointmentTracker {
     }
 
     setupEventListeners() {
+        console.log('Setting up event listeners...');
+
         // Filter event listeners with debouncing
-        document.getElementById('statusFilter').addEventListener('change', () => this.applyFilters());
-        document.getElementById('typeFilter').addEventListener('change', () => this.applyFilters());
-        document.getElementById('dateFilter').addEventListener('change', () => this.applyFilters());
-        document.getElementById('clearFilters').addEventListener('click', () => this.clearFilters());
+        const statusFilter = document.getElementById('statusFilter');
+        const typeFilter = document.getElementById('typeFilter');
+        const dateFilter = document.getElementById('dateFilter');
+        const clearFilters = document.getElementById('clearFilters');
+
+        if (statusFilter) statusFilter.addEventListener('change', () => this.applyFilters());
+        if (typeFilter) typeFilter.addEventListener('change', () => this.applyFilters());
+        if (dateFilter) dateFilter.addEventListener('change', () => this.applyFilters());
+        if (clearFilters) clearFilters.addEventListener('click', () => this.clearFilters());
 
         // Modal event listeners
         document.querySelectorAll('.close-modal, #closeInfoModal, #cancelDecision').forEach(btn => {
@@ -103,7 +122,10 @@ class AppointmentTracker {
         });
 
         // Submit decision button
-        document.getElementById('submitDecision').addEventListener('click', () => this.submitDecision());
+        const submitBtn = document.getElementById('submitDecision');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', () => this.submitDecision());
+        }
 
         // Click outside modal to close
         window.addEventListener('click', (e) => {
@@ -112,23 +134,27 @@ class AppointmentTracker {
             }
         });
 
-        // Export functionality
-        const exportBtn = document.createElement('button');
-        exportBtn.textContent = 'Export CSV';
-        exportBtn.className = 'action-btn btn-export';
-        exportBtn.addEventListener('click', () => this.exportToCSV());
-        document.querySelector('.filter-container').appendChild(exportBtn);
+        // Add export button if filter container exists
+        const filterGrid = document.querySelector('.filter-grid');
+        if (filterGrid && !document.querySelector('.btn-export')) {
+            const exportBtn = document.createElement('button');
+            exportBtn.textContent = 'Export CSV';
+            exportBtn.className = 'action-btn btn-export';
+            exportBtn.addEventListener('click', () => this.exportToCSV());
+            filterGrid.parentElement.appendChild(exportBtn);
+        }
     }
 
     setupSearch() {
-        const searchInput = document.createElement('input');
-        searchInput.type = 'text';
-        searchInput.placeholder = 'Search appointments...';
-        searchInput.className = 'search-input';
-        searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
-
-        const filterContainer = document.querySelector('.filter-container');
-        filterContainer.appendChild(searchInput);
+        const filtersHeader = document.querySelector('.filters-header');
+        if (filtersHeader && !document.querySelector('.search-input')) {
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.placeholder = 'Search appointments...';
+            searchInput.className = 'search-input';
+            searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
+            filtersHeader.appendChild(searchInput);
+        }
     }
 
     handleSearch(query) {
@@ -139,7 +165,7 @@ class AppointmentTracker {
             } else {
                 const normalizedQuery = this.normalizeString(query);
                 this.filteredAppointments = this.appointments.filter(apt =>
-                    this.normalizeString(apt.ClientName).includes(normalizedQuery) ||
+                    this.normalizeString(apt.ClientName || '').includes(normalizedQuery) ||
                     this.normalizeString(apt.Reason || '').includes(normalizedQuery) ||
                     this.normalizeString(apt.AdvisorName || '').includes(normalizedQuery) ||
                     this.normalizeString(apt.Email || '').includes(normalizedQuery)
@@ -157,15 +183,17 @@ class AppointmentTracker {
     }
 
     _applyFiltersImmediate() {
-        const statusValue = document.getElementById('statusFilter').value;
-        const typeValue = document.getElementById('typeFilter').value;
-        const dateValue = document.getElementById('dateFilter').value;
+        const statusValue = document.getElementById('statusFilter')?.value || 'all';
+        const typeValue = document.getElementById('typeFilter')?.value || 'all';
+        const dateValue = document.getElementById('dateFilter')?.value || 'all';
 
         this.filteredAppointments = this.appointments.filter(appointment => {
             // Status filter
-            if (statusValue !== 'all' &&
-                !this.normalizeString(appointment.Status).includes(this.normalizeString(statusValue))) {
-                return false;
+            if (statusValue !== 'all') {
+                const appointmentStatus = this.normalizeString(appointment.Status || '');
+                if (!appointmentStatus.includes(this.normalizeString(statusValue))) {
+                    return false;
+                }
             }
 
             // Type filter
@@ -190,8 +218,12 @@ class AppointmentTracker {
     }
 
     matchesDateFilter(appointmentDate, dateFilter) {
+        if (!appointmentDate) return false;
+
         const days = parseInt(dateFilter);
         const cutoffDate = new Date();
+        cutoffDate.setHours(0, 0, 0, 0);
+
         const aptDate = this.parseDate(appointmentDate);
 
         if (aptDate < cutoffDate) {
@@ -205,6 +237,7 @@ class AppointmentTracker {
     }
 
     renderAll() {
+        console.log('Rendering all components...');
         this.renderUpcomingAppointments();
         this.renderAppointmentsTable();
         this.updateResultsCount();
@@ -219,13 +252,16 @@ class AppointmentTracker {
 
     renderUpcomingAppointments() {
         const container = document.getElementById('upcomingAppointments');
+        if (!container) return;
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         const upcoming = this.appointments
             .filter(appointment => {
                 const appointmentDate = this.parseDate(appointment.Date);
-                return (appointment.Status === 'accepted' || appointment.Status === 'rescheduled') &&
+                const status = this.normalizeString(appointment.Status || '');
+                return (status === 'accepted' || status === 'rescheduled') &&
                     appointmentDate >= today;
             })
             .sort((a, b) => this.parseDate(a.Date) - this.parseDate(b.Date));
@@ -241,7 +277,7 @@ class AppointmentTracker {
         } else {
             upcoming.forEach(appointment => {
                 const card = document.createElement('div');
-                card.className = `upcoming-card ${appointment.Status}`;
+                card.className = `upcoming-card ${this.normalizeString(appointment.Status || '')}`;
 
                 const dateObj = this.parseDate(appointment.Date);
                 const formattedDate = dateObj.toLocaleDateString('en-US', {
@@ -250,14 +286,14 @@ class AppointmentTracker {
 
                 card.innerHTML = `
                     <div class="upcoming-card-header">
-                        <h3 class="upcoming-card-title">${appointment.ClientName}</h3>
+                        <h3 class="upcoming-card-title">${this.escapeHtml(appointment.ClientName || 'Unknown')}</h3>
                         <div class="upcoming-card-date">${formattedDate}</div>
                     </div>
                     <div class="upcoming-card-details">
                         <div class="upcoming-card-detail"><b>Time:</b> ${this.formatTime(appointment.Time)}</div>
                         <div class="upcoming-card-detail"><b>Type:</b> ${this.determineAppointmentType(appointment)}</div>
-                        <div class="upcoming-card-detail"><b>Advisor:</b> ${appointment.AdvisorName}</div>
-                        <div class="upcoming-card-detail"><b>Reason:</b> ${appointment.Reason}</div>
+                        <div class="upcoming-card-detail"><b>Advisor:</b> ${this.escapeHtml(appointment.AdvisorName || 'Unassigned')}</div>
+                        <div class="upcoming-card-detail"><b>Reason:</b> ${this.escapeHtml(appointment.Reason || 'Not specified')}</div>
                     </div>
                 `;
 
@@ -268,12 +304,13 @@ class AppointmentTracker {
 
     renderAppointmentsTable() {
         const tbody = document.getElementById('appointmentsTableBody');
+        if (!tbody) return;
 
         if (this.filteredAppointments.length === 0) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="6" style="text-align: center; padding: 30px; color: var(--muted)">
-                        No appointments match your current filters
+                        ${this.appointments.length === 0 ? 'No appointments found' : 'No appointments match your current filters'}
                     </td>
                 </tr>
             `;
@@ -287,17 +324,20 @@ class AppointmentTracker {
                 weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
             });
 
+            const email = appointment.Email || 'No email provided';
+            const isPending = this.normalizeString(appointment.Status || '') === 'pending';
+
             return `
                 <tr>
-                    <td>${appointment.ClientName}<br><small>${appointment.Email}</small></td>
+                    <td>${this.escapeHtml(appointment.ClientName || 'Unknown')}<br><small>${this.escapeHtml(email)}</small></td>
                     <td>${formattedDate}<br>${this.formatTime(appointment.Time)}</td>
                     <td>${this.determineAppointmentType(appointment)}</td>
-                    <td>${appointment.AdvisorName}</td>
+                    <td>${this.escapeHtml(appointment.AdvisorName || 'Unassigned')}</td>
                     <td>${statusBadge}</td>
                     <td>
                         <div class="action-group">
                             <button class="action-btn btn-info" data-action="info" data-id="${appointment.Id}">Info</button>
-                            ${appointment.Status === 'pending' ? `
+                            ${isPending ? `
                                 <button class="action-btn btn-accept" data-action="accept" data-id="${appointment.Id}">Accept</button>
                                 <button class="action-btn btn-decline" data-action="decline" data-id="${appointment.Id}">Decline</button>
                                 <button class="action-btn btn-reschedule" data-action="reschedule" data-id="${appointment.Id}">Reschedule</button>
@@ -330,26 +370,37 @@ class AppointmentTracker {
     }
 
     updateResultsCount() {
+        const countElement = document.getElementById('resultsCount');
+        if (!countElement) return;
+
         const count = this.filteredAppointments.length;
         const total = this.appointments.length;
-        document.getElementById('resultsCount').textContent =
-            `Showing ${count} of ${total} appointment${total !== 1 ? 's' : ''}`;
+        countElement.textContent = `Showing ${count} of ${total} appointment${total !== 1 ? 's' : ''}`;
     }
 
     clearFilters() {
-        document.getElementById('statusFilter').value = 'all';
-        document.getElementById('typeFilter').value = 'all';
-        document.getElementById('dateFilter').value = 'all';
-        document.querySelector('.search-input').value = '';
+        const statusFilter = document.getElementById('statusFilter');
+        const typeFilter = document.getElementById('typeFilter');
+        const dateFilter = document.getElementById('dateFilter');
+        const searchInput = document.querySelector('.search-input');
+
+        if (statusFilter) statusFilter.value = 'all';
+        if (typeFilter) typeFilter.value = 'all';
+        if (dateFilter) dateFilter.value = 'all';
+        if (searchInput) searchInput.value = '';
+
         this.applyFilters();
     }
 
     showAppointmentInfo(appointmentId) {
         const appointment = this.appointments.find(a => a.Id === appointmentId);
-        if (!appointment) return;
+        if (!appointment) {
+            console.error('Appointment not found:', appointmentId);
+            return;
+        }
 
         document.getElementById('detail-stakeholder').textContent =
-            `${appointment.ClientName} (${appointment.Email})`;
+            `${appointment.ClientName || 'Unknown'} (${appointment.Email || 'No email'})`;
 
         const dateObj = this.parseDate(appointment.Date);
         const formattedDate = dateObj.toLocaleDateString('en-US', {
@@ -359,10 +410,11 @@ class AppointmentTracker {
         document.getElementById('detail-date').textContent = formattedDate;
         document.getElementById('detail-time').textContent = this.formatTime(appointment.Time);
         document.getElementById('detail-type').textContent = this.determineAppointmentType(appointment);
-        document.getElementById('detail-advisor').textContent = appointment.AdvisorName;
+        document.getElementById('detail-advisor').textContent = appointment.AdvisorName || 'Unassigned';
 
         let statusText = '';
-        switch (appointment.Status.toLowerCase()) {
+        const status = this.normalizeString(appointment.Status || '');
+        switch (status) {
             case 'pending':
                 statusText = 'Pending Review';
                 break;
@@ -373,12 +425,14 @@ class AppointmentTracker {
                 statusText = 'Declined';
                 break;
             case 'rescheduled':
-                statusText = `Rescheduled to ${appointment.RescheduledTo || 'new time'}`;
+                statusText = `Rescheduled${appointment.ProposedNewDate ? ' to ' + appointment.ProposedNewDate : ''}`;
                 break;
+            default:
+                statusText = appointment.Status || 'Unknown';
         }
         document.getElementById('detail-status').textContent = statusText;
 
-        document.getElementById('detail-reason').textContent = appointment.Reason;
+        document.getElementById('detail-reason').textContent = appointment.Reason || 'No reason provided';
         document.getElementById('detail-details').textContent =
             appointment.Details || 'No additional details provided';
 
@@ -387,42 +441,50 @@ class AppointmentTracker {
 
     showDecisionModal(action, appointmentId) {
         const appointment = this.appointments.find(a => a.Id === appointmentId);
-        if (!appointment) return;
+        if (!appointment) {
+            console.error('Appointment not found:', appointmentId);
+            return;
+        }
 
         this.currentAction = action;
         this.currentAppointment = appointment;
 
         let modalTitle = '';
+        const submitBtn = document.getElementById('submitDecision');
+        const acceptMessage = document.getElementById('acceptMessage');
+        const reasonSection = document.getElementById('reasonSection');
+        const rescheduleSection = document.getElementById('rescheduleSection');
+
         switch (action) {
             case 'accept':
                 modalTitle = 'Accept Appointment';
-                document.getElementById('submitDecision').textContent = 'Accept Appointment';
-                document.getElementById('submitDecision').className = 'action-btn btn-accept';
-                document.getElementById('acceptMessage').style.display = 'block';
-                document.getElementById('reasonSection').style.display = 'none';
-                document.getElementById('rescheduleSection').style.display = 'none';
+                submitBtn.textContent = 'Accept Appointment';
+                submitBtn.className = 'action-btn btn-accept';
+                acceptMessage.style.display = 'block';
+                reasonSection.style.display = 'none';
+                rescheduleSection.style.display = 'none';
                 break;
             case 'decline':
                 modalTitle = 'Decline Appointment';
-                document.getElementById('submitDecision').textContent = 'Decline Appointment';
-                document.getElementById('submitDecision').className = 'action-btn btn-decline';
-                document.getElementById('acceptMessage').style.display = 'none';
-                document.getElementById('reasonSection').style.display = 'block';
-                document.getElementById('rescheduleSection').style.display = 'none';
+                submitBtn.textContent = 'Decline Appointment';
+                submitBtn.className = 'action-btn btn-decline';
+                acceptMessage.style.display = 'none';
+                reasonSection.style.display = 'block';
+                rescheduleSection.style.display = 'none';
                 break;
             case 'reschedule':
                 modalTitle = 'Reschedule Appointment';
-                document.getElementById('submitDecision').textContent = 'Propose New Time';
-                document.getElementById('submitDecision').className = 'action-btn btn-reschedule';
-                document.getElementById('acceptMessage').style.display = 'none';
-                document.getElementById('reasonSection').style.display = 'block';
-                document.getElementById('rescheduleSection').style.display = 'block';
+                submitBtn.textContent = 'Propose New Time';
+                submitBtn.className = 'action-btn btn-reschedule';
+                acceptMessage.style.display = 'none';
+                reasonSection.style.display = 'block';
+                rescheduleSection.style.display = 'block';
                 break;
         }
 
         document.getElementById('decisionModalTitle').textContent = modalTitle;
         document.getElementById('decision-stakeholder').textContent =
-            `${appointment.ClientName} (${appointment.Email})`;
+            `${appointment.ClientName || 'Unknown'} (${appointment.Email || 'No email'})`;
 
         const dateObj = this.parseDate(appointment.Date);
         const formattedDate = dateObj.toLocaleDateString('en-US', {
@@ -444,8 +506,10 @@ class AppointmentTracker {
 
         // Clear form fields
         document.getElementById('responseReason').value = '';
-        document.getElementById('newDate').value = '';
-        document.getElementById('newTime').value = '';
+        const newDate = document.getElementById('newDate');
+        const newTime = document.getElementById('newTime');
+        if (newDate) newDate.value = '';
+        if (newTime) newTime.value = '';
 
         this.showModal('decisionModal');
     }
@@ -464,11 +528,18 @@ class AppointmentTracker {
                 throw new Error(validationError);
             }
 
-            const formData = this.buildDecisionFormData();
+            const requestData = this.buildDecisionData();
+
+            console.log('Submitting decision:', requestData);
 
             const response = await fetch('/AdvisorAppointment/UpdateStatus', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'include',
+                body: JSON.stringify(requestData)
             });
 
             if (!response.ok) {
@@ -505,7 +576,7 @@ class AppointmentTracker {
 
     validateDecision(action) {
         if (action === 'decline' || action === 'reschedule') {
-            const reason = document.getElementById('responseReason').value.trim();
+            const reason = document.getElementById('responseReason')?.value.trim();
             if (!reason) {
                 return 'Please provide a reason for your decision.';
             }
@@ -515,8 +586,8 @@ class AppointmentTracker {
         }
 
         if (action === 'reschedule') {
-            const newDate = document.getElementById('newDate').value;
-            const newTime = document.getElementById('newTime').value;
+            const newDate = document.getElementById('newDate')?.value;
+            const newTime = document.getElementById('newTime')?.value;
 
             if (!newDate || !newTime) {
                 return 'Please select both a date and time for the rescheduled appointment.';
@@ -526,28 +597,28 @@ class AppointmentTracker {
         return null;
     }
 
-    buildDecisionFormData() {
-        const formData = new FormData();
-        formData.append('appointmentId', this.currentAppointment.Id);
-        formData.append('status', this.currentAction === 'accept' ? 'accepted' : this.currentAction + 'd');
+    buildDecisionData() {
+        const data = {
+            AppointmentId: this.currentAppointment.Id,
+            Status: this.currentAction === 'accept' ? 'accepted' : this.currentAction + 'd'
+        };
 
         if (this.currentAction === 'decline' || this.currentAction === 'reschedule') {
-            const reason = document.getElementById('responseReason').value.trim();
-            formData.append('reason', reason);
+            data.DeclineReason = document.getElementById('responseReason').value.trim();
         }
 
         if (this.currentAction === 'reschedule') {
-            const newDate = document.getElementById('newDate').value;
-            const newTime = document.getElementById('newTime').value;
-            formData.append('newDate', newDate);
-            formData.append('newTime', newTime);
+            data.NewDate = document.getElementById('newDate').value;
+            data.NewTime = document.getElementById('newTime').value;
         }
 
-        return formData;
+        return data;
     }
 
     // Helper Methods
     validateAppointmentData(appointment) {
+        if (!appointment) return false;
+
         const requiredFields = ['Id', 'ClientName', 'Date', 'Time', 'Status'];
         const missingFields = requiredFields.filter(field => !appointment[field]);
 
@@ -557,7 +628,8 @@ class AppointmentTracker {
         }
 
         // Validate date format
-        if (isNaN(this.parseDate(appointment.Date))) {
+        const dateObj = this.parseDate(appointment.Date);
+        if (isNaN(dateObj.getTime())) {
             console.warn('Invalid date format:', appointment.Date);
             return false;
         }
@@ -566,27 +638,41 @@ class AppointmentTracker {
     }
 
     parseDate(dateString) {
+        if (!dateString) return new Date(NaN);
         return new Date(dateString);
     }
 
     formatTime(timeString) {
         if (!timeString) return 'No time';
-        const [hours, minutes] = timeString.split(':');
-        const hour = parseInt(hours);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const hour12 = hour % 12 || 12;
+        const parts = timeString.split(':');
+        if (parts.length < 2) return timeString;
+
+        const hours = parseInt(parts[0]);
+        const minutes = parts[1];
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const hour12 = hours % 12 || 12;
         return `${hour12}:${minutes} ${ampm}`;
     }
 
     determineAppointmentType(appointment) {
+        if (!appointment) return 'Online';
+
         if (appointment.AppointmentType) {
-            return appointment.AppointmentType === 'online' ? 'Online' : 'In-Person';
+            const type = this.normalizeString(appointment.AppointmentType);
+            return type === 'online' ? 'Online' : type === 'physical' ? 'In-Person' : appointment.AppointmentType;
         }
-        return appointment.Type || 'Online';
+
+        if (appointment.Type) {
+            return appointment.Type;
+        }
+
+        return 'Online';
     }
 
     getStatusBadge(status) {
-        const statusLower = status.toLowerCase();
+        if (!status) return `<span class="status-badge">Unknown</span>`;
+
+        const statusLower = this.normalizeString(status);
         switch (statusLower) {
             case 'pending':
                 return `<span class="status-badge status-pending">Pending</span>`;
@@ -597,12 +683,12 @@ class AppointmentTracker {
             case 'rescheduled':
                 return `<span class="status-badge status-rescheduled">Rescheduled</span>`;
             default:
-                return `<span class="status-badge">${status}</span>`;
+                return `<span class="status-badge">${this.escapeHtml(status)}</span>`;
         }
     }
 
     normalizeString(str) {
-        return String(str).toLowerCase().trim();
+        return String(str || '').toLowerCase().trim();
     }
 
     setLoadingState(loading) {
@@ -616,6 +702,8 @@ class AppointmentTracker {
     showModal(modalId) {
         this.closeModals();
         const modal = document.getElementById(modalId);
+        if (!modal) return;
+
         modal.classList.add('active');
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
@@ -651,17 +739,18 @@ class AppointmentTracker {
         notification.className = `notification notification-${type}`;
         notification.innerHTML = `
             <div class="notification-content">
-                <span class="notification-icon">${type === 'success' ? '✓' : '⚠'}</span>
+                <span class="notification-icon">${type === 'success' ? '✓' : type === 'warning' ? '⚠' : '✕'}</span>
                 <span class="notification-message">${this.escapeHtml(message)}</span>
                 <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
             </div>
         `;
 
+        const bgColor = type === 'success' ? '#4CAF50' : type === 'warning' ? '#ff9800' : '#f44336';
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
-            background: ${type === 'success' ? '#4CAF50' : '#f44336'};
+            background: ${bgColor};
             color: white;
             padding: 0;
             border-radius: 8px;
@@ -686,7 +775,8 @@ class AppointmentTracker {
     }
 
     escapeHtml(unsafe) {
-        return unsafe
+        if (unsafe == null) return '';
+        return String(unsafe)
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
@@ -697,13 +787,13 @@ class AppointmentTracker {
     exportToCSV() {
         const headers = ['Client Name', 'Email', 'Date', 'Time', 'Type', 'Advisor', 'Status', 'Reason'];
         const csvData = this.filteredAppointments.map(apt => [
-            apt.ClientName,
-            apt.Email,
-            apt.Date,
-            apt.Time,
+            apt.ClientName || '',
+            apt.Email || '',
+            apt.Date || '',
+            apt.Time || '',
             this.determineAppointmentType(apt),
-            apt.AdvisorName,
-            apt.Status,
+            apt.AdvisorName || '',
+            apt.Status || '',
             apt.Reason || ''
         ]);
 
@@ -726,13 +816,16 @@ class AppointmentTracker {
 // Initialize when page loads
 let appointmentTracker;
 document.addEventListener('DOMContentLoaded', function () {
+    console.log('DOM Content Loaded - Initializing AppointmentTracker');
     appointmentTracker = new AppointmentTracker();
+    appointmentTracker.init(); // FIXED: Explicitly call init()
 });
 
 // Refresh appointments function (can be called externally)
 async function refreshAppointments() {
     if (appointmentTracker) {
         try {
+            console.log('Refreshing appointments...');
             await appointmentTracker.loadAppointments(true);
             appointmentTracker.renderAll();
         } catch (error) {
@@ -765,11 +858,18 @@ style.textContent = `
         border-radius: 4px;
         margin-left: 10px;
         font-size: 14px;
+        min-width: 200px;
     }
     
     .btn-export {
         background: #6c757d;
         margin-left: 10px;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
     }
     
     .btn-export:hover {
@@ -780,26 +880,36 @@ style.textContent = `
         display: flex;
         align-items: center;
         padding: 12px 16px;
+        gap: 8px;
     }
     
     .notification-icon {
-        margin-right: 8px;
         font-weight: bold;
+        font-size: 18px;
+    }
+    
+    .notification-message {
+        flex: 1;
     }
     
     .notification-close {
         background: none;
         border: none;
         color: white;
-        font-size: 18px;
+        font-size: 20px;
         cursor: pointer;
-        margin-left: auto;
         padding: 0;
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+    }
+    
+    .notification-close:hover {
+        opacity: 1;
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(style)
