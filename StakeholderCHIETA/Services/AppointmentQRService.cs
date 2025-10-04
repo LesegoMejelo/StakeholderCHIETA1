@@ -1,121 +1,82 @@
-﻿using StakeholderCHIETA.Models;
-using System.Text.Json;
+﻿using System;
+using System.Text;
+using Google.Cloud.Firestore;
 
 namespace StakeholderCHIETA.Services
 {
-    
-    
-        public class AppointmentQRService : IAppointmentQRService
+    public class AppointmentQRService : IAppointmentQRService
+    {
+        private readonly ITokenService _tokenService;
+        private readonly IQRCodeGenerator _qr;
+        private readonly IEmailService _email;
+        private readonly FirestoreDb _db;
+
+        public AppointmentQRService(
+            ITokenService tokenService,
+            IQRCodeGenerator qr,
+            IEmailService email,
+            FirestoreDb db)
         {
-            private readonly IEmailService _emailService;
-            private readonly IQRCodeGenerator _qrCodeGenerator;
-            private readonly ITokenService _tokenService;
-            private readonly ILogger<AppointmentQRService> _logger;
+            _tokenService = tokenService;
+            _qr = qr;
+            _email = email;
+            _db = db;
+        }
 
-            public AppointmentQRService(
-                IEmailService emailService,
-                IQRCodeGenerator qrCodeGenerator,
-                ITokenService tokenService,
-                ILogger<AppointmentQRService> logger)
+        public async Task SendConfirmationAsync(string appointmentId, string stakeholderEmail, string baseUrl)
+        {
+            if (string.IsNullOrWhiteSpace(appointmentId))
+                throw new ArgumentException("appointmentId is required", nameof(appointmentId));
+            if (string.IsNullOrWhiteSpace(stakeholderEmail))
+                throw new ArgumentException("stakeholderEmail is required", nameof(stakeholderEmail));
+            if (string.IsNullOrWhiteSpace(baseUrl))
+                throw new ArgumentException("baseUrl is required", nameof(baseUrl));
+
+            // 🔁 REPLACEMENT FOR GenerateSecureToken:
+            // Create a one-time token (valid 24h). This matches ITokenService.
+            var (rawToken, tokenId) = await _tokenService.CreateOneTimeTokenAsync(appointmentId, TimeSpan.FromHours(24));
+
+            // Build the check-in URL (encoded)
+            var checkInUrl = $"{baseUrl.TrimEnd('/')}/CheckIn" +
+                             $"?t={Uri.EscapeDataString(rawToken)}&a={Uri.EscapeDataString(appointmentId)}";
+
+            // Generate QR PNG (byte[])
+            var qrPng = _qr.GeneratePng(checkInUrl, 8); // adjust pixelsPerModule if you like
+
+            // Nice HTML with inline QR (cid:qrCode)
+            var html = BuildHtml(checkInUrl);
+
+            // Send the email
+            await _email.SendEmailWithAttachmentAsync(
+                to: stakeholderEmail,
+                subject: "Your appointment is confirmed — CHIETA",
+                htmlBody: html,
+                attachmentBytes: qrPng,
+                attachmentName: "appointment-qr.png",
+                contentId: "qrCode"
+            );
+
+            // Optional: mark email-sent on the appointment to avoid duplicates
+            var docRef = _db.Collection("appointments").Document(appointmentId);
+            await docRef.UpdateAsync(new Dictionary<string, object>
             {
-                _emailService = emailService;
-                _qrCodeGenerator = qrCodeGenerator;
-                _tokenService = tokenService;
-                _logger = logger;
-            }
+                { "ConfirmationEmailSent", true },
+                { "ConfirmationEmailSentAt", Timestamp.FromDateTime(DateTime.UtcNow) }
+            });
+        }
 
-            public async Task SendAppointmentQREmailAsync(Appointment appointment, string userEmail)
-            {
-                try
-                {
-                // Calculate expiry time (1 hour after appointment time)
-                var expiryTime = DateTime.Parse((string)appointment.BookedDateTime).AddHours(1);
-
-
-                // Generate validation token
-                var validationToken = _tokenService.GenerateSecureToken();
-
-                    // Create QR code data
-                    var qrData = new QRCodeData
-                    {
-                        AppointmentId = (string)appointment.Id,
-                        UserId = appointment.UserId,
-                        ExpiryTime = expiryTime,
-                        ValidationToken = validationToken
-                    };
-
-                    // Serialize QR data
-                    var qrDataJson = JsonSerializer.Serialize(qrData);
-
-                    // Generate QR code image
-                    var qrCodeBytes = await _qrCodeGenerator.GenerateQRCodeAsync(qrDataJson);
-
-                    // Store validation token (for later verification)
-                    await _tokenService.StoreTokenAsync(validationToken, appointment.Id, expiryTime);
-
-                    // Send email
-                    await SendEmailWithQRCodeAsync(appointment, userEmail, qrCodeBytes, expiryTime);
-
-                    _logger.LogInformation($"QR code email sent for appointment {appointment.Id}");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Failed to send QR code email for appointment {appointment.Id}");
-                    throw;
-                }
-            }
-
-            private async Task SendEmailWithQRCodeAsync(Appointment appointment, string userEmail,
-                byte[] qrCodeBytes, DateTime expiryTime)
-            {
-                var emailSubject = $"Your Appointment QR Code - {appointment.Title}";
-                var emailBody = $@"
-            <html>
-            <body>
-                <h2>Your Appointment Confirmation</h2>
-                <p>Dear Customer,</p>
-                <p>Your appointment has been confirmed:</p>
-                <ul>
-                    <li><strong>Appointment:</strong> {appointment.Title}</li>
-                    <li><strong>Date & Time:</strong> {appointment.BookedDateTime:yyyy-MM-dd HH:mm}</li>
-                    <li><strong>Description:</strong> {appointment.Description}</li>
-                </ul>
-                <p>Please find your QR code attached below. This code will expire on {expiryTime:yyyy-MM-dd HH:mm}.</p>
-                <p>Show this QR code when you arrive for your appointment.</p>
-                <img src='cid:qrcode' alt='Appointment QR Code' style='max-width: 300px;'/>
-                <p>Thank you!</p>
-            </body>
-            </html>";
-
-                await _emailService.SendEmailWithAttachmentAsync(
-                    userEmail,
-                    emailSubject,
-                    emailBody,
-                    qrCodeBytes,
-                    "qrcode.png",
-                    "qrcode");
-            }
-
-            public bool ValidateQRCode(string qrData)
-            {
-                try
-                {
-                    var qrCodeData = JsonSerializer.Deserialize<QRCodeData>(qrData);
-
-                    // Check if expired
-                    if (DateTime.UtcNow > qrCodeData.ExpiryTime)
-                    {
-                        return false;
-                    }
-
-                    // Validate token
-                    return _tokenService.ValidateToken(qrCodeData.ValidationToken, qrCodeData.AppointmentId);
-                }
-                catch
-                {
-                    return false;
-                }
-            }
+        private static string BuildHtml(string checkInUrl)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("<div style=\"font-family:Segoe UI, Arial, sans-serif;\">");
+            sb.AppendLine("<h2>Your CHIETA appointment is confirmed</h2>");
+            sb.AppendLine("<p>Please present this QR code at the venue to check in.</p>");
+            sb.AppendLine("<p><img src=\"cid:qrCode\" alt=\"Appointment QR\" style=\"max-width:240px;\" /></p>");
+            sb.AppendLine("<p>If the QR doesn’t show, you can also open this link:</p>");
+            sb.AppendLine($"<p><a href=\"{checkInUrl}\">{checkInUrl}</a></p>");
+            sb.AppendLine("<p>See you soon!</p>");
+            sb.AppendLine("</div>");
+            return sb.ToString();
         }
     }
-
+}

@@ -30,7 +30,6 @@ namespace Staekholder_CHIETA_X.Controllers
         {
             try
             {
-                // Fetch from Users collection where Role = "Advisor"
                 var snapshot = await _db.Collection("Users")
                                         .WhereEqualTo("Role", "Advisor")
                                         .GetSnapshotAsync();
@@ -40,6 +39,13 @@ namespace Staekholder_CHIETA_X.Controllers
                     id = doc.Id,
                     name = doc.ContainsField("Name") ? doc.GetValue<string>("Name") : "Unknown"
                 }).ToList();
+
+                // Add logging to see what's being returned
+                Console.WriteLine($"Found {advisors.Count} advisors:");
+                foreach (var adv in advisors)
+                {
+                    Console.WriteLine($"  ID: {adv.id}, Name: {adv.name}");
+                }
 
                 return Ok(advisors);
             }
