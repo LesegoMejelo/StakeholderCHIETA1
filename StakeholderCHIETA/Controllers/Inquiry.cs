@@ -111,7 +111,7 @@ namespace Staekholder_CHIETA_X.Controllers
                         if (string.IsNullOrWhiteSpace(assignedAdvisorName) && adv.TryGetValue("Name", out var nm))
                             assignedAdvisorName = nm?.ToString() ?? assignedAdvisorName;
 
-                        if (adv.TryGetValue("Email", out var ev))
+                        if (adv.TryGetValue("email", out var ev))
                             assignedAdvisorEmail = ev?.ToString() ?? "";
                     }
                 }
@@ -128,7 +128,7 @@ namespace Staekholder_CHIETA_X.Controllers
                     {
                         assignedAdvisorId = match.Id;
                         var adv = match.ToDictionary();
-                        if (adv.TryGetValue("Email", out var ev))
+                        if (adv.TryGetValue("email", out var ev))
                             assignedAdvisorEmail = ev?.ToString() ?? "";
                     }
                 }
@@ -139,8 +139,8 @@ namespace Staekholder_CHIETA_X.Controllers
 
                 var inquiryData = new Dictionary<string, object>
         {
-            { "name", displayName },
-            { "createdBy", new Dictionary<string, object> {
+                { "name", displayName },
+                { "createdBy", new Dictionary<string, object> {
                 { "userId", userId },
                 { "name", displayName },
                 { "email", userEmail }
@@ -937,6 +937,7 @@ namespace Staekholder_CHIETA_X.Controllers
 
         public IActionResult Index() => View();
         public IActionResult Inquiry() => View("~/Views/StakeholderViews/Inquiry/Inquiry.cshtml");
+        public IActionResult InquiryTracking() => View("~/Views/StakeholderViews/InquiryTracking/InquiryTracking.cshtml");
         public IActionResult Tracking() => View("~/Views/EmployeeViews/InquiryTracker.cshtml");
         public IActionResult Feedback()
         {

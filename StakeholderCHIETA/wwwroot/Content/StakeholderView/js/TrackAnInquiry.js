@@ -1,4 +1,4 @@
-// TrackAnInquiry.js - Stakeholder View
+// TrackAnInquiry.js - Stakeholder View (Fixed)
 class InquiryHistory {
     constructor() {
         this.inquiries = [];
@@ -26,7 +26,8 @@ class InquiryHistory {
     async loadInquiries() {
         try {
             console.log('Fetching inquiries from server...');
-            const response = await fetch('/Inquiry/GetMyInquiries', {
+            // FIXED: Changed to correct stakeholder endpoint
+            const response = await fetch('/api/inquiry/stakeholder', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -42,7 +43,20 @@ class InquiryHistory {
             const data = await response.json();
             console.log('Received data:', data);
 
-            this.inquiries = data.filter(inq => this.validateInquiryData(inq));
+            // FIXED: Map backend response to expected format
+            this.inquiries = data.map(inq => ({
+                Id: inq.id,
+                ReferenceNumber: inq.reference,
+                Subject: inq.subject,
+                Category: inq.inquiryType,
+                Status: inq.status,
+                Description: '', // Backend doesn't return description in list
+                SubmittedAt: inq.date,
+                LastUpdated: inq.date,
+                Updates: [], // Backend doesn't return updates in list
+                AssignedTo: inq.assignedTo
+            })).filter(inq => this.validateInquiryData(inq));
+
             this.filteredInquiries = [...this.inquiries];
 
             console.log('Valid inquiries loaded:', this.inquiries.length);
@@ -195,13 +209,14 @@ class InquiryHistory {
                     <h2 class="inquiry-ref">${this.escapeHtml(inquiry.ReferenceNumber || 'N/A')}</h2>
                     <div class="inquiry-date">Submitted on ${submittedDate}</div>
                     <div class="inquiry-category">${this.escapeHtml(inquiry.Category || 'Other')}</div>
+                    ${inquiry.AssignedTo ? `<div class="inquiry-advisor">Assigned to: ${this.escapeHtml(inquiry.AssignedTo)}</div>` : ''}
                 </div>
                 ${statusBadge}
             </div>
             
             <div class="inquiry-body">
                 <h3 class="inquiry-subject">${this.escapeHtml(inquiry.Subject || 'No subject')}</h3>
-                <p class="inquiry-description">${this.escapeHtml(inquiry.Description || 'No description provided')}</p>
+                ${inquiry.Description ? `<p class="inquiry-description">${this.escapeHtml(inquiry.Description)}</p>` : ''}
             </div>
             
             ${hasUpdates ? `
@@ -209,12 +224,14 @@ class InquiryHistory {
                     <span>See Response</span>
                     <span class="icon">▼</span>
                 </button>
-            ` : ''}
+            ` : '<div class="no-response-yet">No updates yet - your inquiry is being reviewed</div>'}
             
-            <div class="updates-section" id="updates-${inquiry.Id}">
-                <h3 class="updates-title">Updates from CHIETA</h3>
-                ${this.renderUpdates(inquiry.Updates)}
-            </div>
+            ${hasUpdates ? `
+                <div class="updates-section" id="updates-${inquiry.Id}">
+                    <h3 class="updates-title">Updates from CHIETA</h3>
+                    ${this.renderUpdates(inquiry.Updates)}
+                </div>
+            ` : ''}
         `;
 
         return card;
@@ -289,6 +306,11 @@ class InquiryHistory {
         if (!timestamp) return new Date(0);
 
         try {
+            // Handle ISO string
+            if (typeof timestamp === 'string') {
+                return new Date(timestamp);
+            }
+            // Handle Firestore Timestamp
             if (timestamp._seconds) {
                 return new Date(timestamp._seconds * 1000);
             }
@@ -333,7 +355,7 @@ class InquiryHistory {
     }
 
     normalizeString(str) {
-        return String(str || '').toLowerCase().trim();
+        return String(str || '').toLowerCase().trim().replace(/\s+/g, '-');
     }
 
     setLoadingState(loading) {
