@@ -1,426 +1,403 @@
-// LogAnInquiry.js - Stakeholder Submit Inquiry
-class InquiryForm {
-    constructor() {
-        this.currentStep = 1;
-        this.formData = {};
-        this.availableTags = ['Urgent', 'Documentation', 'Deadline', 'Follow-up', 'Technical'];
-        this.selectedTags = [];
-        this.advisors = [];
+// LogAnInquiry.js — fixed & hardened
+(function () {
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+    function toast(msg) {
+        const box = $("#toast");
+        const msgEl = $("#toastMsg");
+        if (!box || !msgEl) return console.warn("toast container missing");
+        msgEl.textContent = msg;
+        box.classList.add("show");
+        clearTimeout(toast.t);
+        toast.t = setTimeout(() => box.classList.remove("show"), 1800);
     }
 
-    async init() {
-        console.log('Initializing InquiryForm...');
-        this.setupEventListeners();
-        this.renderTagChips();
-        await this.loadAdvisors();
-        this.updateProgress();
-    }
-
-    async loadAdvisors() {
+    // ---------- Fetch Advisors ----------
+    async function loadAdvisors() {
         try {
-            // This would be an API call to get available advisors
-            // For now, using placeholder data
-            this.advisors = [
-                { id: 'advisor1', name: 'John Doe' },
-                { id: 'advisor2', name: 'Jane Smith' },
-                { id: 'advisor3', name: 'Mike Johnson' },
-                { id: 'advisor4', name: 'Sarah Williams' }
-            ];
-
-            const select = document.getElementById('advisorSelect');
-            if (select) {
-                this.advisors.forEach(advisor => {
-                    const option = document.createElement('option');
-                    option.value = advisor.id;
-                    option.textContent = advisor.name;
-                    select.appendChild(option);
-                });
-            }
-        } catch (error) {
-            console.error('Error loading advisors:', error);
-        }
-    }
-
-    setupEventListeners() {
-        // Navigation buttons
-        document.querySelectorAll('[data-next]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const nextStep = parseInt(e.target.dataset.next);
-                this.goToStep(nextStep);
-            });
-        });
-
-        document.querySelectorAll('[data-prev]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const prevStep = parseInt(e.target.dataset.prev);
-                this.goToStep(prevStep);
-            });
-        });
-
-        // Subject character counter
-        const subjectInput = document.getElementById('subject');
-        if (subjectInput) {
-            subjectInput.addEventListener('input', (e) => {
-                const count = e.target.value.length;
-                document.getElementById('subjectCount').textContent = count;
-            });
-        }
-
-        // File input handler
-        const fileInput = document.getElementById('attachment');
-        if (fileInput) {
-            fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
-        }
-
-        // Form submission
-        const form = document.getElementById('inquiryForm');
-        if (form) {
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.submitInquiry();
-            });
-        }
-
-        // Real-time preview update
-        document.querySelectorAll('input, textarea, select').forEach(input => {
-            input.addEventListener('input', () => this.updatePreview());
-        });
-
-        // Copy reference button (for success screen)
-        const copyBtn = document.getElementById('copyRef');
-        if (copyBtn) {
-            copyBtn.addEventListener('click', () => this.copyReference());
-        }
-
-        // New inquiry button
-        const newInquiryBtn = document.getElementById('newInquiry');
-        if (newInquiryBtn) {
-            newInquiryBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.resetForm();
-            });
-        }
-    }
-
-    renderTagChips() {
-        const container = document.getElementById('tagChips');
-        if (!container) return;
-
-        container.innerHTML = this.availableTags.map(tag => {
-            const isSelected = this.selectedTags.includes(tag);
-            return `
-                <button type="button" class="chip ${isSelected ? 'active' : ''}" data-tag="${tag}">
-                    ${tag}
-                </button>
-            `;
-        }).join('');
-
-        // Add click listeners
-        container.querySelectorAll('.chip').forEach(chip => {
-            chip.addEventListener('click', () => this.toggleTag(chip.dataset.tag));
-        });
-    }
-
-    toggleTag(tag) {
-        if (this.selectedTags.includes(tag)) {
-            this.selectedTags = this.selectedTags.filter(t => t !== tag);
-        } else {
-            this.selectedTags.push(tag);
-        }
-        this.renderTagChips();
-        this.updatePreview();
-    }
-
-    handleFileSelect(event) {
-        const files = Array.from(event.target.files);
-        const fileList = document.getElementById('fileList');
-        if (!fileList) return;
-
-        fileList.innerHTML = files.map(file => {
-            const size = (file.size / 1024 / 1024).toFixed(2);
-            return `
-                <li class="file-item">
-                    <span>${this.escapeHtml(file.name)} (${size} MB)</span>
-                </li>
-            `;
-        }).join('');
-    }
-
-    goToStep(stepNumber) {
-        // Validate current step before moving
-        if (stepNumber > this.currentStep) {
-            if (!this.validateStep(this.currentStep)) {
-                return;
-            }
-        }
-
-        // Hide all panels
-        document.querySelectorAll('.panel').forEach(panel => {
-            panel.classList.remove('active');
-        });
-
-        // Show target panel
-        const targetPanel = document.querySelector(`[data-panel="${stepNumber}"]`);
-        if (targetPanel) {
-            targetPanel.classList.add('active');
-        }
-
-        // Update step indicators
-        document.querySelectorAll('.step').forEach(step => {
-            const stepNum = parseInt(step.dataset.step);
-            step.classList.toggle('current', stepNum === stepNumber);
-            step.setAttribute('aria-selected', stepNum === stepNumber);
-        });
-
-        this.currentStep = stepNumber;
-        this.updateProgress();
-
-        // Update preview when moving to step 2
-        if (stepNumber === 2) {
-            this.updatePreview();
-        }
-
-        // Scroll to top
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    validateStep(stepNumber) {
-        if (stepNumber === 1) {
-            const category = document.querySelector('input[name="category"]:checked');
-            const subject = document.getElementById('subject').value.trim();
-
-            if (!category) {
-                this.showToast('Please select a category');
-                return false;
-            }
-
-            if (!subject) {
-                this.showToast('Please enter a subject');
-                return false;
-            }
-
-            return true;
-        }
-
-        return true;
-    }
-
-    updateProgress() {
-        const progressFill = document.getElementById('progressFill');
-        if (progressFill) {
-            const percentage = (this.currentStep / 2) * 100;
-            progressFill.style.width = `${percentage}%`;
-        }
-    }
-
-    updatePreview() {
-        const reviewBox = document.getElementById('reviewBox');
-        if (!reviewBox) return;
-
-        const category = document.querySelector('input[name="category"]:checked')?.value || 'Not selected';
-        const subject = document.getElementById('subject')?.value || 'Not entered';
-        const description = document.getElementById('description')?.value || 'Not entered';
-        const desired = document.getElementById('desired')?.value || 'Not specified';
-        const relatedDate = document.getElementById('relatedDate')?.value || 'Not specified';
-        const callback = document.getElementById('callback')?.checked ? 'Yes' : 'No';
-        const advisorSelect = document.getElementById('advisorSelect');
-        const advisor = advisorSelect?.options[advisorSelect.selectedIndex]?.text || 'General assignment';
-
-        reviewBox.innerHTML = `
-            <div class="preview-item">
-                <strong>Category:</strong> ${this.escapeHtml(category)}
-            </div>
-            <div class="preview-item">
-                <strong>Subject:</strong> ${this.escapeHtml(subject)}
-            </div>
-            <div class="preview-item">
-                <strong>Assigned to:</strong> ${this.escapeHtml(advisor)}
-            </div>
-            ${this.selectedTags.length > 0 ? `
-                <div class="preview-item">
-                    <strong>Tags:</strong> ${this.selectedTags.map(t => this.escapeHtml(t)).join(', ')}
-                </div>
-            ` : ''}
-            <div class="preview-item">
-                <strong>Description:</strong> ${this.escapeHtml(description)}
-            </div>
-            <div class="preview-item">
-                <strong>Desired outcome:</strong> ${this.escapeHtml(desired)}
-            </div>
-            <div class="preview-item">
-                <strong>Related date:</strong> ${this.escapeHtml(relatedDate)}
-            </div>
-            <div class="preview-item">
-                <strong>Follow-up call requested:</strong> ${callback}
-            </div>
-        `;
-    }
-
-    async submitInquiry() {
-        try {
-            const submitBtn = document.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Submitting...';
-
-            // Validate step 2
-            const description = document.getElementById('description').value.trim();
-            if (!description) {
-                this.showToast('Please provide a description');
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit inquiry';
-                return;
-            }
-
-            // Collect form data
-            const category = document.querySelector('input[name="category"]:checked')?.value;
-            const subject = document.getElementById('subject').value.trim();
-            const desired = document.getElementById('desired').value.trim();
-            const relatedDate = document.getElementById('relatedDate').value;
-            const callback = document.getElementById('callback').checked;
-            const advisorSelect = document.getElementById('advisorSelect');
-            const advisorId = advisorSelect?.value || '';
-            const advisorName = advisorSelect?.options[advisorSelect.selectedIndex]?.text || '';
-
-            const requestData = {
-                Category: category,
-                Subject: subject,
-                Description: description,
-                DesiredOutcome: desired,
-                RelatedDate: relatedDate,
-                CallbackRequested: callback,
-                Tags: this.selectedTags,
-                AssignedAdvisorId: advisorId,
-                AssignedAdvisorName: advisorName !== 'Select an advisor (optional)' ? advisorName : ''
-            };
-
-            console.log('Submitting inquiry:', requestData);
-
-            const response = await fetch('/Inquiry/SubmitInquiry', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'include',
-                body: JSON.stringify(requestData)
+            console.log("Loading advisors...");
+            const response = await fetch("/api/inquiry/advisors", {
+                method: "GET",
+                credentials: "include",
+                headers: { Accept: "application/json" },
             });
 
             if (!response.ok) {
-                throw new Error(`Server returned ${response.status}`);
+                console.error("Failed to load advisors, status:", response.status);
+                throw new Error("Failed to load advisors");
             }
 
-            const result = await response.json();
+            const advisors = await response.json();
+            console.log("Advisors loaded:", advisors);
 
-            if (result.success) {
-                this.showSuccessScreen(result.referenceNumber, requestData);
-            } else {
-                throw new Error(result.message || 'Failed to submit inquiry');
+            const select = $("#advisorSelect");
+            if (!select) {
+                console.error("Advisor select element not found!");
+                return;
             }
 
+            // If advisor should be OPTIONAL, ensure no 'required' on the select in HTML.
+            select.innerHTML = '<option value="">Select an advisor (optional)</option>';
+
+            advisors.forEach((adv) => {
+                // Be robust to different property casings from the API
+                const id = adv.id ?? adv.Id ?? adv.uid ?? adv.userId ?? "";
+                const name = adv.name ?? adv.Name ?? adv.displayName ?? adv.fullName ?? "(No name)";
+                if (!id) return; // skip if no usable id
+
+                const opt = document.createElement("option");
+                opt.value = String(id);
+                opt.textContent = String(name);
+                select.appendChild(opt);
+            });
+
+            console.log("Advisor dropdown populated with", select.options.length - 1, "advisors");
         } catch (error) {
-            console.error('Error submitting inquiry:', error);
-            this.showToast('Failed to submit inquiry. Please try again.', 'error');
-
-            const submitBtn = document.querySelector('button[type="submit"]');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Submit inquiry';
+            console.error("Error loading advisors:", error);
+            toast("Could not load advisor list");
         }
     }
 
-    showSuccessScreen(referenceNumber, formData) {
-        // Hide form panels
-        document.querySelectorAll('.panel').forEach(panel => {
-            panel.classList.remove('active');
+    // ---------- Tag chips ----------
+    const TAGS = [
+        "Eligibility",
+        "Documents",
+        "Portal access",
+        "Payment",
+        "Schedule",
+        "Accreditation",
+        "Policy",
+        "Technical",
+    ];
+
+    function mountChips() {
+        const row = $("#tagChips");
+        if (!row) return;
+        row.innerHTML = "";
+        TAGS.forEach((t) => {
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "chip";
+            chip.textContent = t;
+            chip.addEventListener("click", () => chip.classList.toggle("active"));
+            row.appendChild(chip);
         });
+    }
 
-        // Show success panel
-        const successPanel = document.getElementById('successPanel');
-        if (successPanel) {
-            successPanel.hidden = false;
-            document.getElementById('refCode').textContent = referenceNumber;
+    function readChips() {
+        return $$("#tagChips .chip.active").map((c) => c.textContent);
+    }
 
-            const summary = `Your inquiry about "${formData.Subject}" has been received. ` +
-                `You'll be notified via email when there are updates.`;
-            document.getElementById('successSummary').textContent = summary;
+    // ---------- Stepper / progress ----------
+    function setStep(n) {
+        $$(".panel").forEach((p) => p.classList.toggle("active", p.dataset.panel === String(n)));
+        $$(".step").forEach((s) => {
+            const active = s.dataset.step === String(n);
+            s.classList.toggle("current", active);
+            s.setAttribute("aria-selected", String(active));
+        });
+        const fill = $("#progressFill");
+        if (fill) fill.style.width = (n === 1 ? 50 : 100) + "%";
+        if (n === 2) updateReview();
 
-            // Setup track link
-            const trackLink = document.getElementById('trackLink');
-            if (trackLink) {
-                trackLink.href = '/Inquiry/TrackAnInquiry';
+        const activePanel = $(`.panel[data-panel="${n}"]`);
+        activePanel?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    document.addEventListener("click", (e) => {
+        const nextBtn = e.target.closest("[data-next]");
+        if (nextBtn) {
+            const step = Number(nextBtn.dataset.next);
+            if (validateStep(step - 1)) setStep(step);
+            return;
+        }
+        const prevBtn = e.target.closest("[data-prev]");
+        if (prevBtn) {
+            setStep(Number(prevBtn.dataset.prev));
+            return;
+        }
+
+        const settingsBtn = e.target.closest("#settings-btn");
+        if (settingsBtn) {
+            const menu = $("#settings-menu");
+            const expanded = settingsBtn.getAttribute("aria-expanded") === "true";
+            settingsBtn.setAttribute("aria-expanded", String(!expanded));
+            if (menu) menu.hidden = expanded;
+            return;
+        }
+
+        const copy = e.target.closest("#copyRef");
+        if (copy) {
+            const txt = $("#refCode")?.textContent?.trim();
+            if (txt) {
+                navigator.clipboard?.writeText(txt);
+                toast("Reference copied");
+            }
+            return;
+        }
+    });
+
+    // Close settings menu if clicking outside
+    document.addEventListener("click", (e) => {
+        const menu = $("#settings-menu");
+        const btn = $("#settings-btn");
+        if (!menu || !btn) return;
+        const outsideMenu = !menu.contains(e.target) && e.target !== btn;
+        if (outsideMenu) {
+            menu.setAttribute("hidden", "");
+            btn.setAttribute("aria-expanded", "false");
+        }
+    });
+
+    // ---------- Validation ----------
+    function validateStep(step) {
+        if (step === 1) {
+            const subject = $("#subject");
+            if (!document.querySelector('input[name="category"]:checked')) {
+                toast("Please choose a category.");
+                return false;
+            }
+            if (!subject || !subject.value.trim()) {
+                subject?.focus();
+                toast("Subject is required.");
+                return false;
+            }
+            return true;
+        }
+        if (step === 2) {
+            const desc = $("#description");
+            if (!desc || !desc.value.trim()) {
+                desc?.focus();
+                toast("Please add a description.");
+                return false;
+            }
+            return true;
+        }
+        return true;
+    }
+
+    $("#subject")?.addEventListener("input", () => {
+        const s = $("#subject");
+        const c = $("#subjectCount");
+        if (s && c) c.textContent = String(s.value.length);
+    });
+
+    $("#attachment")?.addEventListener("change", () => {
+        const input = $("#attachment");
+        const list = $("#fileList");
+        if (!input || !list) return;
+
+        list.innerHTML = "";
+        const files = Array.from(input.files || []);
+        const maxFiles = 5;
+        const maxSize = 5 * 1024 * 1024;
+
+        if (files.length > maxFiles) {
+            toast("Please choose up to 5 files.");
+            input.value = "";
+            return;
+        }
+
+        for (const f of files) {
+            if (f.size > maxSize) {
+                toast("Each file must be under 5MB.");
+                input.value = "";
+                list.innerHTML = "";
+                return;
+            }
+            const li = document.createElement("li");
+            li.textContent = `${f.name} (${Math.round(f.size / 1024)} KB)`;
+            list.appendChild(li);
+        }
+    });
+
+    // ---------- Review ----------
+    function updateReview() {
+        const formData = readForm();
+        const advisorName = formData.advisorName || "Not specified";
+        const preview = [
+            `Category: ${formData.category || "—"}`,
+            `Subject: ${formData.subject || "—"}`,
+            `Assigned to: ${advisorName}`,
+            `Tags: ${formData.tags.length ? formData.tags.join(", ") : "—"}`,
+            "",
+            "Description:",
+            formData.description || "—",
+            "",
+            `Desired outcome: ${formData.desired || "—"}`,
+            `Related date: ${formData.relatedDate || "—"}`,
+            `Follow-up call: ${formData.callback ? "Yes" : "No"}`,
+        ].join("\n");
+        const box = $("#reviewBox");
+        if (box) box.textContent = preview;
+    }
+
+    function readForm() {
+        const catInput = document.querySelector('input[name="category"]:checked');
+        const advisorSelect = $("#advisorSelect");
+        const selectedOption = advisorSelect?.selectedOptions?.[0];
+
+        // Debug logging
+        console.log("Advisor select element:", advisorSelect);
+        console.log("Selected option:", selectedOption);
+        console.log("Selected value:", selectedOption?.value);
+        console.log("Selected text:", selectedOption?.textContent);
+
+        return {
+            category: catInput?.value || "",
+            subject: $("#subject")?.value.trim() || "",
+            tags: readChips(),
+            description: $("#description")?.value.trim() || "",
+            desired: $("#desired")?.value.trim() || "",
+            relatedDate: $("#relatedDate")?.value || "",
+            callback: !!$("#callback")?.checked,
+            advisorId: selectedOption && selectedOption.value !== "" ? selectedOption.value : "",
+            advisorName:
+                selectedOption && selectedOption.value !== ""
+                    ? (selectedOption.textContent || "").trim()
+                    : "",
+        };
+    }
+
+    // ---------- Submit ----------
+    $("#inquiryForm")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!validateStep(1) || !validateStep(2)) return;
+
+        const payload = readForm();
+
+        // Debug logging
+        console.log("Form payload:", payload);
+        console.log("Advisor ID being sent:", payload.advisorId);
+        console.log("Advisor Name being sent:", payload.advisorName);
+
+        const submitBtn = $("#inquiryForm button[type='submit']");
+        const originalText = submitBtn?.textContent || "Submit";
+        if (submitBtn) {
+            submitBtn.textContent = "Submitting...";
+            submitBtn.disabled = true;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append("subject", payload.subject);
+            formData.append("description", payload.description);
+            formData.append("inquiryType", payload.category);
+            formData.append("desiredOutcome", payload.desired);
+            formData.append("relatedDate", payload.relatedDate);
+            formData.append("tags", payload.tags.join(","));
+            formData.append("followUpCall", String(payload.callback));
+
+            // Only append if advisor is selected (OPTIONAL)
+            if (payload.advisorId) {
+                // Ensure server accepts these names; adjust if your API expects different keys
+                formData.append("assignedAdvisorId", payload.advisorId);
+                formData.append("assignedAdvisorName", payload.advisorName);
+                console.log("Advisor data added to form");
+            } else {
+                console.log("No advisor selected");
+            }
+
+            const fileInput = $("#attachment");
+            if (fileInput && fileInput.files?.length) {
+                Array.from(fileInput.files).forEach((f) => formData.append("files", f));
+            }
+
+            const response = await fetch("/api/inquiry", {
+                method: "POST",
+                body: formData,
+                credentials: "include",
+            });
+
+            const responseText = await response.text();
+            if (!response.ok) throw new Error(`Server error: ${response.status} - ${responseText}`);
+
+            const result = JSON.parse(responseText || "{}");
+            const refNumber = result.referenceNumber || result.id || genRef();
+
+            showSuccess(refNumber, payload);
+            toast("Inquiry submitted successfully!");
+        } catch (error) {
+            console.error("Submission failed:", error);
+            toast("Failed to submit inquiry: " + (error?.message || "Unknown error"));
+        } finally {
+            if (submitBtn) {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
         }
+    });
 
-        // Scroll to top
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    // ---------- Success view ----------
+    function showSuccess(refId, formData) {
+        const refEl = $("#refCode");
+        if (refEl) refEl.textContent = refId;
+
+        const sum = $("#successSummary");
+        if (sum)
+            sum.textContent = `We created your inquiry under "${formData.category} — ${formData.subject}". Keep this reference for your records.`;
+
+        const trackLink = $("#trackLink");
+        if (trackLink) trackLink.href = "track.html?ref=" + encodeURIComponent(refId);
+
+        const success = $("#successPanel");
+        if (success) success.hidden = false;
+
+        $$(".panel").forEach((p) => p.classList.remove("active"));
+        window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    copyReference() {
-        const refCode = document.getElementById('refCode').textContent;
-        navigator.clipboard.writeText(refCode).then(() => {
-            this.showToast('Reference number copied!');
-        }).catch(err => {
-            console.error('Failed to copy:', err);
-            this.showToast('Failed to copy reference number', 'error');
-        });
+    function genRef() {
+        const now = new Date();
+        const y = String(now.getFullYear()).slice(-2);
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        const d = String(now.getDate()).padStart(2, "0");
+        const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+        return `INQ-${y}${m}${d}-${rand}`;
     }
 
-    resetForm() {
-        // Reset form
-        document.getElementById('inquiryForm').reset();
-        this.selectedTags = [];
-        this.renderTagChips();
-
-        // Hide success panel
-        const successPanel = document.getElementById('successPanel');
-        if (successPanel) {
-            successPanel.hidden = true;
+    function prefillFromURL() {
+        const params = new URLSearchParams(location.search);
+        const subject = params.get("subject");
+        if (subject && $("#subject")) {
+            $("#subject").value = subject;
+            $("#subjectCount") && ($("#subjectCount").textContent = String(subject.length));
         }
-
-        // Go back to step 1
-        this.goToStep(1);
-
-        // Clear file list
-        const fileList = document.getElementById('fileList');
-        if (fileList) {
-            fileList.innerHTML = '';
+        const category = params.get("category");
+        if (category) {
+            const radio = $$('input[name="category"]').find(
+                (r) => r.value.toLowerCase() === category.toLowerCase()
+            );
+            if (radio) radio.checked = true;
         }
-
-        // Reset character counter
-        document.getElementById('subjectCount').textContent = '0';
-
-        this.showToast('Ready to submit a new inquiry');
+        const desired = params.get("desired");
+        if (desired && $("#desired")) $("#desired").value = desired;
     }
 
-    showToast(message, type = 'success') {
-        const toast = document.getElementById('toast');
-        const toastMsg = document.getElementById('toastMsg');
+    $("#newInquiry")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        $("#inquiryForm")?.reset();
+        $$("#tagChips .chip").forEach((c) => c.classList.remove("active"));
+        $("#successPanel") && ($("#successPanel").hidden = true);
+        $("#subjectCount") && ($("#subjectCount").textContent = "0");
+        $("#fileList") && ($("#fileList").innerHTML = "");
+        setStep(1);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
 
-        if (toast && toastMsg) {
-            toastMsg.textContent = message;
-            toast.className = `toast ${type === 'error' ? 'toast-error' : ''}`;
-            toast.classList.add('show');
+    window.addEventListener("error", (e) =>
+        console.error("JavaScript error:", e.error || e.message || e)
+    );
+    window.addEventListener("unhandledrejection", (e) =>
+        console.error("Unhandled promise rejection:", e.reason)
+    );
 
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-    }
-
-    escapeHtml(unsafe) {
-        if (unsafe == null) return '';
-        return String(unsafe)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-}
-
-// Initialize when page loads
-let inquiryForm;
-document.addEventListener('DOMContentLoaded', function () {
-    console.log('DOM Content Loaded - Initializing InquiryForm');
-    inquiryForm = new InquiryForm();
-    inquiryForm.init();
-});
+    // ---------- Init ----------
+    console.log("Initializing inquiry form...");
+    mountChips();
+    loadAdvisors();
+    prefillFromURL();
+    setStep(1);
+    console.log("Inquiry form initialized");
+})();
