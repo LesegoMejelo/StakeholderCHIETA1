@@ -518,6 +518,9 @@ class AppointmentTracker {
         const submitBtn = document.getElementById('submitDecision');
         const originalText = submitBtn.textContent;
 
+        // UPDATED: double-click guard
+        if (submitBtn.disabled) return;
+
         try {
             this.setLoadingState(true);
             submitBtn.disabled = true;
@@ -532,6 +535,7 @@ class AppointmentTracker {
 
             console.log('Submitting decision:', requestData);
 
+            // UPDATED: robust request + result handling (409 + better errors)
             const response = await fetch('/AdvisorAppointment/UpdateStatus', {
                 method: 'POST',
                 headers: {
@@ -542,17 +546,38 @@ class AppointmentTracker {
                 body: JSON.stringify(requestData)
             });
 
+            // UPDATED: handle already accepted gracefully
+            if (response.status === 409) {
+                this.showNotification('This appointment is already accepted. A confirmation email may have been sent earlier.', 'warning', 5000);
+                this.closeModals();
+                await this.loadAppointments(true);
+                this.renderAll();
+                return;
+            }
+
             if (!response.ok) {
-                throw new Error(`Server returned ${response.status}`);
+                let msg = `Server returned ${response.status}`;
+                try {
+                    const err = await response.json();
+                    if (err && err.message) msg = err.message;
+                } catch { /* ignore json parse errors */ }
+                throw new Error(msg);
             }
 
             const result = await response.json();
 
             if (result.success) {
-                this.showNotification(
-                    `Appointment ${this.currentAction === 'accept' ? 'accepted' : this.currentAction + 'd'} successfully!`,
-                    'success'
-                );
+                // UPDATED: specific success message per action
+                if (this.currentAction === 'accept') {
+                    this.showNotification('Appointment accepted. Confirmation email sent to the stakeholder ✅', 'success', 5000);
+                } else if (this.currentAction === 'decline') {
+                    this.showNotification('Appointment declined and stakeholder will be notified.', 'success', 4000);
+                } else if (this.currentAction === 'reschedule') {
+                    this.showNotification('Reschedule proposal sent to the stakeholder.', 'success', 4000);
+                } else {
+                    this.showNotification('Appointment updated successfully.', 'success');
+                }
+
                 this.closeModals();
                 await this.loadAppointments(true); // Force refresh
                 this.renderAll();
@@ -912,4 +937,4 @@ style.textContent = `
         opacity: 1;
     }
 `;
-document.head.appendChild(style)
+document.head.appendChild(style);
