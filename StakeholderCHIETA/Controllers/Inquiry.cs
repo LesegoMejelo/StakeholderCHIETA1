@@ -1,6 +1,7 @@
 ﻿using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using StakeholderCHIETA.Services;
 using System.Security.Claims;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,10 +14,12 @@ namespace Staekholder_CHIETA_X.Controllers
     public class InquiryController : Controller
     {
         private readonly FirestoreDb _db;
+        private readonly IEmailService _emailService;
 
-        public InquiryController(FirestoreDb db)
+        public InquiryController(FirestoreDb db, IEmailService emailService)
         {
             _db = db;
+            _emailService = emailService;
         }
 
         // GET: Fetch all advisors for dropdown
@@ -458,6 +461,56 @@ namespace Staekholder_CHIETA_X.Controllers
 
                 await docRef.UpdateAsync(updateDict);
 
+                // Send confirmation email if status is Accepted
+                if (string.Equals(newStatus, "Accepted", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Try to get requester email and name
+                    string requesterEmail = null;
+                    string requesterName = null;
+                    if (inquiry.TryGetValue("createdBy", out var createdByObj) && createdByObj is Dictionary<string, object> createdByDict)
+                    {
+                        if (createdByDict.TryGetValue("email", out var emailObj))
+                            requesterEmail = emailObj?.ToString();
+                        if (createdByDict.TryGetValue("name", out var nameObj))
+                            requesterName = nameObj?.ToString();
+                    }
+                    else if (inquiry.TryGetValue("createdByEmailLower", out var emailLowerObj))
+                    {
+                        requesterEmail = emailLowerObj?.ToString();
+                    }
+                    if (string.IsNullOrWhiteSpace(requesterName) && inquiry.TryGetValue("name", out var nameFallback))
+                        requesterName = nameFallback?.ToString();
+
+                    if (!string.IsNullOrWhiteSpace(requesterEmail))
+                    {
+                        var referenceNumber = GenerateReferenceNumber(doc.Id);
+                        var subject = inquiry.TryGetValue("subject", out var subjObj) ? subjObj?.ToString() : "Your Appointment Request";
+                        var advisor = inquiry.TryGetValue("assignedAdvisor", out var advObj) ? advObj?.ToString() : advisorName;
+                        var inquiryType = inquiry.TryGetValue("inquiryType", out var typeObj) ? typeObj?.ToString() : "";
+                        var htmlBody = $@"
+                            <h2>Appointment Confirmed</h2>
+                            <p>Dear {requesterName},</p>
+                            <p>Your appointment request has been <b>accepted</b> by advisor <b>{advisor}</b>.</p>
+                            <ul>
+                                <li><strong>Reference Number:</strong> {referenceNumber}</li>
+                                <li><strong>Subject:</strong> {subject}</li>
+                                <li><strong>Type:</strong> {inquiryType}</li>
+                                <li><strong>Status:</strong> Accepted</li>
+                                <li><strong>Advisor:</strong> {advisor}</li>
+                            </ul>
+                            <p>You will be contacted soon with further details.</p>
+                            <p>Best regards,<br>CHIETA Team</p>";
+                        try
+                        {
+                            await _emailService.SendEmailAsync(requesterEmail, "Your Appointment Has Been Accepted", htmlBody);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Failed to send confirmation email: {ex.Message}");
+                        }
+                    }
+                }
+
                 return Ok(new { message = "Inquiry updated successfully" });
             }
             catch (Exception ex)
@@ -573,6 +626,8 @@ namespace Staekholder_CHIETA_X.Controllers
             }
         }
 
+
+
         [HttpGet]
         [Authorize]
         [Route("api/inquiry/test-advisor")]
@@ -685,6 +740,200 @@ namespace Staekholder_CHIETA_X.Controllers
                 return StatusCode(500, new { error = "Firestore connection test failed", details = ex.Message });
             }
         }
+
+        // GET /api/inquiry/mine?status=All|Pending|In%20Progress|Closed&category=All|Bursaries|...&q=text
+        [HttpGet]
+        [Authorize(Roles = "Advisor,Admin")]
+        [Route("api/inquiry/mine")]
+        public async Task<IActionResult> GetMine([FromQuery] string status = "All",
+                                                 [FromQuery] string category = "All",
+                                                 [FromQuery] string q = "")
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var emailL = (User.FindFirstValue(ClaimTypes.Email) ?? "").Trim().ToLowerInvariant();
+                var name = (User.Identity?.Name ?? "").Trim();
+
+                if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(emailL) && string.IsNullOrEmpty(name))
+                    return Unauthorized();
+
+                var col = _db.Collection("inquiries");
+                var tasks = new List<Task<QuerySnapshot>>();
+
+                if (!string.IsNullOrEmpty(userId))
+                    tasks.Add(col.WhereEqualTo("assignedAdvisorId", userId).Limit(300).GetSnapshotAsync());
+                if (!string.IsNullOrEmpty(emailL))
+                    tasks.Add(col.WhereEqualTo("assignedAdvisorEmail", emailL).Limit(300).GetSnapshotAsync());
+                if (!string.IsNullOrEmpty(name))
+                    tasks.Add(col.WhereEqualTo("assignedAdvisor", name).Limit(300).GetSnapshotAsync());
+
+                var snaps = await Task.WhenAll(tasks);
+
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var list = new List<InquiryRow>();
+
+                foreach (var s in snaps)
+                    foreach (var d in s.Documents)
+                    {
+                        if (!seen.Add(d.Id)) continue;
+                        var data = d.ToDictionary();
+
+                        DateTime? createdAt = data.TryGetValue("createdAt", out var ca) && ca is Timestamp ts
+                                              ? ts.ToDateTime() : null;
+
+                        var row = new InquiryRow
+                        {
+                            Id = d.Id,
+                            Reference = GenerateReferenceNumber(d.Id),
+                            Subject = data.TryGetValue("subject", out var subj) ? subj?.ToString() ?? "N/A" : "N/A",
+                            Category = data.TryGetValue("inquiryType", out var it) ? it?.ToString() ?? "N/A" : "N/A",
+                            Status = data.TryGetValue("status", out var st) ? st?.ToString() ?? "Pending" : "Pending",
+                            Date = createdAt
+                        };
+
+                        list.Add(row);
+                    }
+
+                // filters (in-memory to avoid composite indexes)
+                if (!string.Equals(status, "All", StringComparison.OrdinalIgnoreCase))
+                    list = list.Where(x => string.Equals(x.Status, status, StringComparison.OrdinalIgnoreCase)).ToList();
+
+                if (!string.Equals(category, "All", StringComparison.OrdinalIgnoreCase))
+                    list = list.Where(x => string.Equals(x.Category, category, StringComparison.OrdinalIgnoreCase)).ToList();
+
+                if (!string.IsNullOrWhiteSpace(q))
+                {
+                    var ql = q.Trim().ToLowerInvariant();
+                    list = list.Where(x =>
+                        (x.Reference ?? "").ToLowerInvariant().Contains(ql) ||
+                        (x.Subject ?? "").ToLowerInvariant().Contains(ql) ||
+                        (x.Category ?? "").ToLowerInvariant().Contains(ql)
+                    ).ToList();
+                }
+
+                var ordered = list.OrderByDescending(x => x.Date ?? DateTime.MinValue).Take(100).ToList();
+                return Ok(ordered);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetMine error: {ex.Message}");
+                return StatusCode(500, new { error = "Failed to load assigned inquiries" });
+            }
+        }
+        // PUT /api/inquiry/{id}/status  body: { "status": "In Progress", "notes": "Called client" }
+        [HttpPut]
+        [Authorize(Roles = "Advisor,Admin")]
+        [Route("api/inquiry/{id}/status")]
+        public async Task<IActionResult> SetStatus(string id, [FromBody] StatusDto body)
+        {
+            try
+            {
+                var docRef = _db.Collection("inquiries").Document(id);
+                var snap = await docRef.GetSnapshotAsync();
+                if (!snap.Exists) return NotFound();
+
+                var inquiry = snap.ToDictionary();
+                var assignedId = inquiry.TryGetValue("assignedAdvisorId", out var a) ? a?.ToString() : "";
+                var isAdmin = User.IsInRole("Admin");
+                var myId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!isAdmin && !string.Equals(assignedId, myId, StringComparison.Ordinal))
+                    return Forbid();
+
+                var updates = inquiry.TryGetValue("updates", out var u) && u is List<object> arr ? arr : new List<object>();
+                var now = Timestamp.GetCurrentTimestamp();
+                var who = User.Identity?.Name ?? "Advisor";
+
+                updates.Add(new Dictionary<string, object> {
+            { "status", body?.Status ?? "Pending" },
+            { "updatedBy", who },
+            { "timestamp", now },
+            { "notes", body?.Notes ?? "" }
+        });
+
+                await docRef.UpdateAsync(new Dictionary<string, object> {
+            { "status", body?.Status ?? "Pending" },
+            { "updates", updates },
+            { "updatedAt", now }
+        });
+
+                return Ok(new { message = "Status updated" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"SetStatus error: {ex.Message}");
+                return StatusCode(500, new { error = "Failed to update status" });
+            }
+        }
+        // POST /api/inquiry/{id}/comments  body: { "text": "Spoke to stakeholder, awaiting docs." }
+        [HttpPost]
+        [Authorize(Roles = "Advisor,Admin")]
+        [Route("api/inquiry/{id}/comments")]
+        public async Task<IActionResult> AddComment(string id, [FromBody] CommentDto body)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(body?.Text)) return BadRequest(new { error = "Comment text required" });
+
+                var docRef = _db.Collection("inquiries").Document(id);
+                var snap = await docRef.GetSnapshotAsync();
+                if (!snap.Exists) return NotFound();
+
+                var inquiry = snap.ToDictionary();
+                var assignedId = inquiry.TryGetValue("assignedAdvisorId", out var a) ? a?.ToString() : "";
+                var isAdmin = User.IsInRole("Admin");
+                var myId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!isAdmin && !string.Equals(assignedId, myId, StringComparison.Ordinal))
+                    return Forbid();
+
+                var comments = inquiry.TryGetValue("comments", out var c) && c is List<object> arr ? arr : new List<object>();
+                var now = Timestamp.GetCurrentTimestamp();
+
+                comments.Add(new Dictionary<string, object> {
+            { "text", body.Text.Trim() },
+            { "addedByName", User.Identity?.Name ?? "" },
+            { "addedById", myId ?? "" },
+            { "addedByEmail", (User.FindFirstValue(ClaimTypes.Email) ?? "").Trim().ToLowerInvariant() },
+            { "timestamp", now }
+        });
+
+                await docRef.UpdateAsync(new Dictionary<string, object> {
+            { "comments", comments },
+            { "updatedAt", now }
+        });
+
+                return Ok(new { message = "Comment added" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"AddComment error: {ex.Message}");
+                return StatusCode(500, new { error = "Failed to add comment" });
+            }
+        }
+
+        public sealed class CommentDto
+        {
+            public string Text { get; set; } = "";
+        }
+
+
+        public sealed class StatusDto
+        {
+            public string Status { get; set; } = "";
+            public string Notes { get; set; } = "";
+        }
+
+        public sealed class InquiryRow
+        {
+            public string Id { get; set; } = "";
+            public string Reference { get; set; } = "";
+            public string Subject { get; set; } = "";
+            public string Category { get; set; } = "";
+            public string Status { get; set; } = "";
+            public DateTime? Date { get; set; }
+        }
+
 
         public IActionResult Index() => View();
         public IActionResult Inquiry() => View("~/Views/StakeholderViews/Inquiry/Inquiry.cshtml");
