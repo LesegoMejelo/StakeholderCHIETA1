@@ -15,12 +15,15 @@ namespace StakeholderCHIETA.Controllers
     [Authorize(Roles = "Advisor")]
     public class AdvisorAppointmentController : Controller
     {
+        #region Dependencies & Fields
         private readonly FirestoreDb _firestoreDb;
         private readonly ITokenService _tokenService;
         private readonly IQRCodeGenerator _qr;
         private readonly IEmailService _email;
         private readonly ILogger<AdvisorAppointmentController> _logger;
+        #endregion
 
+        #region Constructor
         public AdvisorAppointmentController(
             FirestoreDb firestoreDb,
             ITokenService tokenService,
@@ -34,7 +37,9 @@ namespace StakeholderCHIETA.Controllers
             _email = email;
             _logger = logger;
         }
+        #endregion
 
+        #region Views (Pages)
         // GET: Load appointment tracker page
         [HttpGet]
         public IActionResult AppointmentTracker()
@@ -51,7 +56,9 @@ namespace StakeholderCHIETA.Controllers
         {
             return View("~/Views/EmployeeViews/BoardroomBookingTracker.cshtml");
         }
+        #endregion
 
+        #region API: Read (Advisor Appointments)
         // GET: Return ALL appointments for this advisor
         [HttpGet]
         public async Task<IActionResult> AppointmentTrackerData()
@@ -123,7 +130,7 @@ namespace StakeholderCHIETA.Controllers
                             { "DeclineReason", GetStringValue("DeclineReason") },
                             { "ProposedNewDate", GetStringValue("ProposedNewDate") },
                             { "ProposedNewTime", GetStringValue("ProposedNewTime") },
-                            { "Email", GetStringValue("StakeholderEmail") } // NEW: show stakeholder email in table
+                            { "Email", GetStringValue("StakeholderEmail") } // show stakeholder email in table
                         };
 
                         // Fallbacks for alternate field casing
@@ -197,7 +204,9 @@ namespace StakeholderCHIETA.Controllers
                 });
             }
         }
+        #endregion
 
+        #region DTOs (Requests/Responses)
         public class UpdateAppointmentStatusRequest
         {
             public string AppointmentId { get; set; }
@@ -206,7 +215,9 @@ namespace StakeholderCHIETA.Controllers
             public string NewDate { get; set; }
             public string NewTime { get; set; }
         }
+        #endregion
 
+        #region API: Mutations (Accept / Decline / Reschedule)
         // POST: Accept / Decline / Reschedule
         [HttpPost]
         public async Task<IActionResult> UpdateStatus([FromBody] UpdateAppointmentStatusRequest request)
@@ -352,9 +363,9 @@ namespace StakeholderCHIETA.Controllers
                 });
             }
         }
+        #endregion
 
-        // ---------- Helpers ----------
-
+        #region Helpers (Email HTML, etc.)
         private static string BuildConfirmationEmailHtml(string checkInUrl)
         {
             var sb = new StringBuilder();
@@ -368,5 +379,6 @@ namespace StakeholderCHIETA.Controllers
             sb.AppendLine("</div>");
             return sb.ToString();
         }
+        #endregion
     }
 }
