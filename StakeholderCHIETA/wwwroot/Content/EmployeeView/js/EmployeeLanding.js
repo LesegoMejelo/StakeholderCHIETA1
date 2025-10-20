@@ -196,40 +196,107 @@
         });
     });
 
-    // ---- Settings dropdown ----
-    const settingsBtn = document.getElementById('settings-btn');
-    const settingsMenu = document.getElementById('settings-menu');
-
-    const closeMenu = () => {
-        if (settingsMenu) {
-            settingsMenu.hidden = true;
-            settingsBtn?.setAttribute('aria-expanded', 'false');
-        }
-    };
-
-    const openMenu = () => {
-        if (settingsMenu) {
-            settingsMenu.hidden = false;
-            settingsBtn?.setAttribute('aria-expanded', 'true');
-        }
-    };
-
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const expanded = settingsBtn.getAttribute('aria-expanded') === 'true';
-            expanded ? closeMenu() : openMenu();
+     // Navigation functionality
+     document.addEventListener('DOMContentLoaded', function() {
+        // Get all navigation buttons and menus
+        const navButtons = [
+          { btn: 'appointments-btn', menu: 'appointments-menu' },
+          { btn: 'inquiries-btn', menu: 'inquiries-menu' },
+          { btn: 'spaces-btn', menu: 'spaces-menu' },
+          { btn: 'settings-btn', menu: 'settings-menu' }
+        ];
+  
+        // Initialize each navigation menu
+        navButtons.forEach(({ btn, menu }) => {
+          const button = document.getElementById(btn);
+          const menuElement = document.getElementById(menu);
+  
+          if (button && menuElement) {
+            button.addEventListener('click', (e) => {
+              e.stopPropagation();
+              
+              // Close all other menus
+              navButtons.forEach(({ menu: otherMenu }) => {
+                if (otherMenu !== menu) {
+                  const otherMenuElement = document.getElementById(otherMenu);
+                  const otherButton = document.getElementById(otherMenu.replace('-menu', '-btn'));
+                  if (otherMenuElement) otherMenuElement.hidden = true;
+                  if (otherButton) otherButton.setAttribute('aria-expanded', 'false');
+                }
+              });
+  
+              // Toggle current menu
+              const isExpanded = button.getAttribute('aria-expanded') === 'true';
+              button.setAttribute('aria-expanded', !isExpanded);
+              menuElement.hidden = isExpanded;
+  
+              // Position the menu below the button
+              if (!isExpanded) {
+                const rect = button.getBoundingClientRect();
+                menuElement.style.left = '50%';
+                menuElement.style.transform = 'translateX(-50%)';
+              }
+            });
+          }
         });
-    }
-
-    document.addEventListener('click', (e) => {
-        if (!settingsMenu || settingsMenu.hidden) return;
-        if (!settingsMenu.contains(e.target) && e.target !== settingsBtn) {
-            closeMenu();
-        }
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeMenu();
-    });
-});
+  
+        // Close menus when clicking outside
+        document.addEventListener('click', () => {
+          navButtons.forEach(({ btn, menu }) => {
+            const button = document.getElementById(btn);
+            const menuElement = document.getElementById(menu);
+            if (button && menuElement) {
+              button.setAttribute('aria-expanded', 'false');
+              menuElement.hidden = true;
+            }
+          });
+        });
+  
+        // Prevent menus from closing when clicking inside them
+        navButtons.forEach(({ menu }) => {
+          const menuElement = document.getElementById(menu);
+          if (menuElement) {
+            menuElement.addEventListener('click', (e) => {
+              e.stopPropagation();
+            });
+          }
+        });
+  
+        // Action card buttons navigation
+        document.querySelectorAll('.action-card .btn').forEach(button => {
+          button.addEventListener('click', function() {
+            const target = this.getAttribute('data-nav');
+            if (target) {
+              window.location.href = target;
+            }
+          });
+        });
+  
+        // Position menus on window resize
+        window.addEventListener('resize', () => {
+          navButtons.forEach(({ btn, menu }) => {
+            const button = document.getElementById(btn);
+            const menuElement = document.getElementById(menu);
+            if (button && menuElement && !menuElement.hidden) {
+              const rect = button.getBoundingClientRect();
+              menuElement.style.left = '50%';
+              menuElement.style.transform = 'translateX(-50%)';
+            }
+          });
+        });
+  
+        // Sample data for demonstration
+        setTimeout(() => {
+          document.getElementById('upcoming-list').innerHTML = `
+            <li>Meeting with Finance Team - Tomorrow 10:00 AM</li>
+            <li>Project Review - Friday 2:30 PM</li>
+            <li>Client Presentation - Next Monday</li>
+          `;
+          
+          document.getElementById('inquiries-list').innerHTML = `
+            <li>Budget Approval Request - In Progress</li>
+            <li>Training Program Inquiry - Completed</li>
+            <li>Equipment Purchase - Pending Review</li>
+          `;
+        }, 1000);
+    })})
