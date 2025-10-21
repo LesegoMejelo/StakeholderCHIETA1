@@ -1,9 +1,12 @@
-﻿
-// InquiryTracker.js - Fixed Version
+﻿// InquiryTracker.js - Fixed Version (with regions)
 (function () {
+
+    //#region Scene 0 — Tiny DOM helpers + Toast
+    // Helpers: $, $$
     const $ = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
+    // Toast notifications
     function toast(msg) {
         const box = $("#toast");
         if (!box) return;
@@ -13,11 +16,14 @@
         clearTimeout(toast.t);
         toast.t = setTimeout(() => box.classList.remove("show"), 3000);
     }
+    //#endregion
 
+    //#region Scene 0 — In-memory state (inquiries + advisors)
     let inquiries = [];
     let advisors = []; // Store advisors for reassignment dropdown
+    //#endregion
 
-    // Fetch advisors for reassignment dropdown
+    //#region Scene 1 — Fetch advisors for reassignment (GET /api/inquiry/advisors)
     async function fetchAdvisors() {
         try {
             console.log('Fetching advisors for reassignment...');
@@ -39,8 +45,9 @@
             console.error('Error fetching advisors:', error);
         }
     }
+    //#endregion
 
-    // Populate advisor dropdown in the modal
+    //#region Scene 1 — Populate advisor dropdown (modal select#assignedTo)
     function populateAdvisorDropdown() {
         const assignedToSelect = $("#assignedTo");
         if (!assignedToSelect || advisors.length === 0) return;
@@ -65,8 +72,9 @@
             assignedToSelect.appendChild(option);
         });
     }
+    //#endregion
 
-    // Fetch only inquiries assigned to the logged-in advisor
+    //#region Scene 2 — Fetch *my* inquiries (GET /api/inquiry) + normalize + render
     async function fetchInquiries() {
         try {
             console.log('Fetching inquiries assigned to current advisor...');
@@ -89,6 +97,7 @@
             console.log('Received inquiry data:', data);
             console.log('Number of inquiries:', data.length);
 
+            // Normalize to flat client shape
             inquiries = data.map(inq => ({
                 id: inq.id,
                 ref: inq.reference,
@@ -127,8 +136,9 @@
             }
         }
     }
+    //#endregion
 
-    // Update inquiry status via API
+    //#region Scene 5 — Update inquiry via API (PUT /api/inquiry/{reference})
     async function updateInquiry(inquiryRef, updateData) {
         try {
             console.log('Updating inquiry:', inquiryRef, updateData);
@@ -154,7 +164,9 @@
             throw error;
         }
     }
+    //#endregion
 
+    //#region Scene 3 — Render table + client filters (status/category/search)
     function renderInquiryTable() {
         const tbody = $("#inquiryTableBody");
         if (!tbody) return;
@@ -256,7 +268,9 @@
             return 'N/A';
         }
     }
+    //#endregion
 
+    //#region Scene 4 — Show details modal (bind fields + prep update)
     function showInquiryDetails(inquiryId) {
         const inquiry = inquiries.find(i => i.id === inquiryId);
         if (!inquiry) {
@@ -320,7 +334,9 @@
 
         openModal("#detailModal");
     }
+    //#endregion
 
+    //#region Scene 4 — Helpers: file size + modal plumbing + a11y + escaping
     function formatFileSize(bytes) {
         if (!bytes || bytes < 1024) return bytes + " bytes";
         else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
@@ -382,8 +398,9 @@
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
     }
+    //#endregion
 
-    // Event listeners
+    //#region Scene 6 — Global click handlers (settings menu + modal close)
     document.addEventListener("click", (e) => {
         const settingsBtn = e.target.closest("#settings-btn");
         if (settingsBtn) {
@@ -406,8 +423,9 @@
             $("#settings-btn")?.setAttribute("aria-expanded", "false");
         }
     });
+    //#endregion
 
-    // Filter event listeners
+    //#region Scene 3 — Filter listeners (status/category/search → re-render)
     const statusFilter = $("#statusFilter");
     const categoryFilter = $("#categoryFilter");
     const searchInput = $("#searchInput");
@@ -415,8 +433,9 @@
     if (statusFilter) statusFilter.addEventListener("change", renderInquiryTable);
     if (categoryFilter) categoryFilter.addEventListener("change", renderInquiryTable);
     if (searchInput) searchInput.addEventListener("input", renderInquiryTable);
+    //#endregion
 
-    // Form submission
+    //#region Scene 5 — Modal form submit (PUT update → refresh → toast)
     const updateForm = $("#updateForm");
     if (updateForm) {
         updateForm.addEventListener("submit", async (e) => {
@@ -456,7 +475,12 @@
             }
         });
     }
+    //#endregion
 
+    //
+
+
+    #region Scene 7 — Init + auto - refresh(30s)
     function init() {
         console.log('Initializing InquiryTracker...');
         fetchAdvisors(); // Fetch advisors for dropdown
@@ -475,5 +499,6 @@
     } else {
         init();
     }
-})();
+    //#endregion
 
+})();
