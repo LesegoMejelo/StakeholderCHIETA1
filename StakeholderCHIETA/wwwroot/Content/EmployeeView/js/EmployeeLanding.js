@@ -284,19 +284,4 @@
             }
           });
         });
-  
-        // Sample data for demonstration
-        setTimeout(() => {
-          document.getElementById('upcoming-list').innerHTML = `
-            <li>Meeting with Finance Team - Tomorrow 10:00 AM</li>
-            <li>Project Review - Friday 2:30 PM</li>
-            <li>Client Presentation - Next Monday</li>
-          `;
-          
-          document.getElementById('inquiries-list').innerHTML = `
-            <li>Budget Approval Request - In Progress</li>
-            <li>Training Program Inquiry - Completed</li>
-            <li>Equipment Purchase - Pending Review</li>
-          `;
-        }, 1000);
     })})
