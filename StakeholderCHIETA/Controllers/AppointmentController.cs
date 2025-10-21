@@ -17,6 +17,7 @@ namespace Staekholder_CHIETA_X.Controllers
         // -----------------------------
         // PAGE: Stakeholder appointment booking page
         // -----------------------------
+        [Authorize]
         public async Task<IActionResult> Index()
         {
             try
@@ -41,8 +42,20 @@ namespace Staekholder_CHIETA_X.Controllers
             }
         }
 
+        [Authorize]
         public IActionResult TrackAppointment()
         {
+            // Add debug logging
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var email = User.FindFirstValue(ClaimTypes.Email);
+            var name = User.Identity?.Name;
+
+            Console.WriteLine($"=== TrackAppointment View ===");
+            Console.WriteLine($"User authenticated: {User.Identity?.IsAuthenticated}");
+            Console.WriteLine($"UserId: {userId}");
+            Console.WriteLine($"Email: {email}");
+            Console.WriteLine($"Name: {name}");
+
             return View("~/Views/StakeholderViews/AppointmentTracker.cshtml");
         }
 
@@ -51,26 +64,29 @@ namespace Staekholder_CHIETA_X.Controllers
         // Returns ALL appointments and lets client-side JavaScript filter
         // -----------------------------
         [HttpGet]
-        [Authorize]
+        [Authorize] // Added authorization
         [Route("api/appointment/my-appointments")]
         public async Task<IActionResult> GetMyAppointments()
         {
             try
             {
-                Console.WriteLine("=== GetMyAppointments called ===");
+                Console.WriteLine("=== GetMyAppointments API called ===");
+                Console.WriteLine($"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                Console.WriteLine($"User authenticated: {User.Identity?.IsAuthenticated}");
 
                 var stakeholderUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 var stakeholderEmail = User.FindFirstValue(ClaimTypes.Email);
                 var currentUserName = User.Identity?.Name;
 
-                Console.WriteLine($"StakeholderUserId: {stakeholderUserId}");
-                Console.WriteLine($"StakeholderEmail: {stakeholderEmail}");
-                Console.WriteLine($"UserName: {currentUserName}");
+                Console.WriteLine($"StakeholderUserId: '{stakeholderUserId}'");
+                Console.WriteLine($"StakeholderEmail: '{stakeholderEmail}'");
+                Console.WriteLine($"UserName: '{currentUserName}'");
 
                 if (string.IsNullOrWhiteSpace(stakeholderUserId) &&
                     string.IsNullOrWhiteSpace(stakeholderEmail) &&
                     string.IsNullOrWhiteSpace(currentUserName))
                 {
+                    Console.WriteLine("ERROR: No user identification found!");
                     return Unauthorized(new { message = "User not authenticated" });
                 }
 
@@ -95,7 +111,16 @@ namespace Staekholder_CHIETA_X.Controllers
                 }
 
                 var snap = await query.GetSnapshotAsync();
-                Console.WriteLine($"Found {snap.Documents.Count} appointments");
+                Console.WriteLine($"Firestore query returned {snap.Documents.Count} documents");
+
+                if (snap.Documents.Count == 0)
+                {
+                    Console.WriteLine("WARNING: No appointments found for this user");
+                    Console.WriteLine("Check Firebase to verify:");
+                    Console.WriteLine($"  - StakeholderUserId matches: {stakeholderUserId}");
+                    Console.WriteLine($"  - OR StakeholderEmail matches: {stakeholderEmail}");
+                    Console.WriteLine($"  - OR ClientName matches: {currentUserName}");
+                }
 
                 var items = new List<object>();
 
@@ -103,7 +128,11 @@ namespace Staekholder_CHIETA_X.Controllers
                 {
                     try
                     {
+                        Console.WriteLine($"Processing document: {doc.Id}");
                         var d = doc.ToDictionary();
+
+                        // Log all fields in document for debugging
+                        Console.WriteLine($"  Fields: {string.Join(", ", d.Keys)}");
 
                         // Helper to get string value safely
                         string GetString(string fieldName, string defaultValue = "")
@@ -120,6 +149,7 @@ namespace Staekholder_CHIETA_X.Controllers
                             if (dateVal is string s)
                             {
                                 dateStr = s;
+                                Console.WriteLine($"  Date (string): {dateStr}");
                             }
                             else if (doc.ContainsField("Date"))
                             {
@@ -127,41 +157,82 @@ namespace Staekholder_CHIETA_X.Controllers
                                 {
                                     var ts = doc.GetValue<Timestamp>("Date");
                                     dateStr = ts.ToDateTime().ToString("yyyy-MM-dd");
+                                    Console.WriteLine($"  Date (timestamp): {dateStr}");
                                 }
-                                catch { }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"  Date parse error: {ex.Message}");
+                                }
                             }
                         }
 
                         var status = GetString("Status", "pending").ToLowerInvariant();
                         var timeStr = GetString("Time");
 
+                        Console.WriteLine($"  Status: {status}");
+                        Console.WriteLine($"  Time: {timeStr}");
+
+                        // Get advisor role if available
+                        string advisorRole = "";
+                        var advisorId = GetString("AdvisorId");
+                        if (!string.IsNullOrWhiteSpace(advisorId))
+                        {
+                            try
+                            {
+                                var advisorDoc = await _db.Collection("Users").Document(advisorId).GetSnapshotAsync();
+                                if (advisorDoc.Exists && advisorDoc.ContainsField("Role"))
+                                {
+                                    advisorRole = advisorDoc.GetValue<string>("Role");
+                                    Console.WriteLine($"  AdvisorRole: {advisorRole}");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"  Could not fetch advisor role: {ex.Message}");
+                            }
+                        }
+
+                        // Only include appointments with valid dates
+                        if (string.IsNullOrWhiteSpace(dateStr))
+                        {
+                            Console.WriteLine($"  ⚠️ SKIPPING - no valid date");
+                            continue;
+                        }
+
                         var appointment = new
                         {
                             Id = doc.Id,
-                            AdvisorId = GetString("AdvisorId"),
+                            AdvisorId = advisorId,
                             AdvisorName = GetString("AdvisorName", "Advisor"),
+                            AdvisorRole = advisorRole,
                             ClientName = GetString("ClientName"),
                             StakeholderUserId = GetString("StakeholderUserId"),
                             StakeholderEmail = GetString("StakeholderEmail"),
-                            Reason = GetString("Reason"),
+                            Reason = GetString("Reason", "General Appointment"),
                             Date = dateStr,
                             Time = timeStr,
+                            Duration = GetString("Duration", "30 mins"),
+                            Location = GetString("Location", GetString("AppointmentType") == "online" ? "Online Meeting" : ""),
                             AppointmentType = GetString("AppointmentType", "online"),
                             Status = status,
                             Details = GetString("Details"),
-                            Email = GetString("StakeholderEmail", GetString("Email"))
+                            Email = GetString("StakeholderEmail", GetString("Email")),
+                            ProposedNewDate = GetString("ProposedNewDate"),
+                            ProposedNewTime = GetString("ProposedNewTime"),
+                            DeclineReason = GetString("DeclineReason")
                         };
 
-                        Console.WriteLine($"Appointment: {appointment.ClientName} on {appointment.Date} at {appointment.Time} - Status: {appointment.Status}");
+                        Console.WriteLine($"  ✅ Added: {appointment.ClientName} on {appointment.Date} at {appointment.Time} - Status: {appointment.Status}");
                         items.Add(appointment);
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error processing document {doc.Id}: {ex.Message}");
+                        Console.WriteLine($"❌ Error processing document {doc.Id}: {ex.Message}");
+                        Console.WriteLine($"   Stack: {ex.StackTrace}");
                     }
                 }
 
-                // Sort by date ascending
+                // Sort by date ascending (soonest first)
                 var sorted = items
                     .OrderBy(a => {
                         var apt = (dynamic)a;
@@ -172,20 +243,27 @@ namespace Staekholder_CHIETA_X.Controllers
                     })
                     .ToList();
 
-                Console.WriteLine($"Returning {items.Count} appointments");
+                Console.WriteLine($"=== Returning {sorted.Count} appointments ===");
+
+                // Log the JSON being returned (first appointment only for brevity)
+                if (sorted.Count > 0)
+                {
+                    var firstApt = sorted[0];
+                    Console.WriteLine($"Sample appointment: {System.Text.Json.JsonSerializer.Serialize(firstApt)}");
+                }
+
                 return Json(sorted);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR in GetMyAppointments: {ex.Message}");
+                Console.WriteLine($"❌ CRITICAL ERROR in GetMyAppointments: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, new { message = $"Failed to fetch appointments: {ex.Message}" });
             }
         }
 
-        // -----------------------------
+
         // API: Create a new appointment (stakeholder)
-        // -----------------------------
         [HttpPost]
         [Authorize]
         [Route("api/appointment")]
@@ -228,6 +306,8 @@ namespace Staekholder_CHIETA_X.Controllers
                     ["Reason"] = reason,
                     ["Date"] = date,
                     ["Time"] = time,
+                    ["Duration"] = "30 mins", // Default duration
+                    ["Location"] = appointmentType == "online" ? "Online Meeting" : "",
                     ["AppointmentType"] = appointmentType,
                     ["Status"] = "pending",
                     ["CreatedAt"] = Timestamp.GetCurrentTimestamp(),
@@ -258,6 +338,68 @@ namespace Staekholder_CHIETA_X.Controllers
             {
                 Console.WriteLine($"Error creating appointment: {ex.Message}");
                 return StatusCode(500, new { message = $"Failed to book appointment: {ex.Message}" });
+            }
+        }
+
+        // API: Cancel an appointment (stakeholder)
+        [HttpPost]
+        [Authorize]
+        [Route("api/appointment/cancel")]
+        public async Task<IActionResult> CancelAppointment([FromBody] string appointmentId)
+        {
+            try
+            {
+                Console.WriteLine($"=== CancelAppointment called ===");
+                Console.WriteLine($"AppointmentId: {appointmentId}");
+
+                if (string.IsNullOrWhiteSpace(appointmentId))
+                {
+                    return BadRequest(new { message = "Appointment ID is required" });
+                }
+
+                var stakeholderUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var stakeholderEmail = User.FindFirstValue(ClaimTypes.Email);
+
+                Console.WriteLine($"User - UserId: {stakeholderUserId}, Email: {stakeholderEmail}");
+
+                // Verify the appointment belongs to this user
+                var appointmentDoc = await _db.Collection("appointments").Document(appointmentId).GetSnapshotAsync();
+
+                if (!appointmentDoc.Exists)
+                {
+                    Console.WriteLine("ERROR: Appointment not found");
+                    return NotFound(new { message = "Appointment not found" });
+                }
+
+                var appointmentData = appointmentDoc.ToDictionary();
+                var ownerUserId = appointmentData.ContainsKey("StakeholderUserId") ? appointmentData["StakeholderUserId"]?.ToString() : "";
+                var ownerEmail = appointmentData.ContainsKey("StakeholderEmail") ? appointmentData["StakeholderEmail"]?.ToString() : "";
+
+                Console.WriteLine($"Appointment - UserId: {ownerUserId}, Email: {ownerEmail}");
+
+                // Verify ownership
+                if (ownerUserId != stakeholderUserId && ownerEmail != stakeholderEmail)
+                {
+                    Console.WriteLine("ERROR: User does not own this appointment");
+                    return Forbid();
+                }
+
+                // Update status to cancelled
+                await _db.Collection("appointments").Document(appointmentId).UpdateAsync(new Dictionary<string, object>
+                {
+                    ["Status"] = "cancelled",
+                    ["CancelledAt"] = Timestamp.GetCurrentTimestamp()
+                });
+
+                Console.WriteLine($"✅ Appointment {appointmentId} cancelled successfully");
+
+                return Ok(new { message = "Appointment cancelled successfully" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error cancelling appointment: {ex.Message}");
+                Console.WriteLine($"Stack: {ex.StackTrace}");
+                return StatusCode(500, new { message = $"Failed to cancel appointment: {ex.Message}" });
             }
         }
     }
