@@ -11,10 +11,15 @@ namespace Staekholder_CHIETA_X.Controllers
 {
     public class AppointmentController : Controller
     {
+        #region Dependencies & Fields
         private readonly FirestoreDb _db;
-        public AppointmentController(FirestoreDb db) => _db = db;
+        #endregion
 
-        // -----------------------------
+        #region Constructor
+        public AppointmentController(FirestoreDb db) => _db = db;
+        #endregion
+
+        #region Views (Pages)
         // PAGE: Stakeholder appointment booking page
         // -----------------------------
         [Authorize]
@@ -58,11 +63,11 @@ namespace Staekholder_CHIETA_X.Controllers
 
             return View("~/Views/StakeholderViews/AppointmentTracker.cshtml");
         }
+        #endregion
 
-        // -----------------------------
+        #region API: Read (My Appointments)
         // API: Get the current stakeholder's appointments
         // Returns ALL appointments and lets client-side JavaScript filter
-        // -----------------------------
         [HttpGet]
         [Authorize] // Added authorization
         [Route("api/appointment/my-appointments")]
@@ -261,6 +266,7 @@ namespace Staekholder_CHIETA_X.Controllers
                 return StatusCode(500, new { message = $"Failed to fetch appointments: {ex.Message}" });
             }
         }
+        #endregion
 
 
         // API: Create a new appointment (stakeholder)
@@ -404,9 +410,11 @@ namespace Staekholder_CHIETA_X.Controllers
         }
     }
 
+    #region ViewModels
     public class AdvisorViewModel
     {
         public string Id { get; set; }
         public string Name { get; set; }
     }
+    #endregion
 }

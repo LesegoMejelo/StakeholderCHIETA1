@@ -13,15 +13,20 @@ namespace Staekholder_CHIETA_X.Controllers
     [Authorize]
     public class InquiryController : Controller
     {
+        #region Dependencies & Fields
         private readonly FirestoreDb _db;
         private readonly IEmailService _emailService;
+        #endregion
 
+        #region Constructor
         public InquiryController(FirestoreDb db, IEmailService emailService)
         {
             _db = db;
             _emailService = emailService;
         }
+        #endregion
 
+        #region API: Advisors (Dropdown)
         // GET: Fetch all advisors for dropdown
         [HttpGet]
         [AllowAnonymous]
@@ -55,22 +60,24 @@ namespace Staekholder_CHIETA_X.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+        #endregion
 
+        #region API: Create Inquiry (Public/Anonymous allowed)
         // POST: Create inquiry with advisor assignment
         [HttpPost]
         [AllowAnonymous]
         [Route("api/inquiry")]
         public async Task<IActionResult> Post(
-     [FromForm] string name,
-     [FromForm] string subject,
-     [FromForm] string description,
-     [FromForm] string inquiryType,
-     [FromForm] string desiredOutcome = "",
-     [FromForm] string relatedDate = "",
-     [FromForm] string tags = "",
-     [FromForm] bool followUpCall = false,
-     [FromForm] string assignedAdvisorId = "",
-     [FromForm] string assignedAdvisorName = "")
+            [FromForm] string name,
+            [FromForm] string subject,
+            [FromForm] string description,
+            [FromForm] string inquiryType,
+            [FromForm] string desiredOutcome = "",
+            [FromForm] string relatedDate = "",
+            [FromForm] string tags = "",
+            [FromForm] bool followUpCall = false,
+            [FromForm] string assignedAdvisorId = "",
+            [FromForm] string assignedAdvisorName = "")
         {
             try
             {
@@ -138,40 +145,40 @@ namespace Staekholder_CHIETA_X.Controllers
                 var nowTs = Timestamp.GetCurrentTimestamp();
 
                 var inquiryData = new Dictionary<string, object>
-        {
-                { "name", displayName },
-                { "createdBy", new Dictionary<string, object> {
-                { "userId", userId },
-                { "name", displayName },
-                { "email", userEmail }
-            }},
-            { "createdByEmailLower", userEmailLower }, // <-- NEW, flat field for easy querying
+                {
+                    { "name", displayName },
+                    { "createdBy", new Dictionary<string, object> {
+                        { "userId", userId },
+                        { "name", displayName },
+                        { "email", userEmail }
+                    }},
+                    { "createdByEmailLower", userEmailLower }, // flat field for easy querying
 
-            { "subject", subject.Trim() },
-            { "description", description.Trim() },
-            { "inquiryType", inquiryType.Trim() },
-            { "desiredOutcome", desiredOutcome?.Trim() ?? "" },
-            { "relatedDate", relatedDate?.Trim() ?? "" },
-            { "tags", tagArray },
-            { "followUpCall", followUpCall },
+                    { "subject", subject.Trim() },
+                    { "description", description.Trim() },
+                    { "inquiryType", inquiryType.Trim() },
+                    { "desiredOutcome", desiredOutcome?.Trim() ?? "" },
+                    { "relatedDate", relatedDate?.Trim() ?? "" },
+                    { "tags", tagArray },
+                    { "followUpCall", followUpCall },
 
-            // Advisor fields (now with email too)
-            { "assignedAdvisorId", assignedAdvisorId },
-            { "assignedAdvisor", assignedAdvisorName },
-            { "assignedAdvisorEmail", assignedAdvisorEmail },
+                    // Advisor fields (now with email too)
+                    { "assignedAdvisorId", assignedAdvisorId },
+                    { "assignedAdvisor", assignedAdvisorName },
+                    { "assignedAdvisorEmail", assignedAdvisorEmail },
 
-            { "status", "Pending" },
-            { "createdAt", nowTs },
-            { "updatedAt", nowTs },
-            { "updates", new List<object> {
-                new Dictionary<string, object> {
                     { "status", "Pending" },
-                    { "updatedBy", isAuthed ? (displayName ?? "User") : "System" },
-                    { "timestamp", nowTs },
-                    { "notes", "Inquiry submitted via website" }
-                }
-            }}
-        };
+                    { "createdAt", nowTs },
+                    { "updatedAt", nowTs },
+                    { "updates", new List<object> {
+                        new Dictionary<string, object> {
+                            { "status", "Pending" },
+                            { "updatedBy", isAuthed ? (displayName ?? "User") : "System" },
+                            { "timestamp", nowTs },
+                            { "notes", "Inquiry submitted via website" }
+                        }
+                    }}
+                };
 
                 var docRef = await _db.Collection("inquiries").AddAsync(inquiryData);
 
@@ -188,7 +195,9 @@ namespace Staekholder_CHIETA_X.Controllers
                 return StatusCode(500, new { error = "Internal server error", details = ex.Message });
             }
         }
+        #endregion
 
+        #region Helpers
         private string GenerateReferenceNumber(string docId)
         {
             var now = DateTime.UtcNow;
@@ -196,7 +205,9 @@ namespace Staekholder_CHIETA_X.Controllers
             var shortId = docId.Substring(Math.Max(0, docId.Length - 4)).ToUpper();
             return $"INQ-{datePart}-{shortId}";
         }
+        #endregion
 
+        #region API: Advisor – My Inquiries (flex identity)
         [HttpGet]
         [Authorize(Roles = "Advisor")]
         [Route("api/inquiry")]
@@ -297,6 +308,9 @@ namespace Staekholder_CHIETA_X.Controllers
                 return StatusCode(500, new { error = "Failed to load inquiries" });
             }
         }
+        #endregion
+
+        #region API: Stakeholder – My Inquiries
         [HttpGet]
         [Authorize] // stakeholder must be signed in 
         [Route("api/inquiry/stakeholder")]
@@ -380,8 +394,9 @@ namespace Staekholder_CHIETA_X.Controllers
                 return StatusCode(500, new { error = "Failed to load stakeholder inquiries" });
             }
         }
+        #endregion
 
-
+        #region API: Update Inquiry (Status/Assignment + Email)
         // PUT: Update inquiry status
         [HttpPut]
         [Authorize(Roles = "Advisor,Admin")]
@@ -525,72 +540,9 @@ namespace Staekholder_CHIETA_X.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+        #endregion
 
-        /* [HttpGet]
-         [Authorize(Roles = "Advisor")]
-         [Route("api/inquiry/advisor/{advisorId}")]
-         public async Task<IActionResult> GetAdvisorInquiries(string advisorId)
-         {
-             try
-             {
-                 Console.WriteLine($"GetAdvisorInquiries called with advisorId: {advisorId}");
-                 Console.WriteLine($"User authenticated: {User.Identity.IsAuthenticated}");
-                 Console.WriteLine($"User name: {User.Identity.Name}");
-
-                 // Try to find by assignedAdvisor field
-                 var snapshot = await _db.Collection("inquiries")
-                                         .WhereEqualTo("assignedAdvisor", advisorId)
-                                         .OrderByDescending("createdAt")
-                                         .GetSnapshotAsync();
-
-                 Console.WriteLine($"Found {snapshot.Documents.Count} documents for advisor: {advisorId}");
-
-                 var inquiries = snapshot.Documents.Select(doc =>
-                 {
-                     var data = doc.ToDictionary();
-                     return new
-                     {
-                         id = doc.Id,
-                         referenceNumber = GenerateReferenceNumber(doc.Id),
-                         name = data.ContainsKey("name") ? data["name"] : "N/A",
-                         subject = data.ContainsKey("subject") ? data["subject"] : "N/A",
-                         inquiryType = data.ContainsKey("inquiryType") ? data["inquiryType"] : "N/A",
-                         status = GetLatestStatus(data), // Helper method below
-                         priority = data.ContainsKey("priority") ? data["priority"] : "Normal",
-                         assignedAdvisor = data.ContainsKey("assignedAdvisor") ? data["assignedAdvisor"] : "",
-                         createdAt = data.ContainsKey("createdAt") ? data["createdAt"] : null,
-                         followUpCall = data.ContainsKey("followUpCall") ? data["followUpCall"] : false
-                     };
-                 }).ToList();
-
-                 Console.WriteLine($"Returning {inquiries.Count} inquiries");
-                 return Ok(inquiries);
-             }
-             catch (Exception ex)
-             {
-                 Console.WriteLine($"ERROR in GetAdvisorInquiries: {ex.Message}");
-                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                 return StatusCode(500, new { error = ex.Message, details = ex.StackTrace });
-             }
-         }
-
-         // Helper method to get the latest status from updates array
-         private string GetLatestStatus(Dictionary<string, object> data)
-         {
-             if (!data.ContainsKey("updates")) return "Unknown";
-
-             var updates = data["updates"] as List<object>;
-             if (updates == null || updates.Count == 0) return "Unknown";
-
-             var latestUpdate = updates[updates.Count - 1] as Dictionary<string, object>;
-             if (latestUpdate != null && latestUpdate.ContainsKey("status"))
-             {
-                 return latestUpdate["status"]?.ToString() ?? "Unknown";
-             }
-
-             return "Unknown";
-         }
-        */
+        #region API: Advisor – Filtered & Test endpoints
         // Other existing methods remain the same...
         [HttpGet]
         [Authorize(Roles = "Advisor")]
@@ -603,7 +555,6 @@ namespace Staekholder_CHIETA_X.Controllers
                                         .WhereEqualTo("assignedAdvisor", advisorId)
                                         .OrderByDescending("createdAt")
                                         .GetSnapshotAsync();
-
 
                 var inquiries = snapshot.Documents.Select(doc =>
                 {
@@ -631,8 +582,6 @@ namespace Staekholder_CHIETA_X.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-
-
 
         [HttpGet]
         [Authorize]
@@ -673,50 +622,103 @@ namespace Staekholder_CHIETA_X.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+        #endregion
 
-
-        [HttpPost]
+        #region API: Status & Comments (Mutations)
+        // PUT /api/inquiry/{id}/status  body: { "status": "In Progress", "notes": "Called client" }
+        [HttpPut]
         [Authorize(Roles = "Advisor,Admin")]
         [Route("api/inquiry/{id}/status")]
-        public async Task<IActionResult> UpdateStatus(string id, [FromForm] string status, [FromForm] string updatedBy, [FromForm] string notes)
+        public async Task<IActionResult> SetStatus(string id, [FromBody] StatusDto body)
         {
             try
             {
                 var docRef = _db.Collection("inquiries").Document(id);
-                var snapshot = await docRef.GetSnapshotAsync();
+                var snap = await docRef.GetSnapshotAsync();
+                if (!snap.Exists) return NotFound();
 
-                if (!snapshot.Exists) return NotFound("Inquiry not found");
+                var inquiry = snap.ToDictionary();
+                var assignedId = inquiry.TryGetValue("assignedAdvisorId", out var a) ? a?.ToString() : "";
+                var isAdmin = User.IsInRole("Admin");
+                var myId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-                var inquiry = snapshot.ToDictionary();
-                var updates = inquiry.ContainsKey("updates")
-                    ? ((List<object>)inquiry["updates"]).ToList()
-                    : new List<object>();
+                if (!isAdmin && !string.Equals(assignedId, myId, StringComparison.Ordinal))
+                    return Forbid();
 
-                updates.Add(new Dictionary<string, object>
-                {
-                    { "status", status },
-                    { "updatedBy", updatedBy },
-                    { "timestamp", Timestamp.GetCurrentTimestamp() },
-                    { "notes", notes ?? "" }
+                var updates = inquiry.TryGetValue("updates", out var u) && u is List<object> arr ? arr : new List<object>();
+                var now = Timestamp.GetCurrentTimestamp();
+                var who = User.Identity?.Name ?? "Advisor";
+
+                updates.Add(new Dictionary<string, object> {
+                    { "status", body?.Status ?? "Pending" },
+                    { "updatedBy", who },
+                    { "timestamp", now },
+                    { "notes", body?.Notes ?? "" }
                 });
 
-                await docRef.UpdateAsync(new Dictionary<string, object>
-                {
-                    { "status", status },
+                await docRef.UpdateAsync(new Dictionary<string, object> {
+                    { "status", body?.Status ?? "Pending" },
                     { "updates", updates },
-                    { "updatedAt", Timestamp.GetCurrentTimestamp() }
+                    { "updatedAt", now }
                 });
 
-                Console.WriteLine($"Status updated for inquiry {id} to {status}");
-                return Ok(new { message = "Status updated successfully" });
+                return Ok(new { message = "Status updated" });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR in UpdateStatus: {ex.Message}");
-                return StatusCode(500, new { error = ex.Message });
+                Console.WriteLine($"SetStatus error: {ex.Message}");
+                return StatusCode(500, new { error = "Failed to update status" });
             }
         }
 
+        // POST /api/inquiry/{id}/comments  body: { "text": "Spoke to stakeholder, awaiting docs." }
+        [HttpPost]
+        [Authorize(Roles = "Advisor,Admin")]
+        [Route("api/inquiry/{id}/comments")]
+        public async Task<IActionResult> AddComment(string id, [FromBody] CommentDto body)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(body?.Text)) return BadRequest(new { error = "Comment text required" });
+
+                var docRef = _db.Collection("inquiries").Document(id);
+                var snap = await docRef.GetSnapshotAsync();
+                if (!snap.Exists) return NotFound();
+
+                var inquiry = snap.ToDictionary();
+                var assignedId = inquiry.TryGetValue("assignedAdvisorId", out var a) ? a?.ToString() : "";
+                var isAdmin = User.IsInRole("Admin");
+                var myId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!isAdmin && !string.Equals(assignedId, myId, StringComparison.Ordinal))
+                    return Forbid();
+
+                var comments = inquiry.TryGetValue("comments", out var c) && c is List<object> arr ? arr : new List<object>();
+                var now = Timestamp.GetCurrentTimestamp();
+
+                comments.Add(new Dictionary<string, object> {
+                    { "text", body.Text.Trim() },
+                    { "addedByName", User.Identity?.Name ?? "" },
+                    { "addedById", myId ?? "" },
+                    { "addedByEmail", (User.FindFirstValue(ClaimTypes.Email) ?? "").Trim().ToLowerInvariant() },
+                    { "timestamp", now }
+                });
+
+                await docRef.UpdateAsync(new Dictionary<string, object> {
+                    { "comments", comments },
+                    { "updatedAt", now }
+                });
+
+                return Ok(new { message = "Comment added" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"AddComment error: {ex.Message}");
+                return StatusCode(500, new { error = "Failed to add comment" });
+            }
+        }
+        #endregion
+
+        #region Diagnostics
         // Test endpoint
         [HttpGet]
         [AllowAnonymous]
@@ -746,7 +748,9 @@ namespace Staekholder_CHIETA_X.Controllers
                 return StatusCode(500, new { error = "Firestore connection test failed", details = ex.Message });
             }
         }
+        #endregion
 
+        #region API: Advisor – Mine (Filters/Search)
         // GET /api/inquiry/mine?status=All|Pending|In%20Progress|Closed&category=All|Bursaries|...&q=text
         [HttpGet]
         [Authorize(Roles = "Advisor,Admin")]
@@ -827,102 +831,13 @@ namespace Staekholder_CHIETA_X.Controllers
                 return StatusCode(500, new { error = "Failed to load assigned inquiries" });
             }
         }
-        // PUT /api/inquiry/{id}/status  body: { "status": "In Progress", "notes": "Called client" }
-        [HttpPut]
-        [Authorize(Roles = "Advisor,Admin")]
-        [Route("api/inquiry/{id}/status")]
-        public async Task<IActionResult> SetStatus(string id, [FromBody] StatusDto body)
-        {
-            try
-            {
-                var docRef = _db.Collection("inquiries").Document(id);
-                var snap = await docRef.GetSnapshotAsync();
-                if (!snap.Exists) return NotFound();
+        #endregion
 
-                var inquiry = snap.ToDictionary();
-                var assignedId = inquiry.TryGetValue("assignedAdvisorId", out var a) ? a?.ToString() : "";
-                var isAdmin = User.IsInRole("Admin");
-                var myId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-                if (!isAdmin && !string.Equals(assignedId, myId, StringComparison.Ordinal))
-                    return Forbid();
-
-                var updates = inquiry.TryGetValue("updates", out var u) && u is List<object> arr ? arr : new List<object>();
-                var now = Timestamp.GetCurrentTimestamp();
-                var who = User.Identity?.Name ?? "Advisor";
-
-                updates.Add(new Dictionary<string, object> {
-            { "status", body?.Status ?? "Pending" },
-            { "updatedBy", who },
-            { "timestamp", now },
-            { "notes", body?.Notes ?? "" }
-        });
-
-                await docRef.UpdateAsync(new Dictionary<string, object> {
-            { "status", body?.Status ?? "Pending" },
-            { "updates", updates },
-            { "updatedAt", now }
-        });
-
-                return Ok(new { message = "Status updated" });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"SetStatus error: {ex.Message}");
-                return StatusCode(500, new { error = "Failed to update status" });
-            }
-        }
-        // POST /api/inquiry/{id}/comments  body: { "text": "Spoke to stakeholder, awaiting docs." }
-        [HttpPost]
-        [Authorize(Roles = "Advisor,Admin")]
-        [Route("api/inquiry/{id}/comments")]
-        public async Task<IActionResult> AddComment(string id, [FromBody] CommentDto body)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(body?.Text)) return BadRequest(new { error = "Comment text required" });
-
-                var docRef = _db.Collection("inquiries").Document(id);
-                var snap = await docRef.GetSnapshotAsync();
-                if (!snap.Exists) return NotFound();
-
-                var inquiry = snap.ToDictionary();
-                var assignedId = inquiry.TryGetValue("assignedAdvisorId", out var a) ? a?.ToString() : "";
-                var isAdmin = User.IsInRole("Admin");
-                var myId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (!isAdmin && !string.Equals(assignedId, myId, StringComparison.Ordinal))
-                    return Forbid();
-
-                var comments = inquiry.TryGetValue("comments", out var c) && c is List<object> arr ? arr : new List<object>();
-                var now = Timestamp.GetCurrentTimestamp();
-
-                comments.Add(new Dictionary<string, object> {
-            { "text", body.Text.Trim() },
-            { "addedByName", User.Identity?.Name ?? "" },
-            { "addedById", myId ?? "" },
-            { "addedByEmail", (User.FindFirstValue(ClaimTypes.Email) ?? "").Trim().ToLowerInvariant() },
-            { "timestamp", now }
-        });
-
-                await docRef.UpdateAsync(new Dictionary<string, object> {
-            { "comments", comments },
-            { "updatedAt", now }
-        });
-
-                return Ok(new { message = "Comment added" });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"AddComment error: {ex.Message}");
-                return StatusCode(500, new { error = "Failed to add comment" });
-            }
-        }
-
+        #region DTOs
         public sealed class CommentDto
         {
             public string Text { get; set; } = "";
         }
-
 
         public sealed class StatusDto
         {
@@ -939,8 +854,9 @@ namespace Staekholder_CHIETA_X.Controllers
             public string Status { get; set; } = "";
             public DateTime? Date { get; set; }
         }
+        #endregion
 
-
+        #region Views
         public IActionResult Index() => View();
         public IActionResult Inquiry() => View("~/Views/StakeholderViews/Inquiry/Inquiry.cshtml");
         public IActionResult InquiryTracking() => View("~/Views/StakeholderViews/InquiryTracking/InquiryTracking.cshtml");
@@ -953,5 +869,6 @@ namespace Staekholder_CHIETA_X.Controllers
         {
             return View("~/Views/StakeholderViews/StakeholderAppointmentTracker.cshtml");
         }
+        #endregion
     }
 }
