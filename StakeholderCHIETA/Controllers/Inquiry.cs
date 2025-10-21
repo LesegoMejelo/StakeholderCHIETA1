@@ -278,13 +278,19 @@ namespace Staekholder_CHIETA_X.Controllers
                             reference = GenerateReferenceNumber(doc.Id),
                             subject = data.TryGetValue("subject", out var subj) ? subj?.ToString() ?? "N/A" : "N/A",
                             inquiryType = data.TryGetValue("inquiryType", out var it) ? it?.ToString() ?? "N/A" : "N/A",
+                            description = data.TryGetValue("description", out var desc) ? desc?.ToString() ?? "No description provided" : "No description provided",
+                            desiredOutcome = data.TryGetValue("desiredOutcome", out var desired) ? desired?.ToString() ?? "Not specified" : "Not specified",
+                            tags = data.TryGetValue("tags", out var t) && t is IEnumerable<object> tarr ? tarr.Select(x => x?.ToString() ?? "").ToArray() : Array.Empty<string>(),
                             status,
                             priority = data.TryGetValue("priority", out var pr) ? pr?.ToString() ?? "Normal" : "Normal",
                             date = createdAt,
                             followUpCall = data.TryGetValue("followUpCall", out var f) && f is bool b && b,
                             userName = (data.TryGetValue("createdBy", out var cb) && cb is Dictionary<string, object> cbd && cbd.TryGetValue("name", out var nm))
                                        ? nm?.ToString() ?? "" : (data.TryGetValue("name", out var nm2) ? nm2?.ToString() ?? "" : ""),
-                            assignedTo = data.TryGetValue("assignedAdvisor", out var aa) ? aa?.ToString() ?? "" : ""
+                            userEmail = (data.TryGetValue("createdBy", out var cbe) && cbe is Dictionary<string, object> cbed && cbed.TryGetValue("email", out var em))
+                                       ? em?.ToString() ?? "" : "",
+                            assignedTo = data.TryGetValue("assignedAdvisor", out var aa) ? aa?.ToString() ?? "" : "",
+                            attachments = data.TryGetValue("attachments", out var att) && att is IEnumerable<object> atarr ? atarr : new List<object>()
                         });
                     }
                 }

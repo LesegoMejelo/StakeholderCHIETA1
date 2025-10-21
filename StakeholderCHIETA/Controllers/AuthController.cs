@@ -41,7 +41,7 @@ namespace StakeholderCHIETA.Controllers
         {
             try
             {
-                var decodedToken = await _auth.VerifyIdTokenAsync(idToken);
+                var decodedToken = await _auth.VerifyIdTokenAsync(idToken);  //authenticity, integrity and expiration of token
                 var firebaseUid = decodedToken.Uid;
 
                 // Get docs from both collections
