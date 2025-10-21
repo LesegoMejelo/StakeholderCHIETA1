@@ -3,108 +3,108 @@
 }
 <html>
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>My Inquiries — CHIETA</title>
-  <link rel="stylesheet" href="~/Content/StakeholderView/TrackAnInquiry.css"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My Inquiries — CHIETA</title>
+    <link rel="stylesheet" href="~/Content/StakeholderView/TrackAnInquiry.css" />
 </head>
 <body>
-  <!-- Decorative circles as full page background -->
-  <div class="decor blob-right" aria-hidden="true"></div>
-  <div class="decor arc-left" aria-hidden="true"></div>
-  <div class="decor arc-right-bottom" aria-hidden="true"></div>
+    <!-- Decorative circles as full page background -->
+    <div class="decor blob-right" aria-hidden="true"></div>
+    <div class="decor arc-left" aria-hidden="true"></div>
+    <div class="decor arc-right-bottom" aria-hidden="true"></div>
 
- <!-- Header -->
- <header class="topbar">
-  <div class="container topbar-inner">
-    <div class="brand">
-      <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/logo.png" alt="CHIETA logo" />
-      <div class="divider"></div>
-      <div class="page-title">Track an Inquiry</div>
-    </div>
-  
+    <!-- Header -->
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <div class="brand">
+                <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/logo.png" alt="CHIETA logo" />
+                <div class="divider"></div>
+                <div class="page-title">Track an Inquiry</div>
+            </div>
 
-    <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-      <span class="hide-sm">Settings</span>
-    </button>
-    <nav class="menu-popover" id="settings-menu" role="menu" hidden>
-      <a role="menuitem" href="#">Profile</a>
-      <a role="menuitem" href="#">Notifications</a>
-      <a role="menuitem" href="#">Help</a>
-    </nav>
-  </div>
-  </header>
 
-  <main class="container">
-    <h1>My Inquiry History</h1>
-    <p class="muted">Track the status of your inquiries and view responses from our team.</p>
-    
-    <!-- Filters -->
-    <div class="filters">
-      <div class="filters-header">
-        <h2 class="filters-title">Filter Inquiries</h2>
-        <button class="clear-filters" id="clearFilters">Clear all filters</button>
-      </div>
-      <div class="filter-grid">
-        <div class="filter-group">
-          <label class="filter-label" for="statusFilter">Status</label>
-          <select class="filter-select" id="statusFilter">
-            <option value="all">All Statuses</option>
-            <option value="new">New</option>
-            <option value="in-progress">In Progress</option>
-            <option value="resolved">Resolved</option>
-            <option value="closed">Closed</option>
-          </select>
+            <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                <span class="hide-sm">Settings</span>
+            </button>
+            <nav class="menu-popover" id="settings-menu" role="menu" hidden>
+                <a role="menuitem" href="#">Profile</a>
+                <a role="menuitem" href="#">Notifications</a>
+                <a role="menuitem" href="#">Help</a>
+            </nav>
         </div>
-        
-        <div class="filter-group">
-          <label class="filter-label" for="categoryFilter">Category</label>
-          <select class="filter-select" id="categoryFilter">
-            <option value="all">All Categories</option>
-            <option value="Grants">Grants</option>
-            <option value="Bursaries">Bursaries</option>
-            <option value="Skills Development">Skills Development</option>
-            <option value="Compliance">Compliance</option>
-            <option value="Site Visit">Site Visit</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label class="filter-label" for="dateFilter">Time Period</label>
-          <select class="filter-select" id="dateFilter">
-            <option value="all">All Time</option>
-            <option value="7">Last 7 Days</option>
-            <option value="30">Last 30 Days</option>
-            <option value="90">Last 3 Months</option>
-            <option value="180">Last 6 Months</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Results info -->
-    <div class="results-info">
-      <div class="results-count" id="resultsCount">Loading inquiries...</div>
-      <div>
-        <label for="sortSelect">Sort by: </label>
-        <select class="sort-select" id="sortSelect">
-          <option value="newest">Newest First</option>
-          <option value="oldest">Oldest First</option>
-          <option value="recent-update">Recently Updated</option>
-        </select>
-      </div>
-    </div>
-    
-    <div class="inquiry-cards" id="inquiryList">
-      <!-- Inquiries will be populated by JavaScript -->
-    </div>
-  </main>
+    </header>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-band"><div class="gold-box"></div></div>
-  </footer>
-  <script src="~/Content/StakeholderView/js/TrackAnInquiry.js"></script> 
+    <main class="container">
+        <h1>My Inquiry History</h1>
+        <p class="muted">Track the status of your inquiries and view responses from our team.</p>
+
+        <!-- Filters -->
+        <div class="filters">
+            <div class="filters-header">
+                <h2 class="filters-title">Filter Inquiries</h2>
+                <button class="clear-filters" id="clearFilters">Clear all filters</button>
+            </div>
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label class="filter-label" for="statusFilter">Status</label>
+                    <select class="filter-select" id="statusFilter">
+                        <option value="all">All Statuses</option>
+                        <option value="new">New</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label" for="categoryFilter">Category</label>
+                    <select class="filter-select" id="categoryFilter">
+                        <option value="all">All Categories</option>
+                        <option value="Grants">Grants</option>
+                        <option value="Bursaries">Bursaries</option>
+                        <option value="Skills Development">Skills Development</option>
+                        <option value="Compliance">Compliance</option>
+                        <option value="Site Visit">Site Visit</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label" for="dateFilter">Time Period</label>
+                    <select class="filter-select" id="dateFilter">
+                        <option value="all">All Time</option>
+                        <option value="7">Last 7 Days</option>
+                        <option value="30">Last 30 Days</option>
+                        <option value="90">Last 3 Months</option>
+                        <option value="180">Last 6 Months</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results info -->
+        <div class="results-info">
+            <div class="results-count" id="resultsCount">Loading inquiries...</div>
+            <div>
+                <label for="sortSelect">Sort by: </label>
+                <select class="sort-select" id="sortSelect">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="recent-update">Recently Updated</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="inquiry-cards" id="inquiryList">
+            <!-- Inquiries will be populated by JavaScript -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-band"><div class="gold-box"></div></div>
+    </footer>
+    <script src="~/Content/StakeholderView/js/TrackAnInquiry.js"></script>
 </body>
 </html>

@@ -101,19 +101,19 @@
             inquiries = data.map(inq => ({
                 id: inq.id,
                 ref: inq.reference,
-                category: inq.category || 'N/A',
+                category: inq.inquiryType || inq.category || 'N/A',
                 subject: inq.subject || 'N/A',
-                description: inq.description || '',
-                desired: inq.desired || '',
+                description: inq.description || 'No description provided',
+                desired: inq.desiredOutcome || inq.desired || 'Not specified',
                 tags: Array.isArray(inq.tags) ? inq.tags : [],
                 status: inq.status || 'Pending',
                 date: inq.date,
-                callback: inq.callback || false,
+                callback: inq.followUpCall || inq.callback || false,
                 attachments: Array.isArray(inq.attachments) ? inq.attachments : [],
                 updates: Array.isArray(inq.updates) ? inq.updates : [],
-                userName: inq.userName || 'Unknown',
+                userName: inq.userName || inq.name || 'Unknown',
                 userEmail: inq.userEmail || 'No email',
-                assignedTo: inq.assignedTo || 'You'
+                assignedTo: inq.assignedTo || inq.assignedAdvisor || 'You'
             }));
 
             console.log('Processed inquiries:', inquiries.length);
