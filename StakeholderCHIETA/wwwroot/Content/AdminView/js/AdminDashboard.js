@@ -1,264 +1,10 @@
-﻿/* ------------------ Demo Data ------------------ */
+﻿/* ADMIN DASHBOARD JS — Live metrics + User CRUD*/
 
-// Users (initial seed)
-let users = [
-    { id: 1, name: "Sipho Dlamini", email: "sipho@example.com", role: "User", status: "Active" },
-    { id: 2, name: "Renee McKelvey", email: "renee@company.com", role: "Admin", status: "Active" },
-    { id: 3, name: "Elianora Vasilov", email: "elianora@company.com", role: "Moderator", status: "Suspended" },
-    { id: 4, name: "Alvis Daen", email: "alvis@company.com", role: "User", status: "Active" },
-    { id: 5, name: "Lissa Shipsey", email: "lissa@company.com", role: "User", status: "Active" },
-    { id: 6, name: "Jerry Mattedi", email: "jerry@company.com", role: "User", status: "Active" },
-];
-
-// Engagement time-series (months aligned)
-const months12 = ["Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May"];
-const appointments12 = [80, 120, 95, 140, 110, 130, 160, 150, 170, 180, 175, 190];
-const inquiries12 = [60, 70, 90, 85, 95, 110, 120, 115, 130, 140, 135, 150];
-
-// pagination + search state
-let currentPage = 1;
-const pageSize = 6;
-let searchQuery = "";
-
-/* ------------------ DOM Helpers ------------------ */
-const $ = sel => document.querySelector(sel);
-const $$ = sel => document.querySelectorAll(sel);
-
-/* ------------------ KPIs ------------------ */
-function updateKPIs() {
-    // Total users
-    const totalUsers = users.length;
-    $("#kpi-users").textContent = totalUsers.toLocaleString();
-    // crude "growth": compare current to previous (fake)
-    const lastMonthUsers = Math.max(0, totalUsers - 18);
-    const growthRate = lastMonthUsers ? ((totalUsers - lastMonthUsers) / lastMonthUsers) * 100 : 0;
-    $("#kpi-growth").textContent = `${growthRate.toFixed(1)}%`;
-    $("#kpi-users-delta").textContent = `+${Math.max(0, totalUsers - lastMonthUsers)} this month`;
-
-    // Active appointments = latest month appointments
-    const latestAppts = appointments12[appointments12.length - 1];
-    $("#kpi-appointments").textContent = latestAppts.toLocaleString();
-    $("#kpi-appointments-delta").textContent = `+${Math.max(0, latestAppts - appointments12[appointments12.length - 2])} vs prev`;
-
-    // Open inquiries = latest month inquiries; delta negative means resolved
-    const latestInq = inquiries12[inquiries12.length - 1];
-    const diffInq = latestInq - inquiries12[inquiries12.length - 2];
-    $("#kpi-inquiries").textContent = latestInq.toLocaleString();
-    const inquiriesDelta = diffInq >= 0 ? `+${diffInq} new` : `${Math.abs(diffInq)} resolved`;
-    const deltaClass = diffInq >= 0 ? "up" : "down";
-    const node = $("#kpi-inquiries-delta");
-    node.classList.remove("up", "down");
-    node.classList.add(deltaClass);
-    node.textContent = inquiriesDelta;
-}
-
-/* ------------------ Chart (no libraries) ------------------ */
-function drawLineChart(range = 5) {
-    const labels = months12.slice(-range);
-    const series = [
-        { color: "#6b5dd1", name: "Appointments", data: appointments12.slice(-range) },
-        { color: "#e3b341", name: "Inquiries", data: inquiries12.slice(-range) },
-    ];
-
-    const cvs = $("#lineChart");
-    const ctx = cvs.getContext("2d");
-
-    // clear
-    ctx.clearRect(0, 0, cvs.width, cvs.height);
-
-    // area
-    const P = { l: 50, r: 20, t: 20, b: 36 };
-    const W = cvs.width - P.l - P.r;
-    const H = cvs.height - P.t - P.b;
-
-    // scales
-    const allValues = series.flatMap(s => s.data);
-    const maxY = Math.max(...allValues) * 1.15;
-    const stepX = W / (labels.length - 1);
-
-    // bg
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, cvs.width, cvs.height);
-
-    // grid
-    ctx.strokeStyle = "#eceaf2"; ctx.lineWidth = 1;
-    for (let i = 0; i <= 5; i++) {
-        const y = P.t + (H / 5) * i;
-        ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(P.l + W, y); ctx.stroke();
-    }
-
-    // labels (x)
-    ctx.fillStyle = "#8b86a1";
-    ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-    labels.forEach((lab, i) => {
-        const x = P.l + stepX * i;
-        ctx.textAlign = "center";
-        ctx.fillText(lab, x, P.t + H + 20);
-    });
-
-    const yScale = v => P.t + H - (v / maxY) * H;
-
-    // lines + points
-    series.forEach(s => {
-        ctx.beginPath();
-        ctx.lineWidth = 2.5;
-        ctx.strokeStyle = s.color;
-        s.data.forEach((v, i) => {
-            const x = P.l + i * stepX;
-            const y = yScale(v);
-            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-
-        s.data.forEach((v, i) => {
-            const x = P.l + i * stepX;
-            const y = yScale(v);
-            ctx.fillStyle = s.color;
-            ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
-        });
-    });
-}
-
-/* ------------------ Users Table + CRUD ------------------ */
-function getFilteredUsers() {
-    if (!searchQuery.trim()) return users;
-    const q = searchQuery.toLowerCase();
-    return users.filter(u =>
-        u.name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        u.role.toLowerCase().includes(q) ||
-        u.status.toLowerCase().includes(q)
-    );
-}
-
-function renderUsers() {
-    const rows = getFilteredUsers();
-    const start = (currentPage - 1) * pageSize;
-    const pageRows = rows.slice(start, start + pageSize);
-
-    // body
-    $("#users-body").innerHTML = pageRows.map(u => `
-    <tr>
-      <td>${u.name}</td>
-      <td>${u.email}</td>
-      <td>${u.role}</td>
-      <td>${u.status}</td>
-      <td>
-        <button class="btn-sm edit" data-action="edit" data-id="${u.id}">Edit</button>
-        <button class="btn-sm delete" data-action="delete" data-id="${u.id}">Delete</button>
-      </td>
-    </tr>
-  `).join("");
-
-    // pager
-    const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
-    currentPage = Math.min(currentPage, totalPages);
-    const pagerButtons = [];
-    for (let i = 1; i <= totalPages; i++) {
-        pagerButtons.push(`<button class="page-btn" ${i === currentPage ? 'aria-current="page"' : ""} data-page="${i}">${i}</button>`);
-    }
-    $("#pager").innerHTML = pagerButtons.join("");
-
-    updateKPIs();
-}
-
-/* Events: table actions, pager, search */
-$("#users-body").addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-action]");
-    if (!btn) return;
-    const id = Number(btn.dataset.id);
-    if (btn.dataset.action === "edit") {
-        openModal(users.find(u => u.id === id));
-    } else if (btn.dataset.action === "delete") {
-        const u = users.find(x => x.id === id);
-        if (confirm(`Delete user "${u.name}"?`)) {
-            users = users.filter(x => x.id !== id);
-            renderUsers();
-        }
-    }
-});
-
-$("#pager").addEventListener("click", (e) => {
-    const b = e.target.closest("button[data-page]");
-    if (!b) return;
-    currentPage = Number(b.dataset.page);
-    renderUsers();
-});
-
-$("#userSearch").addEventListener("input", (e) => {
-    searchQuery = e.target.value;
-    currentPage = 1;
-    renderUsers();
-});
-
-/* ------------------ Modal (Add/Edit) ------------------ */
-const modal = $("#userModal");
-const form = $("#userForm");
-const modalTitle = $("#modalTitle");
-
-function openModal(user) {
-    modal.classList.add("show");
-    modal.setAttribute("aria-hidden", "false");
-    if (user) {
-        modalTitle.textContent = "Edit User";
-        $("#userId").value = user.id;
-        $("#name").value = user.name;
-        $("#email").value = user.email;
-        $("#role").value = user.role;
-        $("#status").value = user.status;
-    } else {
-        modalTitle.textContent = "Add User";
-        $("#userId").value = "";
-        $("#name").value = "";
-        $("#email").value = "";
-        $("#role").value = "User";
-        $("#status").value = "Active";
-    }
-    $("#name").focus();
-}
-function closeModal() {
-    modal.classList.remove("show");
-    modal.setAttribute("aria-hidden", "true");
-}
-
-$("#addUserBtn").addEventListener("click", () => openModal(null));
-$("#closeModal").addEventListener("click", closeModal);
-$("#cancelModal").addEventListener("click", closeModal);
-modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
-
-form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const payload = {
-        id: $("#userId").value ? Number($("#userId").value) : Date.now(),
-        name: $("#name").value.trim(),
-        email: $("#email").value.trim(),
-        role: $("#role").value,
-        status: $("#status").value
-    };
-    if (!payload.name || !payload.email) {
-        alert("Please fill in name and email."); return;
-    }
-    const existingIdx = users.findIndex(u => u.id === payload.id);
-    if (existingIdx >= 0) users[existingIdx] = payload; else users.unshift(payload);
-    closeModal();
-    renderUsers();
-});
-
-/* ------------------ Range Picker (chart) ------------------ */
-$("#rangeSelect").addEventListener("change", (e) => {
-    const range = Number(e.target.value);
-    drawLineChart(range);
-});
-
-// ---- Settings dropdown ----
+/* SETTINGS MENU */
 const settingsBtn = document.getElementById('settings-btn');
 const settingsMenu = document.getElementById('settings-menu');
-const prefDark = document.getElementById('pref-dark');
-const DARK_KEY = 'prefers-dark';
-
 const closeMenu = () => { if (settingsMenu) { settingsMenu.hidden = true; settingsBtn?.setAttribute('aria-expanded', 'false'); } };
 const openMenu = () => { if (settingsMenu) { settingsMenu.hidden = false; settingsBtn?.setAttribute('aria-expanded', 'true'); } };
-
 settingsBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     const expanded = settingsBtn.getAttribute('aria-expanded') === 'true';
@@ -270,8 +16,287 @@ document.addEventListener('click', (e) => {
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
 
+/* METRICS (LIVE) */
+async function loadMetrics() {
+    try {
+        const res = await fetch('/admin/metrics', { credentials: 'include' });
+        if (!res.ok) throw new Error(HTTP ${ res.status });
+        const m = await res.json();
 
-/* ------------------ Init ------------------ */
-drawLineChart(5);
-renderUsers();
-updateKPIs();
+        // KPIs
+        document.getElementById('kpi-users').textContent = (m.totalUsers ?? 0).toLocaleString();
+        const activeAppts = (m.appointmentsUpcoming ?? 0) + (m.appointmentsToday ?? 0);
+        document.getElementById('kpi-appointments').textContent = activeAppts.toLocaleString();
+        document.getElementById('kpi-appointments-delta').textContent = Today: ${ m.appointmentsToday ?? 0 };
+
+        const inqOpen = (m.inquiriesOpen ?? 0);
+        const inqOpenedThisMonth = (m.inquiriesOpenedThisMonth ?? 0);
+        const inqResolvedThisMonth = (m.inquiriesResolvedThisMonth ?? 0);
+        document.getElementById('kpi-inquiries').textContent = inqOpen.toLocaleString();
+
+        const inqDelta = document.getElementById('kpi-inquiries-delta');
+        inqDelta.classList.remove('up', 'down');
+        if (inqResolvedThisMonth >= inqOpenedThisMonth) {
+            inqDelta.classList.add('down');
+            inqDelta.textContent = ${ inqResolvedThisMonth } resolved;
+        } else {
+            inqDelta.classList.add('up');
+            inqDelta.textContent = +${ inqOpenedThisMonth } new;
+        }
+
+        // Chart
+        drawLineChartFromMetrics(m.labels || [], m.appointmentsByMonth || [], m.inquiriesByMonth || [], 5);
+    } catch (err) {
+        console.error('❌ Failed to load metrics', err);
+    }
+}
+
+// Chart Drawer (Canvas, no libs)
+function drawLineChartFromMetrics(labels, appts, inqs, range = 5) {
+    const slice = Math.max(1, Math.min(range, labels.length || 1));
+    labels = labels.slice(-slice);
+    appts = appts.slice(-slice);
+    inqs = inqs.slice(-slice);
+
+    const cvs = document.getElementById('lineChart');
+    const ctx = cvs.getContext('2d');
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+    const P = { l: 50, r: 20, t: 20, b: 36 };
+    const W = cvs.width - P.l - P.r;
+    const H = cvs.height - P.t - P.b;
+
+    const maxY = Math.max(1, Math.max(...appts, ...inqs, 1) * 1.15);
+    const stepX = W / (labels.length - 1 || 1);
+    const yScale = v => P.t + H - (v / maxY) * H;
+
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cvs.width, cvs.height);
+    ctx.strokeStyle = "#eceaf2"; ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+        const y = P.t + (H / 5) * i;
+        ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(P.l + W, y); ctx.stroke();
+    }
+
+    ctx.fillStyle = "#8b86a1"; ctx.font = "12px system-ui";
+    labels.forEach((lab, i) => {
+        const x = P.l + stepX * i;
+        ctx.textAlign = "center";
+        ctx.fillText(lab, x, P.t + H + 20);
+    });
+
+    const series = [
+        { color: "#6b5dd1", data: appts },
+        { color: "#e3b341", data: inqs },
+    ];
+
+    series.forEach(s => {
+        ctx.beginPath();
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = 2.5;
+        s.data.forEach((v, i) => {
+            const x = P.l + i * stepX, y = yScale(v);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        s.data.forEach((v, i) => {
+            const x = P.l + i * stepX, y = yScale(v);
+            ctx.beginPath(); ctx.fillStyle = s.color; ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+        });
+    });
+}
+
+document.getElementById('rangeSelect')?.addEventListener('change', async (e) => {
+    try {
+        const res = await fetch('/admin/metrics', { credentials: 'include' });
+        const m = await res.json();
+        drawLineChartFromMetrics(m.labels || [], m.appointmentsByMonth || [], m.inquiriesByMonth || [], Number(e.target.value));
+    } catch (err) {
+        console.error('range change failed', err);
+    }
+});
+
+/* USER LIST (CRUD) */
+let usersCache = [];
+let currentPage = 1;
+const pageSize = 6;
+let searchQuery = "";
+const $ = sel => document.querySelector(sel);
+
+async function loadUsers() {
+    try {
+        const res = await fetch("/Auth/GetUsers", { credentials: 'include' });
+        if (!res.ok) throw new Error("Failed to load users");
+        usersCache = await res.json();
+        currentPage = 1;
+        renderUsers();
+    } catch (err) {
+        console.error("Failed to fetch users", err);
+    }
+}
+
+function filteredUsers() {
+    if (!searchQuery.trim()) return usersCache;
+    const q = searchQuery.toLowerCase();
+    return usersCache.filter(u =>
+        (u.name || "").toLowerCase().includes(q) ||
+        (u.email || "").toLowerCase().includes(q) ||
+        (u.role || "").toLowerCase().includes(q)
+    );
+}
+
+function renderUsers() {
+    const rows = filteredUsers();
+    const start = (currentPage - 1) * pageSize;
+    const pageRows = rows.slice(start, start + pageSize);
+
+    const bodyHtml = pageRows.map(u => `
+        <tr>
+            <td>${escapeHtml(u.name)}</td>
+            <td>${escapeHtml(u.email)}</td>
+            <td>${escapeHtml(u.role)}</td>
+            <td style="text-align:right;">
+                <button class="btn-sm" data-action="edit" data-id="${u.id}">Edit</button>
+                <button class="btn-sm delete" data-action="delete" data-id="${u.id}">Delete</button>
+            </td>
+        </tr>`).join("");
+    $("#users-body").innerHTML = bodyHtml;
+
+    const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+    currentPage = Math.min(currentPage, totalPages);
+    const pagerButtons = [];
+    for (let i = 1; i <= totalPages; i++) {
+        pagerButtons.push(<button class="page-btn" ${i === currentPage ? 'aria-current="page"' : ""} data-page="${i}">${i}</button>);
+    }
+    $("#pager").innerHTML = pagerButtons.join("");
+}
+
+document.getElementById("users-body").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (btn.dataset.action === "edit") {
+        const u = usersCache.find(x => String(x.id) === String(id));
+        openModal(u);
+    } else if (btn.dataset.action === "delete") {
+        deleteUser(id);
+    }
+});
+document.getElementById("pager").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-page]");
+    if (!b) return;
+    currentPage = Number(b.dataset.page);
+    renderUsers();
+});
+document.getElementById("userSearch").addEventListener("input", (e) => {
+    searchQuery = e.target.value || "";
+    currentPage = 1;
+    renderUsers();
+});
+
+async function deleteUser(id) {
+    if (!confirm("Are you sure you want to delete this user?")) return;
+    try {
+        const res = await fetch(/Auth/DeleteUser / ${ encodeURIComponent(id) }, { method: "DELETE", credentials: 'include' });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+            alert(data.message || "User deleted");
+            await loadUsers();
+        } else {
+            alert(data.message || "Error deleting user");
+        }
+    } catch (err) {
+        console.error("Error deleting user:", err);
+        alert("Failed to delete user");
+    }
+}
+
+function escapeHtml(v) {
+    return String(v ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+/*  MODAL */
+const modal = document.getElementById("userModal");
+const userForm = document.getElementById("userForm");
+const addBtn = document.getElementById("addUserBtn");
+const closeBtn = document.getElementById("closeModal");
+const cancelBtn = document.getElementById("cancelModal");
+const modalTitle = document.getElementById("modalTitle");
+
+function showModal() {
+    modal.setAttribute("aria-hidden", "false");
+    modal.classList.add("open");
+}
+function hideModal() {
+    modal.setAttribute("aria-hidden", "true");
+    modal.classList.remove("open");
+}
+
+function openModal(user) {
+    if (user) {
+        modalTitle.textContent = "Edit User";
+        document.getElementById("userId").value = user.id ?? "";
+        document.getElementById("Name").value = user.name ?? "";
+        document.getElementById("email").value = user.email ?? "";
+        document.getElementById("password").value = "";
+        document.getElementById("Role").value = user.role ?? "Client";
+    } else {
+        modalTitle.textContent = "Add User";
+        document.getElementById("userId").value = "";
+        document.getElementById("Name").value = "";
+        document.getElementById("email").value = "";
+        document.getElementById("password").value = "";
+        document.getElementById("Role").value = "Client";
+    }
+    showModal();
+    document.getElementById("Name").focus();
+}
+
+addBtn.addEventListener("click", () => openModal(null));
+closeBtn.addEventListener("click", hideModal);
+cancelBtn.addEventListener("click", hideModal);
+modal.addEventListener("click", (e) => { if (e.target === modal) hideModal(); });
+
+userForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+        Id: document.getElementById("userId").value || undefined,
+        Name: document.getElementById("Name").value.trim(),
+        Email: document.getElementById("email").value.trim(),
+        Password: document.getElementById("password").value,
+        Role: document.getElementById("Role").value
+    };
+    if (!payload.Name || !payload.Email) {
+        alert("Please fill in name and email.");
+        return;
+    }
+    try {
+        const res = await fetch("/Auth/RegisterUser", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+            alert("✅ " + (data.message || "User saved"));
+            hideModal();
+            await loadUsers();
+        } else {
+            alert("❌ " + (data.message || "Error saving user"));
+        }
+    } catch (err) {
+        console.error("Error saving user:", err);
+        alert("❌ Failed to save user");
+    }
+});
+
+/* INIT  */
+document.addEventListener("DOMContentLoaded", () => {
+    loadMetrics();
+    loadUsers();
+});

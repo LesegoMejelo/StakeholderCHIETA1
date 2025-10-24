@@ -81,7 +81,9 @@ class InquiryForm {
                     this.goToStep(nextStep);
                 }
             });
-        });             
+        });    
+        
+
 
         // Subject character counter
         const subjectInput = document.getElementById('subject');

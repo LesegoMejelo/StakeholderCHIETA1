@@ -46,7 +46,7 @@
             </div>
         </section>
 
-        <!-- KPI Cards -->
+        <!-- KPI Cards 
         <section class="kpis container">
             <article class="card kpi">
                 <div class="kpi__label">Total Users</div>
@@ -68,9 +68,9 @@
                 <div class="kpi__value" id="kpi-growth">—</div>
                 <div class="kpi__delta up" id="kpi-growth-delta">vs last month</div>
             </article>
-        </section>
+        </section>  -->
 
-        <!-- Charts -->
+        <!-- Charts 
         <section class="charts container">
             <article class="card chart-card">
                 <header class="card__title-row">
@@ -88,7 +88,7 @@
                     <span class="dot dot--2"></span>Inquiries
                 </footer>
             </article>
-        </section>
+        </section> -->
 
         <!-- User Management -->
         <section class="container">
@@ -118,13 +118,6 @@
                 <div class="pagination" id="pager"></div>
             </article>
         </section>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <div class="container footer__inner">
-                <button class="cta">Primary Action</button>
-            </div>
-        </footer>
 
         <div class="modal" id="userModal" aria-hidden="true" role="dialog">
             <div class="modal__dialog">
@@ -167,6 +160,56 @@
                 </form>
             </div>
         </div>
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container footer__inner">
+                <button class="cta">Primary Action</button>
+            </div>
+        </footer>
+        <div class="modal" id="userModal" aria-hidden="true" role="dialog">
+            <div class="modal__dialog">
+                <header class="modal__header">
+                    <h3 id="modalTitle">Add User</h3>
+                    <button class="icon-btn dark" id="closeModal" aria-label="Close">✕</button>
+                </header>
+
+                <form id="userForm" class="form">
+                    <input type="hidden" id="userId" />
+
+                    <div class="form__row">
+                        <label for="Name">Name</label>
+                        <input id="Name" class="input" required />
+                    </div>
+
+                    <div class="form__row">
+                        <label for="email">Email</label>
+                        <input id="email" type="email" class="input" required />
+                    </div>
+
+                    <div class="form__row">
+                        <label for="password">Password</label>
+                        <input id="password" type="password" class="input" required />
+                    </div>
+
+                    <div class="form__row">
+                        <label for="Role">Role</label>
+                        <select id="Role" class="select" required>
+                            <option value="Client">Client</option>
+                            <option value="Advisor">Advisor</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+
+                    <div class="form__actions">
+                        <button type="button" class="btn ghost" id="cancelModal">Cancel</button>
+                        <button type="submit" class="cta small">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+       
     </main>
 
     <!-- Scripts -->
