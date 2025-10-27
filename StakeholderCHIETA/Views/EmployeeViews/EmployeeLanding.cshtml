@@ -9,7 +9,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Advisor Landing Page</title>
-    <link rel="stylesheet" href="~/Content/EmployeeView/EmployeeLandingPage.css" />
+    <link rel="stylesheet" href="~/Content/EmployeeView/EmployeeLandingPage.css" asp-append-version="true"/>
 </head>
 
 <body>
@@ -18,7 +18,7 @@
     <div class="container topbar-inner">
       <!-- Left: Brand -->
       <div class="brand">
-        <img class="logo" src="/logo.png" alt="CHIETA logo" />
+        <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
         <div class="divider"></div>
         <div class="page-title">Home</div>
       </div>
@@ -163,6 +163,8 @@
         console.log("=== Current User Info ===");
         console.log("User ID:", window.currentUser.userId);
         console.log("User Name:", window.currentUser.name);
+
+     
     </script>
 
     <script src="~/Content/EmployeeView/js/EmployeeLanding.js"></script>

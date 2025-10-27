@@ -7,35 +7,78 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Stakeholder Landing Page</title>
-    <link rel="stylesheet" href="~/Content/EmployeeView/EmployeeLandingPage.css" />
+    <link rel="stylesheet" href="~/Content/EmployeeView/EmployeeLandingPage.css" asp-append-version="true" />
 </head>
 <body>
     <!-- Top Bar -->
+    <!-- Header -->
     <header class="topbar">
         <div class="container topbar-inner">
-            <img class="logo" src="~/Content/StakeholderView/StakeholderLandingImages/LandingPageLogo.jpeg" alt="CHIETA logo" />
+            <!-- Left: Brand -->
+            <div class="brand">
+                <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
+                <div class="divider"></div>
+                <div class="page-title">Home</div>
+            </div>
 
-            <!-- Settings in header -->
-            <nav class="header-actions">
-                <div class="menu" id="settings">
-                    <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-                        <span class="hide-sm">Settings</span>
+            <!-- Center: Navigation -->
+            <div class="center-nav">
+                <!-- Appointments Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="appointments-btn" aria-haspopup="menu" aria-expanded="false">
+
+                        <span>Appointments</span>
                     </button>
-
-                    <div class="menu-popover" id="settings-menu" role="menu" hidden>
-                        <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
-                        <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
-                        <div class="menu-sep" role="separator"></div>
-                        <div class="menu-sep" role="separator"></div>
-                        <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
-                            <button type="submit" class="danger">Sign out</button>
-                        </form>
-
-                    </div>
+                    <nav class="nav-popover" id="appointments-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeAppointmentTracker/Index.html">My Appointments</a>
+                        <a role="menuitem" href="#">Schedule New</a>
+                    </nav>
                 </div>
-            </nav>
+
+                <!-- Inquiries Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="inquiries-btn" aria-haspopup="menu" aria-expanded="false">
+
+                        <span>Inquiries</span>
+                    </button>
+                    <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeInquiryTracker/index.html">Track Inquiries</a>
+                        <a role="menuitem" href="#">New Inquiry</a>
+                    </nav>
+                </div>
+
+                <!-- Spaces Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="spaces-btn" aria-haspopup="menu" aria-expanded="false">
+
+                        <span>Spaces</span>
+                    </button>
+                    <nav class="nav-popover" id="spaces-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeBoardroomBooking/index.html">Book Space</a>
+                        <a role="menuitem" href="#">My Bookings</a>
+
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Right: Settings -->
+            <div class="settings-nav">
+                <button class="nav-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+
+                    <span class="hide-sm">Settings</span>
+                </button>
+                <nav class="nav-popover" id="settings-menu" role="menu" hidden>
+                    <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
+                    <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
+                    <div class="menu-sep" role="separator"></div>
+                    <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
+                        <button type="submit" class="danger">Sign out</button>
+                    </form>
+                </nav>
+            </div>
         </div>
     </header>
+
 
     <main class="container page">
 
