@@ -1,9 +1,99 @@
 ﻿
-// InquiryTracker.js - Fixed Version
+// InquiryTracker.js - Fixed Version with Navigation
 (function () {
     const $ = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
+    // ==================== NAVIGATION FUNCTIONALITY ====================
+    function initializeNavigation() {
+        const navButtons = [
+            { btn: 'appointments-btn', menu: 'appointments-menu' },
+            { btn: 'inquiries-btn', menu: 'inquiries-menu' },
+            { btn: 'spaces-btn', menu: 'spaces-menu' },
+            { btn: 'settings-btn', menu: 'settings-menu' }
+        ];
+
+        // Initialize each navigation menu
+        navButtons.forEach(({ btn, menu }) => {
+            const button = document.getElementById(btn);
+            const menuElement = document.getElementById(menu);
+
+            if (button && menuElement) {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    
+                    // Close all other menus
+                    navButtons.forEach(({ menu: otherMenu }) => {
+                        if (otherMenu !== menu) {
+                            const otherMenuElement = document.getElementById(otherMenu);
+                            const otherButton = document.getElementById(otherMenu.replace('-menu', '-btn'));
+                            if (otherMenuElement) {
+                                otherMenuElement.hidden = true;
+                                otherMenuElement.style.display = 'none';
+                            }
+                            if (otherButton) otherButton.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+
+                    // Toggle current menu
+                    const isExpanded = button.getAttribute('aria-expanded') === 'true';
+                    button.setAttribute('aria-expanded', !isExpanded);
+                    menuElement.hidden = isExpanded;
+                    menuElement.style.display = isExpanded ? 'none' : 'block';
+                });
+            }
+        });
+
+        // Close menus when clicking outside
+        document.addEventListener('click', (e) => {
+            // Check if click is outside any nav button or menu
+            const isNavButton = e.target.closest('.nav-btn');
+            const isNavMenu = e.target.closest('.nav-popover');
+            
+            if (!isNavButton && !isNavMenu) {
+                navButtons.forEach(({ btn, menu }) => {
+                    const button = document.getElementById(btn);
+                    const menuElement = document.getElementById(menu);
+                    if (button && menuElement) {
+                        button.setAttribute('aria-expanded', 'false');
+                        menuElement.hidden = true;
+                        menuElement.style.display = 'none';
+                    }
+                });
+            }
+        });
+
+        // Prevent menus from closing when clicking inside them
+        navButtons.forEach(({ menu }) => {
+            const menuElement = document.getElementById(menu);
+            if (menuElement) {
+                menuElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+            }
+        });
+
+        // Close menu when clicking a menu item
+        navButtons.forEach(({ menu }) => {
+            const menuElement = document.getElementById(menu);
+            if (menuElement) {
+                const menuItems = menuElement.querySelectorAll('a[role="menuitem"]');
+                menuItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        const button = document.getElementById(menu.replace('-menu', '-btn'));
+                        if (button) {
+                            button.setAttribute('aria-expanded', 'false');
+                        }
+                        menuElement.hidden = true;
+                        menuElement.style.display = 'none';
+                    });
+                });
+            }
+        });
+    }
+
+    // ==================== INQUIRY TRACKING FUNCTIONALITY ====================
     function toast(msg) {
         const box = $("#toast");
         if (!box) return;
@@ -383,84 +473,96 @@
             .replace(/'/g, "&#039;");
     }
 
-    // Event listeners
-    document.addEventListener("click", (e) => {
-        const settingsBtn = e.target.closest("#settings-btn");
-        if (settingsBtn) {
-            const menu = $("#settings-menu");
-            const expanded = settingsBtn.getAttribute("aria-expanded") === "true";
-            settingsBtn.setAttribute("aria-expanded", String(!expanded));
-            menu.hidden = expanded;
-            return;
-        }
-
-        const closeBtn = e.target.closest("[data-close-modal]");
-        if (closeBtn) {
-            closeModal("#detailModal");
-            return;
-        }
-
-        const outsideMenu = !$("#settings-menu")?.contains(e.target) && e.target !== $("#settings-btn");
-        if (outsideMenu) {
-            $("#settings-menu")?.setAttribute("hidden", "");
-            $("#settings-btn")?.setAttribute("aria-expanded", "false");
-        }
-    });
-
-    // Filter event listeners
-    const statusFilter = $("#statusFilter");
-    const categoryFilter = $("#categoryFilter");
-    const searchInput = $("#searchInput");
-
-    if (statusFilter) statusFilter.addEventListener("change", renderInquiryTable);
-    if (categoryFilter) categoryFilter.addEventListener("change", renderInquiryTable);
-    if (searchInput) searchInput.addEventListener("input", renderInquiryTable);
-
-    // Form submission
-    const updateForm = $("#updateForm");
-    if (updateForm) {
-        updateForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            const inquiryRef = updateForm.dataset.inquiryRef;
-            if (!inquiryRef) {
-                toast("No inquiry selected");
+    // ==================== EVENT LISTENERS ====================
+    function setupEventListeners() {
+        // Existing inquiry tracking event listeners
+        document.addEventListener("click", (e) => {
+            const settingsBtn = e.target.closest("#settings-btn");
+            if (settingsBtn) {
+                const menu = $("#settings-menu");
+                const expanded = settingsBtn.getAttribute("aria-expanded") === "true";
+                settingsBtn.setAttribute("aria-expanded", String(!expanded));
+                menu.hidden = expanded;
                 return;
             }
 
-            const newStatus = $("#statusUpdate")?.value;
-            const notes = $("#internalNotes")?.value.trim() || '';
-            const assignedTo = $("#assignedTo")?.value || '';
-
-            try {
-                const updateData = {
-                    status: newStatus,
-                    internalNotes: notes
-                };
-
-                // Only include assignedTo if a new advisor was selected
-                if (assignedTo) {
-                    updateData.assignedTo = assignedTo;
-                }
-
-                console.log('Submitting update:', updateData);
-
-                await updateInquiry(inquiryRef, updateData);
-                await fetchInquiries();
-
-                toast("Inquiry updated successfully");
+            const closeBtn = e.target.closest("[data-close-modal]");
+            if (closeBtn) {
                 closeModal("#detailModal");
-            } catch (error) {
-                console.error('Update error:', error);
-                toast("Failed to update inquiry: " + error.message);
+                return;
+            }
+
+            const outsideMenu = !$("#settings-menu")?.contains(e.target) && e.target !== $("#settings-btn");
+            if (outsideMenu) {
+                $("#settings-menu")?.setAttribute("hidden", "");
+                $("#settings-btn")?.setAttribute("aria-expanded", "false");
             }
         });
+
+        // Filter event listeners
+        const statusFilter = $("#statusFilter");
+        const categoryFilter = $("#categoryFilter");
+        const searchInput = $("#searchInput");
+
+        if (statusFilter) statusFilter.addEventListener("change", renderInquiryTable);
+        if (categoryFilter) categoryFilter.addEventListener("change", renderInquiryTable);
+        if (searchInput) searchInput.addEventListener("input", renderInquiryTable);
+
+        // Form submission
+        const updateForm = $("#updateForm");
+        if (updateForm) {
+            updateForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const inquiryRef = updateForm.dataset.inquiryRef;
+                if (!inquiryRef) {
+                    toast("No inquiry selected");
+                    return;
+                }
+
+                const newStatus = $("#statusUpdate")?.value;
+                const notes = $("#internalNotes")?.value.trim() || '';
+                const assignedTo = $("#assignedTo")?.value || '';
+
+                try {
+                    const updateData = {
+                        status: newStatus,
+                        internalNotes: notes
+                    };
+
+                    // Only include assignedTo if a new advisor was selected
+                    if (assignedTo) {
+                        updateData.assignedTo = assignedTo;
+                    }
+
+                    console.log('Submitting update:', updateData);
+
+                    await updateInquiry(inquiryRef, updateData);
+                    await fetchInquiries();
+
+                    toast("Inquiry updated successfully");
+                    closeModal("#detailModal");
+                } catch (error) {
+                    console.error('Update error:', error);
+                    toast("Failed to update inquiry: " + error.message);
+                }
+            });
+        }
     }
 
+    // ==================== INITIALIZATION ====================
     function init() {
-        console.log('Initializing InquiryTracker...');
+        console.log('Initializing InquiryTracker with Navigation...');
+        
+        // Initialize navigation
+        initializeNavigation();
+        
+        // Initialize inquiry tracking
         fetchAdvisors(); // Fetch advisors for dropdown
         fetchInquiries(); // Fetch inquiries
+
+        // Setup event listeners
+        setupEventListeners();
 
         // Auto-refresh every 30 seconds
         setInterval(() => {
@@ -476,4 +578,3 @@
         init();
     }
 })();
-
