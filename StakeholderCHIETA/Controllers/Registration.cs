@@ -15,6 +15,12 @@ namespace StakeholderCHIETA.Controllers
         private readonly FirestoreDb _firestoreDb;
         private readonly FirebaseAuth _auth;
 
+        private static readonly HashSet<string> ValidProvinces = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Gauteng","Western Cape","KwaZulu-Natal","Eastern Cape","Free State",
+            "Limpopo","Mpumalanga","North West","Northern Cape"
+        };
+
         public RegistrationController(FirestoreDb firestoreDb, FirebaseAuth auth)
         {
             _firestoreDb = firestoreDb;
@@ -39,6 +45,28 @@ namespace StakeholderCHIETA.Controllers
 
             try
             {
+                // Normalize role (Title case)
+                var role = char.ToUpper(dto.Role[0]) + dto.Role.Substring(1).ToLower();
+
+                // If creating an Advisor, require a Province
+                string? normalizedProvince = null;
+                if (string.Equals(role, "Advisor", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (string.IsNullOrWhiteSpace(dto.Province))
+                        return BadRequest(new { message = "Province is required for Advisor users." });
+
+                    // Trim and basic normalization (you can map to canonical names if needed)
+                    normalizedProvince = dto.Province.Trim();
+                    if (ValidProvinces.Count > 0 && !ValidProvinces.Contains(normalizedProvince))
+                    {
+                        return BadRequest(new
+                        {
+                            message = $"Invalid province '{dto.Province}'.",
+                            allowed = ValidProvinces
+                        });
+                    }
+                }
+
                 var userRecordArgs = new UserRecordArgs
                 {
                     Email = dto.Email,
@@ -49,8 +77,6 @@ namespace StakeholderCHIETA.Controllers
 
                 var userRecord = await _auth.CreateUserAsync(userRecordArgs);
 
-                var role = char.ToUpper(dto.Role[0]) + dto.Role.Substring(1).ToLower();
-
                 var userData = new Dictionary<string, object>
                 {
                     { "Name", dto.Name },
@@ -59,6 +85,17 @@ namespace StakeholderCHIETA.Controllers
                     { "password", dto.Password }, 
                     { "createdAt", Timestamp.GetCurrentTimestamp() }
                 };
+
+                // Only store Province if provided (primarily Advisors)
+                if (!string.IsNullOrWhiteSpace(normalizedProvince))
+                {
+                    userData["Province"] = normalizedProvince;
+                }
+                else if (!string.IsNullOrWhiteSpace(dto.Province))
+                {
+                    // For non-advisors, allow storing Province if you like
+                    userData["Province"] = dto.Province.Trim();
+                }
 
                 await _firestoreDb.Collection("Users").Document(userRecord.Uid).SetAsync(userData);
 
@@ -88,7 +125,9 @@ namespace StakeholderCHIETA.Controllers
                         id = doc.Id,
                         name = doc.ContainsField("Name") ? doc.GetValue<string>("Name") : "",
                         email = doc.ContainsField("email") ? doc.GetValue<string>("email") : "",
-                        role = doc.ContainsField("Role") ? doc.GetValue<string>("Role") : ""
+                        role = doc.ContainsField("Role") ? doc.GetValue<string>("Role") : "",
+                        province = doc.ContainsField("Province") ? doc.GetValue<string>("Province") : "",
+
                     });
                 }
 
@@ -127,5 +166,7 @@ namespace StakeholderCHIETA.Controllers
         public string Email { get; set; }
         public string Password { get; set; }
         public string Role { get; set; }
+
+        public string? Province { get; set; }
     }
 }

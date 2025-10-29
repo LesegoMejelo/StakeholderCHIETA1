@@ -65,6 +65,161 @@ namespace Staekholder_CHIETA_X.Controllers
         }
         #endregion
 
+        #region API: Lookup (Provinces & Advisors)
+        // GET: /api/appointment/provinces
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("api/appointment/provinces")]
+        public async Task<IActionResult> GetProvinces()
+        {
+            try
+            {
+                // Try to read provinces from Users (Advisors)
+                var snapshot = await _db.Collection("Users").GetSnapshotAsync();
+
+                // Filter advisor role case-insensitively and pull province fields
+                var provincesFromUsers = snapshot.Documents
+                    .Where(d =>
+                    {
+                        string role = null;
+                        if (d.ContainsField("Role")) role = d.GetValue<string>("Role");
+                        else if (d.ContainsField("role")) role = d.GetValue<string>("role");
+                        return !string.IsNullOrWhiteSpace(role) && role.Equals("Advisor", StringComparison.OrdinalIgnoreCase);
+                    })
+                    .Select(d =>
+                    {
+                        if (d.ContainsField("Province")) return d.GetValue<string>("Province")?.Trim();
+                        if (d.ContainsField("province")) return d.GetValue<string>("province")?.Trim();
+                        return null;
+                    })
+                    .Where(p => !string.IsNullOrWhiteSpace(p))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(p => p)
+                    .ToList();
+
+                Console.WriteLine($"[GetProvinces] provincesFromUsers.Count = {provincesFromUsers?.Count ?? 0}");
+
+                // Full SA province list (fallback)
+                var saProvinces = new List<string>
+        {
+            "Eastern Cape",
+            "Free State",
+            "Gauteng",
+            "KwaZulu-Natal",
+            "Limpopo",
+            "Mpumalanga",
+            "North West",
+            "Northern Cape",
+            "Western Cape"
+        };
+
+                // If we found provinces in Firestore, return them; otherwise return full SA list
+                if (provincesFromUsers != null && provincesFromUsers.Count > 0)
+                {
+                    return Ok(provincesFromUsers);
+                }
+
+                Console.WriteLine("[GetProvinces] No provinces found in Firestore - returning fallback SA list.");
+                return Ok(saProvinces);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetProvinces error: {ex}");
+                return StatusCode(500, new { error = "Failed to load provinces" });
+            }
+        }
+
+
+
+
+
+
+
+
+        /*
+         // GET: /api/appointment/provinces
+         // Returns distinct list of provinces where advisors exist
+         [HttpGet]
+         [AllowAnonymous]
+         [Route("api/appointment/provinces")]
+         public async Task<IActionResult> GetProvinces()
+         {
+             try
+             {
+                 var snapshot = await _db.Collection("Users")
+                                         .WhereEqualTo("Role", "Advisor")
+                                         .GetSnapshotAsync();
+
+                 var provinces = snapshot.Documents
+                     .Select(d =>
+                     {
+                         if (d.ContainsField("Province")) return d.GetValue<string>("Province")?.Trim();
+                         if (d.ContainsField("province")) return d.GetValue<string>("province")?.Trim();
+                         return null;
+                     })
+                     .Where(p => !string.IsNullOrWhiteSpace(p))
+                     .Distinct(StringComparer.OrdinalIgnoreCase)
+                     .OrderBy(p => p)
+                     .ToList();
+
+                 return Ok(provinces);
+             }
+             catch (Exception ex)
+             {
+                 Console.WriteLine($"GetProvinces error: {ex.Message}");
+                 return StatusCode(500, new { error = "Failed to load provinces" });
+             }
+         }
+
+
+         // GET: /api/appointment/advisors?province=Gauteng
+         // Returns advisors optionally filtered by province
+        */
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("api/appointment/advisors")]
+        public async Task<IActionResult> GetAdvisorsByProvince([FromQuery] string province = "")
+        {
+            try
+            {
+                Query query = _db.Collection("Users").WhereEqualTo("Role", "Advisor");
+
+                if (!string.IsNullOrWhiteSpace(province))
+                {
+                    // try standard "Province" field first
+                    query = query.WhereEqualTo("Province", province);
+                }
+
+                var snapshot = await query.GetSnapshotAsync();
+
+                // If province was supplied but no results, retry with lowercase field key (legacy tolerance)
+                if (!string.IsNullOrWhiteSpace(province) && snapshot.Count == 0)
+                {
+                    var altQuery = _db.Collection("Users")
+                                      .WhereEqualTo("Role", "Advisor")
+                                      .WhereEqualTo("province", province);
+                    snapshot = await altQuery.GetSnapshotAsync();
+                }
+
+                var advisors = snapshot.Documents.Select(doc => new
+                {
+                    id = doc.Id,
+                    name = doc.ContainsField("Name") ? doc.GetValue<string>("Name") : "Unknown",
+                    province = doc.ContainsField("Province")
+                                ? doc.GetValue<string>("Province")
+                                : (doc.ContainsField("province") ? doc.GetValue<string>("province") : "")
+                }).ToList();
+
+                return Ok(advisors);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetAdvisorsByProvince error: {ex.Message}");
+                return StatusCode(500, new { error = "Failed to load advisors" });
+            }
+        }
+        #endregion
+
         #region API: Read (My Appointments)
         // API: Get the current stakeholder's appointments
         // Returns ALL appointments and lets client-side JavaScript filter
@@ -279,7 +434,9 @@ namespace Staekholder_CHIETA_X.Controllers
             [FromForm] string date,
             [FromForm] string time,
             [FromForm] string appointmentType = "online",
-            [FromForm] string details = "")
+            [FromForm] string details = "",
+            [FromForm] string province = ""
+            )
         {
             try
             {
@@ -297,6 +454,26 @@ namespace Staekholder_CHIETA_X.Controllers
                     return BadRequest(new { message = "Selected advisor not found" });
 
                 var advisorName = advisorDoc.ContainsField("Name") ? advisorDoc.GetValue<string>("Name") : "Advisor";
+
+                var advisorProvince =
+                   advisorDoc.ContainsField("Province") ? advisorDoc.GetValue<string>("Province") :
+                   (advisorDoc.ContainsField("province") ? advisorDoc.GetValue<string>("province") : "");
+
+                // Guard: if client submitted a province, ensure it matches the advisor's province
+                if (!string.IsNullOrWhiteSpace(province))
+                {
+                    var posted = (province ?? "").Trim();
+                    var actual = (advisorProvince ?? "").Trim();
+
+                    if (!posted.Equals(actual, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return BadRequest(new
+                        {
+                            message = $"Advisor does not belong to selected province. Expected '{actual}', got '{posted}'."
+                        });
+                    }
+                }
+
                 var stakeholderUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
                 var stakeholderEmail = User.FindFirstValue(ClaimTypes.Email) ?? "";
                 var clientName = User.Identity?.Name ?? "Anonymous User";
@@ -305,6 +482,7 @@ namespace Staekholder_CHIETA_X.Controllers
                 {
                     ["AdvisorId"] = advisor,
                     ["AdvisorName"] = advisorName,
+                    ["AdvisorProvince"] = advisorProvince ?? "",
                     ["ClientName"] = clientName,
                     ["StakeholderUserId"] = stakeholderUserId,
                     ["StakeholderEmail"] = stakeholderEmail,

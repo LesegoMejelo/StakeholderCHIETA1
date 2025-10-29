@@ -59,6 +59,28 @@
                     <input type="hidden" id="appointmentType" name="appointmentType" required>
                 </div>
 
+                <!-- Province -->
+<div class="form-group mb-3">
+  <label for="provinceSelect" class="form-label">Select Province</label>
+  <select id="provinceSelect" class="form-control">
+    <option value="">-- Choose Province --</option>
+    <!-- JS will populate from /api/appointment/provinces -->
+  </select>
+</div>
+
+<!-- Advisor (note name="advisor" so backend receives the advisor ID) 
+<div class="form-group mb-3">
+  <label for="advisorSelect" class="form-label">Select Advisor</label>
+  <select id="advisorSelect" name="advisor" class="form-control" disabled>
+    <option value="">Select a province first</option>
+  </select>
+</div>
+-->
+
+<!-- Hidden field that will carry the chosen province to the server -->
+<input type="hidden" id="provinceField" name="province" value="">
+
+
                 <!-- Advisor selection -->
                 <div class="form-group">
                     <label class="form-label">Select Advisor</label>
@@ -150,6 +172,8 @@
     <footer class="footer">
         <div class="footer-band"><div class="gold-box"></div></div>
     </footer>
-    <script src="~/Content/StakeholderView/js/StakeholderAppointmentBooking.js"></script>
+   <!-- <script src="~/Content/StakeholderView/js/StakeholderAppointmentBooking.js"></script> -->
+
+    <script src="~/Content/AdminView/js/AppointmentBooking.js"></script>
 </body>
 </html>

@@ -21,5 +21,12 @@ namespace StakeholderCHIETA.Models
         [Required]
         [DataType(DataType.Time)]
         public TimeSpan Time { get; set; }
+
+        public int SelectedProvinceId { get; set; }      // bound to province select
+        public int SelectedAdvisorId { get; set; }       // bound to advisor select
+
+        public List<SelectListItem> Provinces { get; set; } = new();
+       // public List<SelectListItem> Advisors { get; set; } = new();
     }
 }
+
