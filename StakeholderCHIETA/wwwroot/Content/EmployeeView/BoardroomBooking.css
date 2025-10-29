@@ -1,131 +1,274 @@
 :root {
-    --purple-900: #3b2458;
-    --purple-700: #4b2e6f;
-    --beige-200: #f0dcb8;
-    --gold-600: #c8922b;
-    --ink: #231f2a;
-    --muted: #6b6574;
-    --panel: #ffffff;
-    --bg: #f5f5f8;
-    --line: #e8e2f0;
-    --shadow: 0 10px 28px rgba(0,0,0,.08);
-    --success: #4caf50;
-    --warning: #ff9800;
-    --error: #f44336;
-  }
-  
-  * { box-sizing: border-box }
-  html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial; color: var(--ink); background: var(--bg) }
-  
-  /* Header */
-  .topbar { background: var(--panel); position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--line); box-shadow:var(--shadow); overflow:visible}
-  .container{ width:min(1100px,92vw); margin:0 auto; padding:16px }
-  .container.narrow{ max-width:1100px; margin:0 auto; padding:18px }
-  .topbar-inner { display: flex; align-items: center; justify-content: space-between; height:86px }
-  .brand{ display:flex; align-items:center; gap:10px }
-  .logo { font-weight: 900; color: var(--purple-900); letter-spacing: .5px; height:46px; width:auto }
-  .divider{ width:2px; height:20px; background:var(--line) }
-  .page-title{ font-weight:800; color:var(--purple-900) }
-  .icon-btn{ background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px 12px; cursor:pointer; font-weight:700 }
+  --purple-900: #3b2458;
+  --purple-700: #4b2e6f;
+  --beige-200: #f0dcb8;
+  --gold-600: #c8922b;
+  --ink: #231f2a;
+  --muted: #6b6574;
+  --panel: #ffffff;
+  --bg: #f5f5f8;
+  --line: #e8e2f0;
+  --shadow: 0 10px 28px rgba(0,0,0,.08);
+  --success: #4caf50;
+  --warning: #ff9800;
+  --error: #f44336;
+}
 
-  .menu-popover{
-    position:absolute; right:16px; top:58px; width:220px;
-    background:#fff; color:var(--ink);
-    border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow);
-    display:block; padding:8px; text-align:left; text-decoration:none;
-  }
-  .menu-popover[hidden]{ display:none }
-  .menu-popover a{ display:block; padding:10px 10px; border-radius:8px; color:inherit; text-decoration:none }
-  .menu-popover a:hover{ background:#f8f6ff }
+* { box-sizing: border-box }
+html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial; color: var(--ink); background: var(--bg) }
 
-  /* Main content */
-  main { padding: 20px 0 60px }
-  
-  /* Booking form */
-  .booking-form { background: var(--panel); border-radius: 16px; padding: 30px; box-shadow: var(--shadow); border: 1px solid var(--line); margin-bottom: 30px }
-  .form-title { margin: 0 0 10px; color: var(--purple-900) }
-  .form-subtitle { color: var(--muted); margin: 0 0 25px }
-  
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px }
-  .form-group { margin-bottom: 20px }
-  .form-label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--purple-700) }
-  .form-input, .form-select, .form-textarea { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); font-size: 1rem; transition: border-color 0.3s, box-shadow 0.3s }
-  .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--purple-700); box-shadow: 0 0 0 3px rgba(75, 46, 111, 0.1) }
-  .form-textarea { min-height: 100px; resize: vertical }
-  
-  /* Space type selector */
-  .space-selector { display: flex; gap: 15px; margin-bottom: 25px }
-  .space-option { flex: 1; text-align: center; padding: 20px; border: 2px solid var(--line); border-radius: 12px; cursor: pointer; transition: all 0.3s }
-  .space-option:hover { border-color: var(--purple-700) }
-  .space-option.selected { border-color: var(--purple-900); background-color: #f8f6ff }
-  .space-icon { font-size: 2rem; margin-bottom: 10px }
-  .space-name { font-weight: 700; color: var(--purple-900) }
-  .space-desc { color: var(--muted); font-size: 0.9rem; margin-top: 5px }
-  
-  /* Calendar */
-  .calendar-section { background: var(--panel); border-radius: 16px; padding: 30px; box-shadow: var(--shadow); border: 1px solid var(--line); margin-bottom: 30px }
-  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px }
-  .calendar-title { margin: 0; color: var(--purple-900) }
-  .calendar-nav { display: flex; gap: 10px }
-  .calendar-nav-btn { background: var(--purple-900); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer }
-  
-  .calendar { width: 100%; border-collapse: collapse }
-  .calendar th { padding: 12px; text-align: center; background: #f9f7ff; color: var(--purple-700); font-weight: 700 }
-  .calendar td { padding: 12px; text-align: center; border: 1px solid var(--line); cursor: pointer; transition: all 0.2s }
-  .calendar td:hover { background: #f5f3ff }
-  .calendar td.selected { background: var(--purple-900); color: white }
-  .calendar td.unavailable { background: #f5f5f5; color: #999; cursor: not-allowed }
-  .calendar td.today { background: var(--beige-200); font-weight: 700 }
-  
-  /* Available spaces */
-  .spaces-section { background: var(--panel); border-radius: 16px; padding: 30px; box-shadow: var(--shadow); border: 1px solid var(--line) }
-  .spaces-title { margin: 0 0 20px; color: var(--purple-900) }
-  .spaces-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px }
-  .space-card { background: #f9f7ff; border-radius: 10px; padding: 20px; border: 1px solid var(--line); transition: all 0.2s }
-  .space-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,.1) }
-  .space-card.selected { border-color: var(--purple-900); background: #f0ebfa }
-  .space-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px }
-  .space-card-title { font-weight: 700; margin: 0; color: var(--purple-900) }
-  .space-card-capacity { color: var(--muted); font-size: 0.9rem }
-  .space-card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px }
-  .space-card-detail { font-size: 0.9rem }
-  .space-card-detail b { color: var(--purple-700) }
-  .space-card-actions { display: flex; gap: 10px }
-  
-  /* Time slots */
-  .time-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px }
-  .time-slot { padding: 10px; text-align: center; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; transition: all 0.2s }
-  .time-slot:hover { background: #f5f3ff }
-  .time-slot.selected { background: var(--purple-900); color: white; border-color: var(--purple-900) }
-  .time-slot.unavailable { background: #f5f5f5; color: #999; cursor: not-allowed }
-  
-  /* Form actions */
-  .form-actions { margin-top: 30px; display: flex; justify-content: flex-end }
-  .submit-btn { background: var(--gold-600); color: white; border: none; padding: 14px 28px; border-radius: 10px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: background 0.3s }
-  .submit-btn:hover { background: #b57c1f }
-  .submit-btn:disabled { background: #cccccc; cursor: not-allowed }
-  
-  /* Modal */
-  .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; visibility: hidden; transition: all 0.3s }
-  .modal.active { opacity: 1; visibility: visible }
-  .modal-content { background: white; border-radius: 16px; padding: 30px; width: 90%; max-width: 500px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); transform: translateY(20px); transition: transform 0.3s }
-  .modal.active .modal-content { transform: translateY(0) }
-  .modal-title { margin: 0 0 15px; color: var(--purple-900) }
-  .modal-message { color: var(--muted); line-height: 1.6; margin-bottom: 25px }
-  .modal-actions { display: flex; justify-content: flex-end; gap: 15px }
-  .modal-btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer }
-  .modal-btn.confirm { background: var(--success); color: white; border: none }
-  
-  /* Footer */
-  .footer { position: relative; height: 140px; margin-top: 40px }
-  .footer-band { position: absolute; inset: auto 0 0 0; height: 60px; background: var(--purple-900); box-shadow: 0 -6px 16px rgba(0,0,0,.06) inset }
-  .gold-box { position: absolute; left: 50%; transform: translateX(-50%); bottom: 18px; width: 200px; height: 36px; background: var(--gold-600); border-radius: 8px }
-  
-  /* Responsive */
-  @media (max-width: 768px) {
-    .form-grid { grid-template-columns: 1fr }
-    .space-selector { flex-direction: column }
-    .spaces-grid { grid-template-columns: 1fr }
-    .time-slots { grid-template-columns: repeat(2, 1fr) }
-    .calendar-header { flex-direction: column; gap: 15px }
+/* Header */
+.topbar { background: var(--panel); position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--line); box-shadow:var(--shadow); overflow:visible}
+.container{ width:min(1100px,92vw); margin:0 auto; padding:16px }
+.container.narrow{ max-width:1100px; margin:0 auto; padding:18px }
+.topbar-inner { display: flex; align-items: center; justify-content: space-between; height:86px }
+.brand{ display:flex; align-items:center; gap:10px }
+.logo { font-weight: 900; color: var(--purple-900); letter-spacing: .5px; height:46px; width:auto }
+.divider{ width:2px; height:20px; background:var(--line) }
+.page-title{ font-weight:800; color:var(--purple-900) }
+
+/* Center Navigation */
+.center-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex: 1;
+  max-width: 500px;
+  margin: 0 20px;
+}
+
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-btn {
+  background: #fff;
+  border: 1px solid #e8e2f0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #3b2458;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.nav-btn:hover {
+  background: #f8f6ff;
+  border-color: #3b2458;
+}
+
+.nav-btn[aria-expanded="true"] {
+  background: #f8f6ff;
+  border-color: #3b2458;
+}
+
+.nav-popover {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid #e8e2f0;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 8px;
+  z-index: 1001;
+  min-width: 180px;
+  margin-top: 8px;
+}
+
+.nav-popover[hidden] {
+  display: none;
+}
+
+.nav-popover a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+}
+
+.nav-popover a:hover {
+  background: #f8f6ff;
+}
+
+.settings-nav {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.hide-sm {
+  display: inline;
+}
+
+/* Settings Menu Styles */
+.menu-sep {
+  height: 1px;
+  background: #eee6f6;
+  margin: 6px 0;
+}
+
+.nav-popover .danger {
+  background: none;
+  border: none;
+  color: #7b1a1a;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.nav-popover .danger:hover {
+  background: #fff2f2;
+}
+
+/* Main content */
+main { padding: 20px 0 60px }
+
+/* Booking form */
+.booking-form { background: var(--panel); border-radius: 16px; padding: 30px; box-shadow: var(--shadow); border: 1px solid var(--line); margin-bottom: 30px }
+.form-title { margin: 0 0 10px; color: var(--purple-900) }
+.form-subtitle { color: var(--muted); margin: 0 0 25px }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px }
+.form-group { margin-bottom: 20px }
+.form-label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--purple-700) }
+.form-input, .form-select, .form-textarea { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); font-size: 1rem; transition: border-color 0.3s, box-shadow 0.3s }
+.form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--purple-700); box-shadow: 0 0 0 3px rgba(75, 46, 111, 0.1) }
+.form-textarea { min-height: 100px; resize: vertical }
+
+/* Space type selector */
+.space-selector { display: flex; gap: 15px; margin-bottom: 25px }
+.space-option { flex: 1; text-align: center; padding: 20px; border: 2px solid var(--line); border-radius: 12px; cursor: pointer; transition: all 0.3s }
+.space-option:hover { border-color: var(--purple-700) }
+.space-option.selected { border-color: var(--purple-900); background-color: #f8f6ff }
+.space-icon { font-size: 2rem; margin-bottom: 10px }
+.space-name { font-weight: 700; color: var(--purple-900) }
+.space-desc { color: var(--muted); font-size: 0.9rem; margin-top: 5px }
+
+/* Calendar */
+.calendar-section { background: var(--panel); border-radius: 16px; padding: 30px; box-shadow: var(--shadow); border: 1px solid var(--line); margin-bottom: 30px }
+.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px }
+.calendar-title { margin: 0; color: var(--purple-900) }
+.calendar-nav { display: flex; gap: 10px }
+.calendar-nav-btn { background: var(--purple-900); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer }
+
+.calendar { width: 100%; border-collapse: collapse }
+.calendar th { padding: 12px; text-align: center; background: #f9f7ff; color: var(--purple-700); font-weight: 700 }
+.calendar td { padding: 12px; text-align: center; border: 1px solid var(--line); cursor: pointer; transition: all 0.2s }
+.calendar td:hover { background: #f5f3ff }
+.calendar td.selected { background: var(--purple-900); color: white }
+.calendar td.unavailable { background: #f5f5f5; color: #999; cursor: not-allowed }
+.calendar td.today { background: var(--beige-200); font-weight: 700 }
+
+/* Available spaces */
+.spaces-section { background: var(--panel); border-radius: 16px; padding: 30px; box-shadow: var(--shadow); border: 1px solid var(--line) }
+.spaces-title { margin: 0 0 20px; color: var(--purple-900) }
+.spaces-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px }
+.space-card { background: #f9f7ff; border-radius: 10px; padding: 20px; border: 1px solid var(--line); transition: all 0.2s }
+.space-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,.1) }
+.space-card.selected { border-color: var(--purple-900); background: #f0ebfa }
+.space-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px }
+.space-card-title { font-weight: 700; margin: 0; color: var(--purple-900) }
+.space-card-capacity { color: var(--muted); font-size: 0.9rem }
+.space-card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px }
+.space-card-detail { font-size: 0.9rem }
+.space-card-detail b { color: var(--purple-700) }
+.space-card-actions { display: flex; gap: 10px }
+
+/* Time slots */
+.time-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px }
+.time-slot { padding: 10px; text-align: center; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; transition: all 0.2s }
+.time-slot:hover { background: #f5f3ff }
+.time-slot.selected { background: var(--purple-900); color: white; border-color: var(--purple-900) }
+.time-slot.unavailable { background: #f5f5f5; color: #999; cursor: not-allowed }
+
+/* Form actions */
+.form-actions { margin-top: 30px; display: flex; justify-content: flex-end }
+.submit-btn { background: var(--gold-600); color: white; border: none; padding: 14px 28px; border-radius: 10px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: background 0.3s }
+.submit-btn:hover { background: #b57c1f }
+.submit-btn:disabled { background: #cccccc; cursor: not-allowed }
+
+/* Modal */
+.modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; visibility: hidden; transition: all 0.3s }
+.modal.active { opacity: 1; visibility: visible }
+.modal-content { background: white; border-radius: 16px; padding: 30px; width: 90%; max-width: 500px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); transform: translateY(20px); transition: transform 0.3s }
+.modal.active .modal-content { transform: translateY(0) }
+.modal-title { margin: 0 0 15px; color: var(--purple-900) }
+.modal-message { color: var(--muted); line-height: 1.6; margin-bottom: 25px }
+.modal-actions { display: flex; justify-content: flex-end; gap: 15px }
+.modal-btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer }
+.modal-btn.confirm { background: var(--success); color: white; border: none }
+
+/* Footer */
+.footer { position: relative; height: 140px; margin-top: 40px }
+.footer-band { position: absolute; inset: auto 0 0 0; height: 60px; background: var(--purple-900); box-shadow: 0 -6px 16px rgba(0,0,0,.06) inset }
+.gold-box { position: absolute; left: 50%; transform: translateX(-50%); bottom: 18px; width: 200px; height: 36px; background: var(--gold-600); border-radius: 8px }
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .center-nav {
+    gap: 12px;
+    margin: 0 16px;
   }
+  
+  .nav-btn {
+    padding: 8px 14px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-grid { grid-template-columns: 1fr }
+  .space-selector { flex-direction: column }
+  .spaces-grid { grid-template-columns: 1fr }
+  .time-slots { grid-template-columns: repeat(2, 1fr) }
+  .calendar-header { flex-direction: column; gap: 15px }
+  
+  .center-nav {
+    gap: 8px;
+    margin: 0 12px;
+  }
+  
+  .nav-btn span {
+    display: none;
+  }
+  
+  .nav-btn {
+    padding: 10px 12px;
+  }
+  
+  .brand .page-title {
+    display: none;
+  }
+  
+  .brand .divider {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .center-nav {
+    gap: 4px;
+  }
+  
+  .nav-btn {
+    padding: 8px 10px;
+  }
+  
+  .hide-sm {
+    display: none;
+  }
+}
