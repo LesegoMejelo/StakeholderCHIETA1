@@ -42,6 +42,42 @@ a {
   padding: 20px 0 60px;
 }
 
+/* Decorative Background Elements */
+.decor {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.blob-right {
+  width: 300px;
+  height: 300px;
+  background: linear-gradient(135deg, var(--purple-700), var(--gold));
+  top: 100px;
+  right: -100px;
+  filter: blur(60px);
+}
+
+.arc-left {
+  width: 250px;
+  height: 250px;
+  background: var(--beige-200);
+  top: 400px;
+  left: -80px;
+  filter: blur(50px);
+}
+
+.arc-right-bottom {
+  width: 350px;
+  height: 350px;
+  background: linear-gradient(135deg, var(--gold-600), var(--purple-700));
+  bottom: 200px;
+  right: -120px;
+  filter: blur(70px);
+}
+
 /* Header */
 .topbar { 
   background: var(--panel);
@@ -463,62 +499,6 @@ a {
   height: 36px;
   background: var(--gold-600);
   border-radius: 8px;
-}
-
-/* Decorative shapes - Fixed */
-.decor {
-  position: absolute;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.blob-right {
-  right: -88px;
-  top: 86px;
-  width: 320px;
-  height: 320px;
-  border-radius: 50%;
-  background: var(--beige-200);
-  opacity: .85;
-}
-
-.arc-left {
-  left: -70px;
-  top: 470px;
-  width: 280px;
-  height: 280px;
-  border-radius: 50%;
-  border: 3px solid var(--purple-700);
-  background: transparent;
-}
-
-.arc-right-bottom {
-  right: -80px;
-  bottom: 40px;
-  width: 240px;
-  height: 240px;
-  border-radius: 50%;
-  border: 3px solid var(--gold-600);
-  background: transparent;
-}
-
-/* Ensure main container has relative positioning */
-.page {
-  position: relative;
-  padding: 20px 0 60px;
-  min-height: 100vh; /* Ensure enough space for shapes */
-  overflow: hidden; /* Prevent horizontal scroll from shapes */
-}
-
-/* Add some spacing for the shapes to be visible */
-.welcome {
-  position: relative;
-  z-index: 1; /* Ensure content stays above shapes */
-}
-
-.actions {
-  position: relative;
-  z-index: 1; /* Ensure content stays above shapes */
 }
 
 /* Settings Menu Styles */
