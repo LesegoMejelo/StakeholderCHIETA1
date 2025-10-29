@@ -102,14 +102,15 @@
                     <input type="hidden" id="appointmentType" name="appointmentType" required>
                 </div>
 
+                
                 <!-- Province -->
-<div class="form-group mb-3">
-  <label for="provinceSelect" class="form-label">Select Province</label>
-  <select id="provinceSelect" class="form-control">
-    <option value="">-- Choose Province --</option>
-    <!-- JS will populate from /api/appointment/provinces -->
-  </select>
-</div>
+                <div class="form-group">
+                    <label for="provinceSelect" class="form-label">Select Province</label>
+                    <select id="provinceSelect" class="form-select">
+                        <option value="">-- Choose Province --</option>
+                        <!-- JS will populate from /api/appointment/provinces -->
+                    </select>
+                </div>
 
 <!-- Advisor (note name="advisor" so backend receives the advisor ID) 
 <div class="form-group mb-3">
