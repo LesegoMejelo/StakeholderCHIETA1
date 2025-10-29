@@ -465,7 +465,7 @@ a {
   border-radius: 8px;
 }
 
-/* Decorative shapes */
+/* Decorative shapes - Fixed */
 .decor {
   position: absolute;
   pointer-events: none;
@@ -500,6 +500,25 @@ a {
   border-radius: 50%;
   border: 3px solid var(--gold-600);
   background: transparent;
+}
+
+/* Ensure main container has relative positioning */
+.page {
+  position: relative;
+  padding: 20px 0 60px;
+  min-height: 100vh; /* Ensure enough space for shapes */
+  overflow: hidden; /* Prevent horizontal scroll from shapes */
+}
+
+/* Add some spacing for the shapes to be visible */
+.welcome {
+  position: relative;
+  z-index: 1; /* Ensure content stays above shapes */
+}
+
+.actions {
+  position: relative;
+  z-index: 1; /* Ensure content stays above shapes */
 }
 
 /* Settings Menu Styles */
