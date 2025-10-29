@@ -24,7 +24,7 @@
             <!-- Center: Navigation -->
             <div class="center-nav">
                 <!-- Appointments Navigation -->
-                <div style="position: relative;">
+                <div class="nav-dropdown">
                     <button class="nav-btn" id="appointments-btn" aria-haspopup="menu" aria-expanded="false">
                         <span>Appointments</span>
                     </button>
@@ -35,7 +35,7 @@
                 </div>
 
                 <!-- Inquiries Navigation -->
-                <div style="position: relative;">
+                <div class="nav-dropdown">
                     <button class="nav-btn" id="inquiries-btn" aria-haspopup="menu" aria-expanded="false">
                         <span>Inquiries</span>
                     </button>
@@ -46,7 +46,7 @@
                 </div>
 
                 <!-- Spaces Navigation -->
-                <div style="position: relative;">
+                <div class="nav-dropdown">
                     <button class="nav-btn" id="spaces-btn" aria-haspopup="menu" aria-expanded="false">
                         <span>Spaces</span>
                     </button>
@@ -58,7 +58,7 @@
             </div>
 
             <!-- Right: Settings -->
-            <div class="settings-nav" style="position: relative;">
+            <div class="settings-nav">
                 <button class="nav-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
                     <span class="hide-sm">Settings</span>
                 </button>
@@ -83,16 +83,16 @@
 
        <!--  Welcome -->
         <section class="welcome">
-                    <h1>Welcome @User.Identity.Name</h1>
-            <p class="tagline">This is your personalised landing page, equipt for your every need</p>
+            <h1>Welcome @User.Identity.Name</h1>
+            <p class="tagline">This is your personalised landing page, equipped for your every need</p>
 
             <div class="summary-grid">
-                <a id="link-appointments" class="summary-card" href="~/Views/StakeholdereViews/Appointment/Book.cshtml">
+                <a id="link-appointments" class="summary-card" href="@Url.Action("TrackAppointment", "Inquiry")">
                     <h3>Upcoming Appointments</h3>
                     <ul id="upcoming-list" class="mini-list"><li class="muted">Loading..</li></ul>
                 </a>
 
-                <a id="link-inquiries" class="summary-card" href="~/Views/StakeholdereViews/Inquiry/Inquiry.cshtml">
+                <a id="link-inquiries" class="summary-card" href="@Url.Action("Tracking", "Inquiry")">
                     <h3>Recent Inquiries</h3>
                     <ul id="inquiries-list" class="mini-list"><li class="muted">Loading…</li></ul>
                 </a>
@@ -109,55 +109,45 @@
             </p>
 
             <div class="actions-grid">
+                <!-- Book an appointment-->
                 <div class="action-card">
-                    <div class="card-hero" aria-hidden="true"></div>
-                    <!-- Book an appointment-->
-                 <h3> <a asp-controller="Appointment" asp-action="Index">Book an Appointment</a> </h3>
-                    <p>You can make an appointment with your Skills Advisor while communicating any specific information. From the booking, a confirmation will be sent along with an invite, depending on specifics.</p>
-                    <button class="btn">
-                        <a asp-controller="Appointment" asp-action="Index">Book</a>
-                    </button>
+                    <div class="card-hero appointment-book-hero" aria-hidden="true"></div>
+                    <div class="action-card-content">
+                        <h3><a href="@Url.Action("Index", "Appointment")">Book an Appointment</a></h3>
+                        <p>You can make an appointment with your Skills Advisor while communicating any specific information. From the booking, a confirmation will be sent along with an invite, depending on specifics.</p>
+                        <button class="btn" data-nav="@Url.Action("Index", "Appointment")">Book</button>
+                    </div>
                 </div>
 
                  <!--Track Appointments-->
                 <div class="action-card">
-                    <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a asp-controller="Inquiry" asp-action="TrackAppointment">Track your appointments</a></h3>
-                    <p>You can track the status of all your appointments with the option of cancelling, if necessary</p>
-                    <button class="btn" data-nav="inquiry-track.html">Go</button>
+                    <div class="card-hero appointment-track-hero" aria-hidden="true"></div>
+                    <div class="action-card-content">
+                        <h3><a href="@Url.Action("TrackAppointment", "Inquiry")">Track your appointments</a></h3>
+                        <p>You can track the status of all your appointments with the option of cancelling, if necessary</p>
+                        <button class="btn" data-nav="@Url.Action("TrackAppointment", "Inquiry")">Track</button>
+                    </div>
                 </div>
 
                 <!-- Log an Inquiry -->
                 <div class="action-card">
-                    <div class="card-hero" aria-hidden="true"></div>
-                    <h3> <a asp-controller="Inquiry"  asp-action="Inquiry" > Log an Inquiry </a></h3>
-                    <p>If you have any questions regarding your advisory, you can log an inquiry with your advisor.</p>
-                    <button class="btn">
-                        <a asp-controller="Inquiry" asp-action="Inquiry">Log</a>
-                    </button>
+                    <div class="card-hero inquiry-log-hero" aria-hidden="true"></div>
+                    <div class="action-card-content">
+                        <h3><a href="@Url.Action("Inquiry", "Inquiry")">Log an Inquiry</a></h3>
+                        <p>If you have any questions regarding your advisory, you can log an inquiry with your advisor.</p>
+                        <button class="btn" data-nav="@Url.Action("Inquiry", "Inquiry")">Log</button>
+                    </div>
                 </div>
 
                 <!-- Track an Inquiry -->
                 <div class="action-card">
-                    <div class="card-hero" aria-hidden="true"></div>
-                    <h3> <a asp-controller="Inquiry" asp-action="InquiryTracking"> Track an Inquiry </a></h3>
-                    <p>If you have logged an inquiry, you can now track it.</p>
-                    <button class="btn">
-                        <a asp-controller="Inquiry" asp-action="Tracking">Track</a>
-                    </button>
+                    <div class="card-hero inquiry-track-hero" aria-hidden="true"></div>
+                    <div class="action-card-content">
+                        <h3><a href="@Url.Action("Tracking", "Inquiry")">Track an Inquiry</a></h3>
+                        <p>If you have logged an inquiry, you can now track its progress and status updates.</p>
+                        <button class="btn" data-nav="@Url.Action("Tracking", "Inquiry")">Track</button>
+                    </div>
                 </div>
-                
-                <!--Provide Feedback
-                <div class="action-card">
-                    <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a asp-controller="Inquiry" asp-action="Feedback">Rate your Advisor</a></h3>
-                    <p>You can rate the service provided in your inquiries and appointments.</p>
-                    <button class="btn">
-                        <a asp-controller="Inquiry" asp-action="Feedback">Rate</a>
-                    </button>
-                </div>
--->
-                
             </div>
         </section>
     </main>
