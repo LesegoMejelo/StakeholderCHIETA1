@@ -7,7 +7,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Book Appointment — CHIETA</title>
+    <title>Book Appointment</title>
     <link rel="stylesheet" href="~/Content/StakeholderView/AppointmentBooking.css" />
 
 </head>
@@ -17,23 +17,66 @@
     <div class="decor arc-left" aria-hidden="true"></div>
     <div class="decor arc-right-bottom" aria-hidden="true"></div>
 
-    <!-- Header -->
+     <!-- Header -->
     <header class="topbar">
         <div class="container topbar-inner">
+            <!-- Left: Brand -->
             <div class="brand">
-                <img class="logo" src="~/Content/StakeholderView/StakeholderLandingImages/logo.png" alt="CHIETA logo" />
+                <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
                 <div class="divider"></div>
                 <div class="page-title">Schedule an Appointment</div>
             </div>
 
-            <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-                <span class="hide-sm">Settings</span>
-            </button>
-            <nav class="menu-popover" id="settings-menu" role="menu" hidden>
-                <a role="menuitem" href="#">Profile</a>
-                <a role="menuitem" href="#">Notifications</a>
-                <a role="menuitem" href="#">Help</a>
-            </nav>
+            <!-- Center: Navigation -->
+            <div class="center-nav">
+                <!-- Appointments Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="appointments-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span>Appointments</span>
+                    </button>
+                    <nav class="nav-popover" id="appointments-menu" role="menu" hidden>
+                        <a role="menuitem" href="/Inquiry/TrackAppointment">My Appointments</a>
+                        <a role="menuitem" href="/Appointment/Index">Schedule New</a>
+                    </nav>
+                </div>
+
+                <!-- Inquiries Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="inquiries-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span>Inquiries</span>
+                    </button>
+                    <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeInquiryTracker/index.html">Track Inquiries</a>
+                        <a role="menuitem" href="#">New Inquiry</a>
+                    </nav>
+                </div>
+
+                <!-- Spaces Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="spaces-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span>Spaces</span>
+                    </button>
+                    <nav class="nav-popover" id="spaces-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeBoardroomBooking/index.html">Book Space</a>
+                        <a role="menuitem" href="#">My Bookings</a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Right: Settings -->
+            <div class="settings-nav" style="position: relative;">
+                <button class="nav-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                    <span class="hide-sm">Settings</span>
+                </button>
+                <nav class="nav-popover" id="settings-menu" role="menu" hidden>
+                    <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
+                    <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
+                    <div class="menu-sep" role="separator"></div>
+                    <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
+                        <button type="submit" class="danger">Sign out</button>
+                    </form>
+                </nav>
+            </div>
         </div>
     </header>
 

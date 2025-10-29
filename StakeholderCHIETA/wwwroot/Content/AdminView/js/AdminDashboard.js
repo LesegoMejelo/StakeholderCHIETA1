@@ -20,14 +20,14 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(
 async function loadMetrics() {
     try {
         const res = await fetch('/admin/metrics', { credentials: 'include' });
-        if (!res.ok) throw new Error(HTTP ${ res.status });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const m = await res.json();
 
         // KPIs
         document.getElementById('kpi-users').textContent = (m.totalUsers ?? 0).toLocaleString();
         const activeAppts = (m.appointmentsUpcoming ?? 0) + (m.appointmentsToday ?? 0);
         document.getElementById('kpi-appointments').textContent = activeAppts.toLocaleString();
-        document.getElementById('kpi-appointments-delta').textContent = Today: ${ m.appointmentsToday ?? 0 };
+        document.getElementById('kpi-appointments-delta').textContent = `Today: ${m.appointmentsToday ?? 0}`;
 
         const inqOpen = (m.inquiriesOpen ?? 0);
         const inqOpenedThisMonth = (m.inquiriesOpenedThisMonth ?? 0);
@@ -38,10 +38,10 @@ async function loadMetrics() {
         inqDelta.classList.remove('up', 'down');
         if (inqResolvedThisMonth >= inqOpenedThisMonth) {
             inqDelta.classList.add('down');
-            inqDelta.textContent = ${ inqResolvedThisMonth } resolved;
+            inqDelta.textContent = `${inqResolvedThisMonth} resolved`;
         } else {
             inqDelta.classList.add('up');
-            inqDelta.textContent = +${ inqOpenedThisMonth } new;
+            inqDelta.textContent = `+${inqOpenedThisMonth} new`;
         }
 
         // Chart
@@ -59,6 +59,8 @@ function drawLineChartFromMetrics(labels, appts, inqs, range = 5) {
     inqs = inqs.slice(-slice);
 
     const cvs = document.getElementById('lineChart');
+    if (!cvs) return;
+    
     const ctx = cvs.getContext('2d');
     ctx.clearRect(0, 0, cvs.width, cvs.height);
 
@@ -70,14 +72,21 @@ function drawLineChartFromMetrics(labels, appts, inqs, range = 5) {
     const stepX = W / (labels.length - 1 || 1);
     const yScale = v => P.t + H - (v / maxY) * H;
 
-    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cvs.width, cvs.height);
-    ctx.strokeStyle = "#eceaf2"; ctx.lineWidth = 1;
+    ctx.fillStyle = "#fff"; 
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+    ctx.strokeStyle = "#eceaf2"; 
+    ctx.lineWidth = 1;
+    
     for (let i = 0; i <= 5; i++) {
         const y = P.t + (H / 5) * i;
-        ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(P.l + W, y); ctx.stroke();
+        ctx.beginPath(); 
+        ctx.moveTo(P.l, y); 
+        ctx.lineTo(P.l + W, y); 
+        ctx.stroke();
     }
 
-    ctx.fillStyle = "#8b86a1"; ctx.font = "12px system-ui";
+    ctx.fillStyle = "#8b86a1"; 
+    ctx.font = "12px system-ui";
     labels.forEach((lab, i) => {
         const x = P.l + stepX * i;
         ctx.textAlign = "center";
@@ -98,9 +107,13 @@ function drawLineChartFromMetrics(labels, appts, inqs, range = 5) {
             i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         });
         ctx.stroke();
+        
         s.data.forEach((v, i) => {
             const x = P.l + i * stepX, y = yScale(v);
-            ctx.beginPath(); ctx.fillStyle = s.color; ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); 
+            ctx.fillStyle = s.color; 
+            ctx.arc(x, y, 3, 0, Math.PI * 2); 
+            ctx.fill();
         });
     });
 }
@@ -115,7 +128,7 @@ document.getElementById('rangeSelect')?.addEventListener('change', async (e) => 
     }
 });
 
-/* USER LIST (CRUD) */
+/* USER LIST (CRUD) - FIXED VERSION */
 let usersCache = [];
 let currentPage = 1;
 const pageSize = 6;
@@ -124,13 +137,20 @@ const $ = sel => document.querySelector(sel);
 
 async function loadUsers() {
     try {
-        const res = await fetch("/Auth/GetUsers", { credentials: 'include' });
-        if (!res.ok) throw new Error("Failed to load users");
+        const res = await fetch("/Auth/GetUsers", { 
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         usersCache = await res.json();
+        console.log('Users loaded:', usersCache);
         currentPage = 1;
         renderUsers();
     } catch (err) {
         console.error("Failed to fetch users", err);
+        alert("Failed to load users");
     }
 }
 
@@ -151,67 +171,89 @@ function renderUsers() {
 
     const bodyHtml = pageRows.map(u => `
         <tr>
-            <td>${escapeHtml(u.name)}</td>
-            <td>${escapeHtml(u.email)}</td>
-            <td>${escapeHtml(u.role)}</td>
+            <td>${escapeHtml(u.name || '')}</td>
+            <td>${escapeHtml(u.email || '')}</td>
+            <td>${escapeHtml(u.role || '')}</td>
             <td style="text-align:right;">
                 <button class="btn-sm" data-action="edit" data-id="${u.id}">Edit</button>
                 <button class="btn-sm delete" data-action="delete" data-id="${u.id}">Delete</button>
             </td>
         </tr>`).join("");
+    
     $("#users-body").innerHTML = bodyHtml;
 
     const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
     currentPage = Math.min(currentPage, totalPages);
+    
     const pagerButtons = [];
     for (let i = 1; i <= totalPages; i++) {
-        pagerButtons.push(<button class="page-btn" ${i === currentPage ? 'aria-current="page"' : ""} data-page="${i}">${i}</button>);
+        pagerButtons.push(`<button class="page-btn" ${i === currentPage ? 'aria-current="page"' : ''} data-page="${i}">${i}</button>`);
     }
     $("#pager").innerHTML = pagerButtons.join("");
 }
 
+// FIXED: Event delegation for user actions
 document.getElementById("users-body").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-action]");
     if (!btn) return;
+    
     const id = btn.dataset.id;
-    if (btn.dataset.action === "edit") {
-        const u = usersCache.find(x => String(x.id) === String(id));
-        openModal(u);
-    } else if (btn.dataset.action === "delete") {
+    const action = btn.dataset.action;
+    
+    if (action === "edit") {
+        const user = usersCache.find(x => String(x.id) === String(id));
+        if (user) {
+            openModal(user);
+        }
+    } else if (action === "delete") {
         deleteUser(id);
     }
 });
+
+// FIXED: Pagination event listener
 document.getElementById("pager").addEventListener("click", (e) => {
-    const b = e.target.closest("button[data-page]");
-    if (!b) return;
-    currentPage = Number(b.dataset.page);
+    const btn = e.target.closest("button[data-page]");
+    if (!btn) return;
+    currentPage = Number(btn.dataset.page);
     renderUsers();
 });
+
 document.getElementById("userSearch").addEventListener("input", (e) => {
     searchQuery = e.target.value || "";
     currentPage = 1;
     renderUsers();
 });
 
+// FIXED: Delete function
 async function deleteUser(id) {
     if (!confirm("Are you sure you want to delete this user?")) return;
+    
     try {
-        const res = await fetch(/Auth/DeleteUser / ${ encodeURIComponent(id) }, { method: "DELETE", credentials: 'include' });
+        const res = await fetch(`/Auth/DeleteUser/${encodeURIComponent(id)}`, {
+            method: "DELETE",
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
         const data = await res.json().catch(() => ({}));
+        
         if (res.ok) {
-            alert(data.message || "User deleted");
-            await loadUsers();
+            alert(data.message || "User deleted successfully");
+            await loadUsers(); // Reload the user list
         } else {
-            alert(data.message || "Error deleting user");
+            alert(data.message || `Error: ${res.status}`);
         }
     } catch (err) {
         console.error("Error deleting user:", err);
-        alert("Failed to delete user");
+        alert("Failed to delete user - network error");
     }
 }
 
 function escapeHtml(v) {
-    return String(v ?? "")
+    if (v === null || v === undefined) return '';
+    return String(v)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -219,7 +261,7 @@ function escapeHtml(v) {
         .replace(/'/g, "&#039;");
 }
 
-/*  MODAL */
+/* MODAL */
 const modal = document.getElementById("userModal");
 const userForm = document.getElementById("userForm");
 const addBtn = document.getElementById("addUserBtn");
@@ -231,6 +273,7 @@ function showModal() {
     modal.setAttribute("aria-hidden", "false");
     modal.classList.add("open");
 }
+
 function hideModal() {
     modal.setAttribute("aria-hidden", "true");
     modal.classList.remove("open");
@@ -259,44 +302,81 @@ function openModal(user) {
 addBtn.addEventListener("click", () => openModal(null));
 closeBtn.addEventListener("click", hideModal);
 cancelBtn.addEventListener("click", hideModal);
-modal.addEventListener("click", (e) => { if (e.target === modal) hideModal(); });
+modal.addEventListener("click", (e) => { 
+    if (e.target === modal) hideModal(); 
+});
 
+// FIXED: Form submission with better error handling
 userForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    
+    const userId = document.getElementById("userId").value;
     const payload = {
-        Id: document.getElementById("userId").value || undefined,
         Name: document.getElementById("Name").value.trim(),
         Email: document.getElementById("email").value.trim(),
         Password: document.getElementById("password").value,
         Role: document.getElementById("Role").value
     };
+    
+    // Only include ID if we're editing
+    if (userId) {
+        payload.Id = userId;
+    }
+    
+    // Validation
     if (!payload.Name || !payload.Email) {
         alert("Please fill in name and email.");
         return;
     }
+    
+    // If creating new user, require password
+    if (!userId && !payload.Password) {
+        alert("Please enter a password for new user.");
+        return;
+    }
+    
     try {
         const res = await fetch("/Auth/RegisterUser", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
             credentials: "include",
             body: JSON.stringify(payload)
         });
+        
         const data = await res.json().catch(() => ({}));
+        
         if (res.ok) {
-            alert("✅ " + (data.message || "User saved"));
+            alert("✅ " + (data.message || "User saved successfully"));
             hideModal();
-            await loadUsers();
+            await loadUsers(); // Reload the list
         } else {
-            alert("❌ " + (data.message || "Error saving user"));
+            alert("❌ " + (data.message || `Error: ${res.status}`));
         }
     } catch (err) {
         console.error("Error saving user:", err);
-        alert("❌ Failed to save user");
+        alert("❌ Failed to save user - network error");
     }
 });
 
-/* INIT  */
+/* INIT */
 document.addEventListener("DOMContentLoaded", () => {
     loadMetrics();
     loadUsers();
+    
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + N to add new user
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+            e.preventDefault();
+            openModal(null);
+        }
+        
+        // Escape to close modal if open
+        if (e.key === 'Escape' && modal?.classList.contains('open')) {
+            hideModal();
+        }
+    });
 });
