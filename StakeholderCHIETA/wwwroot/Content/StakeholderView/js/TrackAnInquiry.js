@@ -1,4 +1,4 @@
-// TrackAnInquiry.js - Stakeholder View (Fixed)
+// TrackAnInquiry.js - Stakeholder View (Fixed to show advisor updates)
 class InquiryHistory {
     constructor() {
         this.inquiries = [];
@@ -26,7 +26,6 @@ class InquiryHistory {
     async loadInquiries() {
         try {
             console.log('Fetching inquiries from server...');
-            // FIXED: Changed to correct stakeholder endpoint
             const response = await fetch('/api/inquiry/stakeholder', {
                 method: 'GET',
                 headers: {
@@ -43,23 +42,24 @@ class InquiryHistory {
             const data = await response.json();
             console.log('Received data:', data);
 
-            // FIXED: Map backend response to expected format
+            // FIXED: Map backend response with description and updates
             this.inquiries = data.map(inq => ({
                 Id: inq.id,
                 ReferenceNumber: inq.reference,
                 Subject: inq.subject,
                 Category: inq.inquiryType,
                 Status: inq.status,
-                Description: '', // Backend doesn't return description in list
+                Description: inq.description || '', // FIXED: Now included from backend
                 SubmittedAt: inq.date,
                 LastUpdated: inq.date,
-                Updates: [], // Backend doesn't return updates in list
+                Updates: Array.isArray(inq.updates) ? inq.updates : [], // FIXED: Now included from backend
                 AssignedTo: inq.assignedTo
             })).filter(inq => this.validateInquiryData(inq));
 
             this.filteredInquiries = [...this.inquiries];
 
             console.log('Valid inquiries loaded:', this.inquiries.length);
+            console.log('Sample inquiry with updates:', this.inquiries[0]); // Debug log
 
         } catch (error) {
             console.error('Error loading inquiries:', error);
@@ -203,6 +203,8 @@ class InquiryHistory {
         const hasUpdates = inquiry.Updates && Array.isArray(inquiry.Updates) && inquiry.Updates.length > 0;
         const submittedDate = this.formatDate(inquiry.SubmittedAt);
 
+        console.log(`Inquiry ${inquiry.ReferenceNumber} has ${inquiry.Updates?.length || 0} updates`); // Debug
+
         card.innerHTML = `
             <div class="inquiry-header">
                 <div>
@@ -221,7 +223,7 @@ class InquiryHistory {
             
             ${hasUpdates ? `
                 <button class="response-btn" data-id="${inquiry.Id}">
-                    <span>See Response</span>
+                    <span>See Response (${inquiry.Updates.length})</span>
                     <span class="icon">▼</span>
                 </button>
             ` : '<div class="no-response-yet">No updates yet - your inquiry is being reviewed</div>'}
@@ -242,9 +244,17 @@ class InquiryHistory {
             return '<div class="no-updates">No updates yet. Our team will respond soon.</div>';
         }
 
-        return updates.map(update => {
+        // FIXED: Sort updates by timestamp (newest first)
+        const sortedUpdates = [...updates].sort((a, b) => {
+            const timeA = this.getTimestamp(a.Timestamp);
+            const timeB = this.getTimestamp(b.Timestamp);
+            return timeB - timeA; // Newest first
+        });
+
+        return sortedUpdates.map(update => {
             const updateDate = this.formatDate(update.Timestamp);
             const author = update.Author || 'CHIETA Support';
+            const message = update.Message || 'No message';
 
             return `
                 <div class="update update-employee">
@@ -252,7 +262,8 @@ class InquiryHistory {
                         <div class="update-author">${this.escapeHtml(author)}</div>
                         <div class="update-date">${updateDate}</div>
                     </div>
-                    <p class="update-content">${this.escapeHtml(update.Message || 'No message')}</p>
+                    <p class="update-content">${this.escapeHtml(message)}</p>
+                    ${update.Status ? `<div class="update-status">Status updated to: <strong>${this.escapeHtml(update.Status)}</strong></div>` : ''}
                 </div>
             `;
         }).join('');
@@ -267,10 +278,13 @@ class InquiryHistory {
                 this.classList.toggle('expanded');
                 updatesSection.classList.toggle('expanded');
 
+                const span = this.querySelector('span:first-child');
+                const text = span.textContent;
+
                 if (updatesSection.classList.contains('expanded')) {
-                    this.querySelector('span').textContent = 'Hide Response';
+                    span.textContent = text.replace('See Response', 'Hide Response');
                 } else {
-                    this.querySelector('span').textContent = 'See Response';
+                    span.textContent = text.replace('Hide Response', 'See Response');
                 }
             });
         });
@@ -332,7 +346,9 @@ class InquiryHistory {
             return date.toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
-                day: 'numeric'
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
             });
         } catch (e) {
             return 'Invalid date';
