@@ -116,23 +116,29 @@
             <div class="actions-grid">
                 <div class="action-card">
                     <div class="card-hero appointments-hero" aria-hidden="true"></div>
-                    <h3><a asp-controller="AdvisorAppointment" asp-action="AppointmentTracker">Check your appointments</a></h3>
-                    <p>You can check all the appointments made with you. Each appointment will have the option to accept or decline.</p>
-                    <button class="btn" data-nav="@Url.Action("AppointmentTracker", "AdvisorAppointment")">View</button>
+                    <div class="action-card-content">
+                        <h3><a href="@Url.Action("AppointmentTracker", "AdvisorAppointment")">Check your appointments</a></h3>
+                        <p>You can check all the appointments made with you. Each appointment will have the option to accept or decline.</p>
+                        <button class="btn" data-nav="@Url.Action("AppointmentTracker", "AdvisorAppointment")">View</button>
+                    </div>
                 </div>
 
                 <div class="action-card">
                     <div class="card-hero inquiries-hero" aria-hidden="true"></div>
-                    <h3><a asp-controller="Inquiry" asp-action="Tracking">Track Your Inquiries</a></h3>
-                    <p>All the inquiries assigned to you can be accessed via this page and updates can be made.</p>
-                    <button class="btn" data-nav="@Url.Action("Tracking", "Inquiry")">Track</button>
+                    <div class="action-card-content">
+                        <h3><a href="@Url.Action("Tracking", "Inquiry")">Track Your Inquiries</a></h3>
+                        <p>All the inquiries assigned to you can be accessed via this page and updates can be made.</p>
+                        <button class="btn" data-nav="@Url.Action("Tracking", "Inquiry")">Track</button>
+                    </div>
                 </div>
 
                 <div class="action-card">
                     <div class="card-hero spaces-hero" aria-hidden="true"></div>
-                    <h3><a asp-controller="AdvisorAppointment" asp-action="BoardroomBooking">Book an Office Space</a></h3>
-                    <p>Book the office that meets the needs of all your meetings</p>
-                    <button class="btn" data-nav="@Url.Action("BoardroomBooking", "AdvisorAppointment")">Book</button>
+                    <div class="action-card-content">
+                        <h3><a href="@Url.Action("BoardroomBooking", "AdvisorAppointment")">Book an Office Space</a></h3>
+                        <p>Book the office that meets the needs of all your meetings</p>
+                        <button class="btn" data-nav="@Url.Action("BoardroomBooking", "AdvisorAppointment")">Book</button>
+                    </div>
                 </div>
             </div>
         </section>
