@@ -289,6 +289,29 @@ a {
 
 @media (min-width: 1024px) {
   .actions-grid {
+      grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .actions-grid {
+      grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* For pages with 3 cards (Employee) */
+.actions-grid.three-cards {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .actions-grid.three-cards {
+      grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .actions-grid.three-cards {
       grid-template-columns: repeat(3, 1fr);
   }
 }
@@ -332,6 +355,7 @@ a {
   background: linear-gradient(135deg, rgba(59, 36, 88, 0.2), rgba(200, 146, 43, 0.2));
 }
 
+/* Employee Hero Images */
 .appointments-hero {
   background-image: url('https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80');
 }
@@ -342,6 +366,23 @@ a {
 
 .spaces-hero {
   background-image: url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80');
+}
+
+/* Stakeholder Hero Images */
+.appointment-book-hero {
+  background-image: url('https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80');
+}
+
+.appointment-track-hero {
+  background-image: url('https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80');
+}
+
+.inquiry-log-hero {
+  background-image: url('https://images.unsplash.com/photo-1559028012-481c04fa702d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80');
+}
+
+.inquiry-track-hero {
+  background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80');
 }
 
 .action-card-content {
@@ -558,6 +599,15 @@ a {
   
   .tagline {
       font-size: 16px;
+  }
+  
+  /* Mobile grid adjustments */
+  .actions-grid {
+      grid-template-columns: 1fr;
+  }
+  
+  .actions-grid.three-cards {
+      grid-template-columns: 1fr;
   }
 }
 
