@@ -1,0 +1,117 @@
+@{
+    Layout = null;
+}
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>My Appointments — CHIETA</title>
+  <link rel="stylesheet" href="~/Content/StakeholderView/AppointmentTracker.css"/>
+</head>
+<body>
+  <!-- Decorative circles as full page background -->
+  <div class="decor blob-right" aria-hidden="true"></div>
+  <div class="decor arc-left" aria-hidden="true"></div>
+  <div class="decor arc-right-bottom" aria-hidden="true"></div>
+
+   <!-- Header -->
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <!-- Left: Brand -->
+            <div class="brand">
+                <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
+                <div class="divider"></div>
+                <div class="page-title">Track Appointments</div>
+            </div>
+
+            <!-- Center: Navigation -->
+            <div class="center-nav">
+                <!-- Appointments Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="appointments-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span>Appointments</span>
+                    </button>
+                    <nav class="nav-popover" id="appointments-menu" role="menu" hidden>
+                        <a role="menuitem" href="/Inquiry/TrackAppointment">My Appointments</a>
+                        <a role="menuitem" href="/Appointment/Index">Schedule New</a>
+                    </nav>
+                </div>
+
+                <!-- Inquiries Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="inquiries-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span>Inquiries</span>
+                    </button>
+                    <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeInquiryTracker/index.html">Track Inquiries</a>
+                        <a role="menuitem" href="#">New Inquiry</a>
+                    </nav>
+                </div>
+
+                <!-- Spaces Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="spaces-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span>Spaces</span>
+                    </button>
+                    <nav class="nav-popover" id="spaces-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeBoardroomBooking/index.html">Book Space</a>
+                        <a role="menuitem" href="#">My Bookings</a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Right: Settings -->
+            <div class="settings-nav" style="position: relative;">
+                <button class="nav-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                    <span class="hide-sm">Settings</span>
+                </button>
+                <nav class="nav-popover" id="settings-menu" role="menu" hidden>
+                    <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
+                    <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
+                    <div class="menu-sep" role="separator"></div>
+                    <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
+                        <button type="submit" class="danger">Sign out</button>
+                    </form>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+  <main class="container">
+    <div class="dashboard-header">
+      <h1>My Appointments</h1>
+      <p>View and manage your scheduled appointments</p>
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">All Appointments</button>
+      <button class="filter-btn" data-filter="upcoming">Upcoming</button>
+      <button class="filter-btn" data-filter="pending">Pending</button>
+      <button class="filter-btn" data-filter="completed">Completed</button>
+      <button class="filter-btn" data-filter="cancelled">Cancelled</button>
+    </div>
+
+    <div class="appointments-grid" id="appointmentsContainer">
+      <!-- Appointments will be loaded here dynamically -->
+    </div>
+  </main>
+
+  <!-- Cancel Appointment Modal -->
+  <div class="modal" id="cancelModal">
+    <div class="modal-content">
+      <h3 class="modal-title">Cancel Appointment</h3>
+      <p class="modal-message" id="modalMessage">Are you sure you want to cancel this appointment? This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="closeModal">Keep Appointment</button>
+        <button class="modal-btn confirm" id="confirmCancel">Yes, Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-band"><div class="gold-box"></div></div>
+  </footer>
+  <script src="~/Content/StakeholderView/js/StakeholderAppointmentsTracking.js"></script> 
+</body>
+</html>

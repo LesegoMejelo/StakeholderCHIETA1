@@ -8,32 +8,40 @@ using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Linq;
+using StakeholderCHIETA_X.Models.DTOs.Auth;
 
 namespace StakeholderCHIETA.Controllers
 {
     public class AuthController : Controller
     {
+        #region Dependencies & Fields
         private readonly FirebaseAuth _auth;
         private readonly FirestoreDb _firestoreDb;
+        #endregion
 
+        #region Constructor
         public AuthController(FirebaseAuth auth, FirestoreDb firestoreDb)
         {
             _auth = auth;
             _firestoreDb = firestoreDb;
         }
+        #endregion
 
+        #region Views (Login Page)
         // GET: /Auth/Login
         [HttpGet]
         public IActionResult Login() => View();
+        #endregion
 
+        #region Authentication (Login / Logout)
         // POST: /Auth/Login
-
         [HttpPost]
         public async Task<IActionResult> Login([FromForm] string idToken)
         {
             try
             {
-                var decodedToken = await _auth.VerifyIdTokenAsync(idToken);
+                var decodedToken = await _auth.VerifyIdTokenAsync(idToken);  //authenticity, integrity and expiration of token
                 var firebaseUid = decodedToken.Uid;
 
                 // Get docs from both collections
@@ -112,19 +120,10 @@ namespace StakeholderCHIETA.Controllers
             // Redirect back to login page
             return RedirectToAction("Login", "Auth");
         }
+        #endregion
 
 
-
-        // POST: /Auth/Register (only Admins)
-        public class RegisterUserDto
-        {
-            public string Email { get; set; }
-            public string Password { get; set; }
-            public string Name { get; set; }
-            public string Role { get; set; }
-            public string Status { get; set; }
-        }
-
+        #region Admin APIs (Register / Get Users)
         [HttpPost("RegisterUser")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> RegisterUser([FromBody] RegisterUserDto model)
@@ -133,7 +132,6 @@ namespace StakeholderCHIETA.Controllers
                 string.IsNullOrEmpty(model.Password) ||
                 string.IsNullOrEmpty(model.Name) ||
                 string.IsNullOrEmpty(model.Role))
-               
             {
                 return BadRequest(new { message = "All fields are required." });
             }
@@ -155,7 +153,7 @@ namespace StakeholderCHIETA.Controllers
                     { "Name", model.Name },
                     { "Role", role },
                     { "email", model.Email },
-                    { "password", model.Password },                     
+                    { "password", model.Password },
                     { "createdAt", Timestamp.GetCurrentTimestamp() }
                 };
 
@@ -168,7 +166,6 @@ namespace StakeholderCHIETA.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
-
 
         [HttpGet("GetUsers")]
         [Authorize(Roles = "Admin")]
@@ -183,21 +180,20 @@ namespace StakeholderCHIETA.Controllers
                     .Select(d => new
                     {
                         id = d.Id,
-                        name = d.ContainsField("Name") ? d.GetValue<string>("Name") : "",                       
+                        name = d.ContainsField("Name") ? d.GetValue<string>("Name") : "",
                         email = d.ContainsField("email") ? d.GetValue<string>("email") : "",
-                        role = d.ContainsField("Role") ? d.GetValue<string>("Role") : ""                        
+                        role = d.ContainsField("Role") ? d.GetValue<string>("Role") : ""
                     })
                     .ToList(); // materialize the result
 
                 return Ok(users);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error fetching users", error = ex.Message });
             }
         }
-
-
-
+        #endregion
     }
 }
+

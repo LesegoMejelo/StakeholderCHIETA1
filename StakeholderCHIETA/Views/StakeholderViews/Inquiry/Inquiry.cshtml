@@ -1,103 +1,227 @@
 ﻿@{
     Layout = null;
 }
-
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Inquiry Page</title>
-    <link rel="stylesheet" href="~/Content/StakeholderView/Style.css" />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Submit an Inquiry — CHIETA</title>
+    <link rel="stylesheet" href="~/Content/StakeholderView/LogAnInquiry.css" />
 </head>
 <body>
-
-    <div class="navbar">
-        <img src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png">
-    </div>
-
-    <div class="container">
-        <div class="title">Log an Inquiry</div>
-
-        <!-- Inquiry Type Dropdown -->
-        <div class="dropdown">
-            <label for="inquiryType">Select Inquiry Type:</label>
-            <select id="inquiryType">
-                <option value="">-- Choose an option --</option>
-                <option value="Feedback Follow-Up">Feedback Follow-Up</option>
-                <option value="Training Availability">Training Availability</option>
-                <option value="Accreditation and Compliance">Accreditation and Compliance</option>
-                <option value="Funding and Grants">Funding and Grants</option>
-                <option value="Boardroom/Facility Use">Boardroom/Facility Use</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-
-        <!--Comment section-->
-        <div class="Comment-section">
-            <label for="issue">Describe Issue:</label>
-            <textarea id="issue" placeholder="Type your issue here..."></textarea>
-
-            Message and Name Input -->
-
-            <div class="Comment-section NameLabel"
-            <label for="nameInput">Your Name:</label>
-            <input type="text" id="nameInput" placeholder="Your name" />
+   <!-- Header -->
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <!-- Left: Brand -->
+            <div class="brand">
+                <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
+                <div class="divider"></div>
+                <div class="page-title">Log an Inquiry</div>
             </div>
 
+            <!-- Center: Navigation -->
+            <div class="center-nav">
+                <!-- Appointments Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="appointments-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span>Appointments</span>
+                    </button>
+                    <nav class="nav-popover" id="appointments-menu" role="menu" hidden>
+                        <a role="menuitem" href="/Inquiry/TrackAppointment">My Appointments</a>
+                        <a role="menuitem" href="/Appointment/Index">Schedule New</a>
+                    </nav>
+                </div>
 
-            <!--Submit Button-->
-            <button id="submitBtn" type="button">Submit</button>
+                <!-- Inquiries Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="inquiries-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span>Inquiries</span>
+                    </button>
+                    <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeInquiryTracker/index.html">Track Inquiries</a>
+                        <a role="menuitem" href="#">New Inquiry</a>
+                    </nav>
+                </div>
 
-            <!--Confirmation message-->
+                <!-- Spaces Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="spaces-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span>Spaces</span>
+                    </button>
+                    <nav class="nav-popover" id="spaces-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeBoardroomBooking/index.html">Book Space</a>
+                        <a role="menuitem" href="#">My Bookings</a>
+                    </nav>
+                </div>
+            </div>
 
-            <div id="confirmationMessage" class="cloud-message" style="display: none;">
-                Your inquiry has been submitted. Please expect to hear from us within the next 3 business days.
+            <!-- Right: Settings -->
+            <div class="settings-nav" style="position: relative;">
+                <button class="nav-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                    <span class="hide-sm">Settings</span>
+                </button>
+                <nav class="nav-popover" id="settings-menu" role="menu" hidden>
+                    <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
+                    <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
+                    <div class="menu-sep" role="separator"></div>
+                    <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
+                        <button type="submit" class="danger">Sign out</button>
+                    </form>
+                </nav>
             </div>
         </div>
-    </div>
+    </header>
 
-    <script>
-        document.getElementById("submitBtn").addEventListener("click", async function () {
-            const name = document.getElementById("nameInput").value.trim();
-            const message = document.getElementById("issue").value.trim();
-            const inquiryType = document.getElementById("inquiryType").value;
+    <!-- Decorative shapes -->
+    <div class="decor blob-right" aria-hidden="true"></div>
+    <div class="decor arc-left" aria-hidden="true"></div>
+    <div class="decor arc-right-bottom" aria-hidden="true"></div>
 
-            // Basic validation
-            if (!message || !inquiryType) {
-                alert("Please fill in all fields.");
-                return;
-            }
+    <main class="container narrow">
+        <!-- Why this page -->
+        <section class="intro">
+            <h1>We're here to help</h1>
+            <p class="muted">Log a question or issue about grants, bursaries, skills programmes, or compliance. You'll get a reference number when submitted.</p>
+        </section>
 
-            try {
-                const response = await fetch("/api/inquiry", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    },
-                    body: new URLSearchParams({
-                        name: name || "Anonymous",
-                        message: message,
-                        inquiryType: inquiryType
-                    })
-                });
+        <!-- Progress -->
+        <section class="wizard">
+            <div class="steps" role="tablist" aria-label="Inquiry steps">
+                <button class="step current" data-step="1" role="tab" aria-selected="true"><span>1</span> Category</button>
+                <button class="step" data-step="2" role="tab" aria-selected="false"><span>2</span> Details & Review</button>
+            </div>
+            <div class="bar"><div class="bar__fill" id="progressFill" style="width:50%"></div></div>
+        </section>
 
-                const result = await response.json();
-                console.log("Server response:", result);
+        <!-- Panels -->
+        <form id="inquiryForm" class="cards" novalidate>
+            <!-- Step 1: Category -->
+            <section class="card panel active" data-panel="1" aria-labelledby="catTitle">
+                <div class="card__hd">
+                    <div>
+                        <div id="catTitle" class="card__title">Choose a category</div>
+                        <div class="muted" style="font-size:.92rem">This helps us route your inquiry to the right team.</div>
+                    </div>
+                </div>
+                <div class="card__bd">
+                    <div class="radio-grid" role="radiogroup" aria-label="Category">
+                        <label class="radio"><input type="radio" name="category" value="Grants" required>Grants</label>
+                        <label class="radio"><input type="radio" name="category" value="Bursaries">Bursaries</label>
+                        <label class="radio"><input type="radio" name="category" value="Skills Development">Skills Development</label>
+                        <label class="radio"><input type="radio" name="category" value="Compliance">Compliance</label>
+                        <label class="radio"><input type="radio" name="category" value="Site Visit">Site Visit</label>
+                        <label class="radio"><input type="radio" name="category" value="Other">Other</label>
+                    </div>
 
-                // Show confirmation
-                document.getElementById("confirmationMessage").style.display = "block";
+                    <div class="form__row">
+                        <label for="subject">Subject <span class="req">*</span></label>
+                        <input type="text" id="subject" name="subject" placeholder="E.g. Query about discretionary grant window" required maxlength="120">
+                        <div class="help-line"><span id="subjectCount">0</span>/120</div>
+                    </div>
 
-                // Clear form
-                document.getElementById("nameInput").value = "";
-                document.getElementById("issue").value = "";
-                document.getElementById("inquiryType").value = "";
+                    <!-- In your Inquiry.cshtml, update the advisor select section: -->
 
-            } catch (error) {
-                console.error("Submission failed:", error);
-                alert("Something went wrong. Please try again.");
-            }
-        });
-    </script>
+                    <div class="form__row">
+                        <label for="advisorSelect">Assign to Advisor <span class="req">*</span></label>
+                        <!-- Change name="advisorSelect" to name="assignedAdvisorId" -->
+                        <select id="advisorSelect" name="assignedAdvisorId" required>
+                            <option value="">Select an advisor</option>
+                            <!-- Will be populated by JavaScript -->
+                        </select>
+                        <div class="help-line">Choose which advisor should handle this inquiry</div>
+                    </div>
 
+                    <div class="form__row">
+                        <label>Quick tags (optional)</label>
+                        <div id="tagChips" class="chip-row"></div>
+                    </div>
+
+              <!--      <div class="actions">
+                        <button type="button" class="btn" data-next="2">Next</button>
+                    </div> -->
+                </div>
+            </section>
+
+            <!-- Step 2: Details & Review -->
+            <section class="card panel" data-panel="2" aria-labelledby="detailsTitle">
+                <div class="card__hd">
+                    <div>
+                        <div id="detailsTitle" class="card__title">Details & review</div>
+                        <div class="muted" style="font-size:.92rem">Tell us what happened and what outcome you're hoping for. Review before submitting.</div>
+                    </div>
+                </div>
+                <div class="card__bd">
+                    <div class="form__row">
+                        <label for="description">Description <span class="req">*</span></label>
+                        <textarea id="description" name="description" rows="6" placeholder="Provide context, steps taken, and any relevant IDs…" required></textarea>
+                    </div>
+
+                    <div class="two-col">
+                        <div class="form__row">
+                            <label for="desired">Desired outcome</label>
+                            <input type="text" id="desired" name="desired" placeholder="E.g. Confirmation of required documents" />
+                        </div>
+                        <div class="form__row">
+                            <label for="relatedDate">Related date (optional)</label>
+                            <input type="date" id="relatedDate" name="relatedDate" />
+                        </div>
+                    </div>
+
+                    <div class="form__row">
+                        <label for="attachment">Attachments (optional)</label>
+                        <input type="file" id="attachment" name="attachment" accept=".pdf,.doc,.docx,.png,.jpg" multiple>
+                        <div class="help-line">Max 5 files, 5&nbsp;MB each. Do not upload sensitive personal data.</div>
+                        <ul id="fileList" class="file-list"></ul>
+                    </div>
+
+                    <div class="form__row">
+                        <label class="check"><input type="checkbox" id="callback" name="callback"> I'd like a follow-up call</label>
+                    </div>
+
+                    <div class="review">
+                        <h3>Preview</h3>
+                        <div id="reviewBox" class="review-box"></div>
+                    </div>
+
+                    <div class="actions">
+                        <button type="button" class="btn ghost" data-prev="1">Back</button>
+                        <button type="submit" class="btn">Submit inquiry</button>
+                    </div>
+                </div>
+            </section>
+        </form>
+
+        <!-- Success screen -->
+        <section class="card success-panel" id="successPanel" hidden>
+            <div class="card__hd">
+                <div>
+                    <div class="card__title">Inquiry submitted</div>
+                    <div class="muted" style="font-size:.92rem">Your reference number is below.</div>
+                </div>
+            </div>
+            <div class="card__bd">
+                <div class="success-box">
+                    <div class="ref-line">Reference: <strong id="refCode">—</strong> <button id="copyRef" class="btn ghost small">Copy</button></div>
+                    <div id="successSummary" class="muted"></div>
+                    <div class="success-actions">
+                        <a class="btn ghost" id="newInquiry" href="#">Log another</a>
+                        <a class="btn">
+                        <a asp-controller="Inquiry" asp-action="InquiryTracking"> Track an Inquiry </a>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-band"><div class="gold-box"></div></div>
+    </footer>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite"><span id="toastMsg">Saved</span></div>
+
+    <script src="~/Content/StakeholderView/js/LogAnInquiry.js"></script>
 </body>
 </html>

@@ -1,5 +1,4 @@
-﻿
-@{
+﻿@{
     Layout = null;
 }
 
@@ -8,33 +7,70 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Stakeholder Landing Page</title>
-    <link rel="stylesheet" href="~/Content/EmployeeView/EmployeeLandingPage.css" />
+    <link rel="stylesheet" href="~/Content/EmployeeView/EmployeeLandingPage.css" asp-append-version="true" />
 </head>
 <body>
-    <!-- Top Bar -->
+
+    <!-- Header -->
     <header class="topbar">
         <div class="container topbar-inner">
-            <img class="logo" src="https://acfesa.co.za/sites/default/files/inline-images/CHIETA%20Logo.png" alt="CHIETA logo" />
+            <!-- Left: Brand -->
+            <div class="brand">
+                <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
+                <div class="divider"></div>
+                <div class="page-title">Home</div>
+            </div>
 
-            <!-- Settings in header -->
-            <nav class="header-actions">
-                <div class="menu" id="settings">
-                    <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-                        <span class="hide-sm">Settings</span>
+            <!-- Center: Navigation -->
+            <div class="center-nav">
+                <!-- Appointments Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="appointments-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span>Appointments</span>
                     </button>
-
-                    <div class="menu-popover" id="settings-menu" role="menu" hidden>
-                        <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
-                        <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
-                        <div class="menu-sep" role="separator"></div>
-                        <div class="menu-sep" role="separator"></div>
-                        <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
-                            <button type="submit" class="danger">Sign out</button>
-                        </form>
-
-                    </div>
+                    <nav class="nav-popover" id="appointments-menu" role="menu" hidden>
+                        <a role="menuitem" href="/Inquiry/TrackAppointment">My Appointments</a>
+                        <a role="menuitem" href="/Appointment/Index">Schedule New</a>
+                    </nav>
                 </div>
-            </nav>
+
+                <!-- Inquiries Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="inquiries-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span>Inquiries</span>
+                    </button>
+                    <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeInquiryTracker/index.html">Track Inquiries</a>
+                        <a role="menuitem" href="#">New Inquiry</a>
+                    </nav>
+                </div>
+
+                <!-- Spaces Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="spaces-btn" aria-haspopup="menu" aria-expanded="false">
+                        <span>Spaces</span>
+                    </button>
+                    <nav class="nav-popover" id="spaces-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeBoardroomBooking/index.html">Book Space</a>
+                        <a role="menuitem" href="#">My Bookings</a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Right: Settings -->
+            <div class="settings-nav" style="position: relative;">
+                <button class="nav-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
+                    <span class="hide-sm">Settings</span>
+                </button>
+                <nav class="nav-popover" id="settings-menu" role="menu" hidden>
+                    <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
+                    <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
+                    <div class="menu-sep" role="separator"></div>
+                    <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
+                        <button type="submit" class="danger">Sign out</button>
+                    </form>
+                </nav>
+            </div>
         </div>
     </header>
 
@@ -78,7 +114,17 @@
                     <!-- Book an appointment-->
                  <h3> <a asp-controller="Appointment" asp-action="Index">Book an Appointment</a> </h3>
                     <p>You can make an appointment with your Skills Advisor while communicating any specific information. From the booking, a confirmation will be sent along with an invite, depending on specifics.</p>
-                    <button class="btn" data-nav="appointment-booking.html">Go</button>
+                    <button class="btn">
+                        <a asp-controller="Appointment" asp-action="Index">Book</a>
+                    </button>
+                </div>
+
+                 <!--Track Appointments-->
+                <div class="action-card">
+                    <div class="card-hero" aria-hidden="true"></div>
+                    <h3><a asp-controller="Inquiry" asp-action="TrackAppointment">Track your appointments</a></h3>
+                    <p>You can track the status of all your appointments with the option of cancelling, if necessary</p>
+                    <button class="btn" data-nav="inquiry-track.html">Go</button>
                 </div>
 
                 <!-- Log an Inquiry -->
@@ -86,15 +132,32 @@
                     <div class="card-hero" aria-hidden="true"></div>
                     <h3> <a asp-controller="Inquiry"  asp-action="Inquiry" > Log an Inquiry </a></h3>
                     <p>If you have any questions regarding your advisory, you can log an inquiry with your advisor.</p>
-                    <button class="btn" data-nav="inquiry-create.html">Go</button>
+                    <button class="btn">
+                        <a asp-controller="Inquiry" asp-action="Inquiry">Log</a>
+                    </button>
                 </div>
+
                 <!-- Track an Inquiry -->
                 <div class="action-card">
                     <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a href="inquiry-track.html">Track an Inquiry</a></h3>
-                    <p>You can track all the inquiries logged and see the progress of each one.</p>
-                    <button class="btn" data-nav="inquiry-track.html">Go</button>
+                    <h3> <a asp-controller="Inquiry" asp-action="InquiryTracking"> Track an Inquiry </a></h3>
+                    <p>If you have logged an inquiry, you can now track it.</p>
+                    <button class="btn">
+                        <a asp-controller="Inquiry" asp-action="Tracking">Track</a>
+                    </button>
                 </div>
+                
+                <!--Provide Feedback
+                <div class="action-card">
+                    <div class="card-hero" aria-hidden="true"></div>
+                    <h3><a asp-controller="Inquiry" asp-action="Feedback">Rate your Advisor</a></h3>
+                    <p>You can rate the service provided in your inquiries and appointments.</p>
+                    <button class="btn">
+                        <a asp-controller="Inquiry" asp-action="Feedback">Rate</a>
+                    </button>
+                </div>
+-->
+                
             </div>
         </section>
     </main>
@@ -105,6 +168,6 @@
         <div class="gold-box"></div>
     </footer>
 
-    <script src="~/Content/EmployeeView/js/EmployeeLanding.js"></script>
+    <script src="~/Content/StakeholderView/js/StakeholderLanding.js"></script>
 </body>
 </html>
