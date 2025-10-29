@@ -19,13 +19,17 @@ document.addEventListener('DOMContentLoaded', () => {
           if (button && menuElement) {
               button.addEventListener('click', (e) => {
                   e.stopPropagation();
+                  e.preventDefault();
                   
                   // Close all other menus
                   navButtons.forEach(({ menu: otherMenu }) => {
                       if (otherMenu !== menu) {
                           const otherMenuElement = document.getElementById(otherMenu);
                           const otherButton = document.getElementById(otherMenu.replace('-menu', '-btn'));
-                          if (otherMenuElement) otherMenuElement.hidden = true;
+                          if (otherMenuElement) {
+                              otherMenuElement.hidden = true;
+                              otherMenuElement.style.display = 'none';
+                          }
                           if (otherButton) otherButton.setAttribute('aria-expanded', 'false');
                       }
                   });
@@ -34,20 +38,28 @@ document.addEventListener('DOMContentLoaded', () => {
                   const isExpanded = button.getAttribute('aria-expanded') === 'true';
                   button.setAttribute('aria-expanded', !isExpanded);
                   menuElement.hidden = isExpanded;
+                  menuElement.style.display = isExpanded ? 'none' : 'block';
               });
           }
       });
 
       // Close menus when clicking outside
-      document.addEventListener('click', () => {
-          navButtons.forEach(({ btn, menu }) => {
-              const button = document.getElementById(btn);
-              const menuElement = document.getElementById(menu);
-              if (button && menuElement) {
-                  button.setAttribute('aria-expanded', 'false');
-                  menuElement.hidden = true;
-              }
-          });
+      document.addEventListener('click', (e) => {
+          // Check if click is outside any nav button or menu
+          const isNavButton = e.target.closest('.nav-btn');
+          const isNavMenu = e.target.closest('.nav-popover');
+          
+          if (!isNavButton && !isNavMenu) {
+              navButtons.forEach(({ btn, menu }) => {
+                  const button = document.getElementById(btn);
+                  const menuElement = document.getElementById(menu);
+                  if (button && menuElement) {
+                      button.setAttribute('aria-expanded', 'false');
+                      menuElement.hidden = true;
+                      menuElement.style.display = 'none';
+                  }
+              });
+          }
       });
 
       // Prevent menus from closing when clicking inside them
@@ -59,12 +71,31 @@ document.addEventListener('DOMContentLoaded', () => {
               });
           }
       });
+
+      // Close menu when clicking a menu item
+      navButtons.forEach(({ menu }) => {
+          const menuElement = document.getElementById(menu);
+          if (menuElement) {
+              const menuItems = menuElement.querySelectorAll('a[role="menuitem"]');
+              menuItems.forEach(item => {
+                  item.addEventListener('click', () => {
+                      const button = document.getElementById(menu.replace('-menu', '-btn'));
+                      if (button) {
+                          button.setAttribute('aria-expanded', 'false');
+                      }
+                      menuElement.hidden = true;
+                      menuElement.style.display = 'none';
+                  });
+              });
+          }
+      });
   }
 
   // Action card buttons navigation
   function initializeActionButtons() {
       document.querySelectorAll('.action-card .btn[data-nav]').forEach(button => {
-          button.addEventListener('click', function() {
+          button.addEventListener('click', function(e) {
+              e.preventDefault();
               const target = this.getAttribute('data-nav');
               if (target) {
                   window.location.href = target;
