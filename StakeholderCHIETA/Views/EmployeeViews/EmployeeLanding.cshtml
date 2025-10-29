@@ -4,12 +4,13 @@
     var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
     var userName = User.Identity?.Name ?? "User";
 }
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Advisor Landing Page</title>
-    <link rel="stylesheet" href="~/Content/EmployeeView/EmployeeLandingPage.css" />
+    <link rel="stylesheet" href="~/Content/EmployeeView/EmployeeLandingPage.css" asp-append-version="true"/>
 </head>
 
 <body>
@@ -18,7 +19,7 @@
     <div class="container topbar-inner">
       <!-- Left: Brand -->
       <div class="brand">
-        <img class="logo" src="/logo.png" alt="CHIETA logo" />
+        <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
         <div class="divider"></div>
         <div class="page-title">Home</div>
       </div>
@@ -26,9 +27,8 @@
       <!-- Center: Navigation -->
       <div class="center-nav">
         <!-- Appointments Navigation -->
-        <div style="position: relative;">
+        <div class="nav-dropdown">
           <button class="nav-btn" id="appointments-btn" aria-haspopup="menu" aria-expanded="false">
-       
             <span>Appointments</span>
           </button>
           <nav class="nav-popover" id="appointments-menu" role="menu" hidden>
@@ -39,9 +39,8 @@
         </div>
 
         <!-- Inquiries Navigation -->
-        <div style="position: relative;">
+        <div class="nav-dropdown">
           <button class="nav-btn" id="inquiries-btn" aria-haspopup="menu" aria-expanded="false">
-        
             <span>Inquiries</span>
           </button>
           <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
@@ -52,9 +51,8 @@
         </div>
 
         <!-- Spaces Navigation -->
-        <div style="position: relative;">
+        <div class="nav-dropdown">
           <button class="nav-btn" id="spaces-btn" aria-haspopup="menu" aria-expanded="false">
- 
             <span>Spaces</span>
           </button>
           <nav class="nav-popover" id="spaces-menu" role="menu" hidden>
@@ -68,16 +66,15 @@
       <!-- Right: Settings -->
       <div class="settings-nav">
         <button class="nav-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-         
           <span class="hide-sm">Settings</span>
         </button>
         <nav class="nav-popover" id="settings-menu" role="menu" hidden>
           <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
           <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
           <div class="menu-sep" role="separator"></div>
-                        <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
-                            <button type="submit" class="danger">Sign out</button>
-                        </form>            
+          <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
+            <button type="submit" class="danger">Sign out</button>
+          </form>            
         </nav>
       </div>
     </div>
@@ -118,31 +115,30 @@
 
             <div class="actions-grid">
                 <div class="action-card">
-                    <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a asp-controller="AdvisorAppointment" asp-action="AppointmentTracker">Check your appointments</a></h3>
-                    <p>You can check all the appointments made with you. Each appointment will have the option to accept or decline.</p>
-                    <button class="btn" data-nav="@Url.Action("AppointmentTracker", "AdvisorAppointment")">View</button>
+                    <div class="card-hero appointments-hero" aria-hidden="true"></div>
+                    <div class="action-card-content">
+                        <h3><a href="@Url.Action("AppointmentTracker", "AdvisorAppointment")">Check your appointments</a></h3>
+                        <p>You can check all the appointments made with you. Each appointment will have the option to accept or decline.</p>
+                        <button class="btn" data-nav="@Url.Action("AppointmentTracker", "AdvisorAppointment")">View</button>
+                    </div>
                 </div>
 
                 <div class="action-card">
-                    <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a asp-controller="Inquiry" asp-action="Tracking">Track Your Inquiries</a></h3>
-                    <p>All the inquiries assigned to you can be accessed via this page and updates can be made.</p>
-                    <button class="btn" data-nav="@Url.Action("Tracking", "Inquiry")">Track</button>
+                    <div class="card-hero inquiries-hero" aria-hidden="true"></div>
+                    <div class="action-card-content">
+                        <h3><a href="@Url.Action("Tracking", "Inquiry")">Track Your Inquiries</a></h3>
+                        <p>All the inquiries assigned to you can be accessed via this page and updates can be made.</p>
+                        <button class="btn" data-nav="@Url.Action("Tracking", "Inquiry")">Track</button>
+                    </div>
                 </div>
 
                 <div class="action-card">
-                    <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a asp-controller="AdvisorAppointment" asp-action="BoardroomBooking">Book an Office Space</a></h3>
-                    <p>Book the office that meets the needs of all your meetings</p>
-                    <button class="btn" data-nav="@Url.Action("BoardroomBooking", "AdvisorAppointment")">Book</button>
-                </div>
-
-                <div class="action-card">
-                    <div class="card-hero" aria-hidden="true"></div>
-                    <h3><a asp-controller="AdvisorAppointment" asp-action="BoardroomBookingTracker">Track your bookings</a></h3>
-                    <p>Track all your bookings to check your dates or cancel your bookings</p>
-                    <button class="btn" data-nav="@Url.Action("BoardroomBooking", "AdvisorAppointment")">Book</button>
+                    <div class="card-hero spaces-hero" aria-hidden="true"></div>
+                    <div class="action-card-content">
+                        <h3><a href="@Url.Action("BoardroomBooking", "AdvisorAppointment")">Book an Office Space</a></h3>
+                        <p>Book the office that meets the needs of all your meetings</p>
+                        <button class="btn" data-nav="@Url.Action("BoardroomBooking", "AdvisorAppointment")">Book</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -153,17 +149,6 @@
         <div class="footer-band"></div>
         <div class="gold-box"></div>
     </footer>
-
-    <script>
-        // Make advisor info available to JavaScript for debugging
-        window.currentUser = {
-            userId: '@userId',
-            name: '@userName'
-        };
-        console.log("=== Current User Info ===");
-        console.log("User ID:", window.currentUser.userId);
-        console.log("User Name:", window.currentUser.name);
-    </script>
 
     <script src="~/Content/EmployeeView/js/EmployeeLanding.js"></script>
 </body>

@@ -3,188 +3,192 @@
 }
 <html>
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Book Space — CHIETA</title>
-  <link rel="stylesheet" href="~/Content/EmployeeView/BoardroomBooking.css"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Book Space — CHIETA</title>
+    <link rel="stylesheet" href="~/Content/EmployeeView/BoardroomBooking.css" />
 </head>
 <body>
-  <!-- Header -->
-<!-- Header -->
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <!-- Left: Brand -->
-      <div class="brand">
-        <img class="logo" src="/logo.png" alt="CHIETA logo" />
-        <div class="divider"></div>
-        <div class="page-title">Boardroom Booking</div>
-      </div>
-
-      <!-- Center: Navigation -->
-      <div class="center-nav">
-        <!-- Appointments Navigation -->
-        <div style="position: relative;">
-          <button class="nav-btn" id="appointments-btn" aria-haspopup="menu" aria-expanded="false">
-       
-            <span>Appointments</span>
-          </button>
-          <nav class="nav-popover" id="appointments-menu" role="menu" hidden>
-            <a role="menuitem" href="/EmployeeView/EmployeeAppointmentTracker/Index.html">My Appointments</a>
-            <a role="menuitem" href="appointment-list.html">Upcoming Appointments</a>
-            <a role="menuitem" href="#">Schedule New</a>
-          </nav>
-        </div>
-
-        <!-- Inquiries Navigation -->
-        <div style="position: relative;">
-          <button class="nav-btn" id="inquiries-btn" aria-haspopup="menu" aria-expanded="false">
-        
-            <span>Inquiries</span>
-          </button>
-          <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
-            <a role="menuitem" href="/EmployeeView/EmployeeInquiryTracker/index.html">Track Inquiries</a>
-            <a role="menuitem" href="inquiry-list.html">Recent Inquiries</a>
-            <a role="menuitem" href="#">New Inquiry</a>
-          </nav>
-        </div>
-
-        <!-- Spaces Navigation -->
-        <div style="position: relative;">
-          <button class="nav-btn" id="spaces-btn" aria-haspopup="menu" aria-expanded="false">
- 
-            <span>Spaces</span>
-          </button>
-          <nav class="nav-popover" id="spaces-menu" role="menu" hidden>
-            <a role="menuitem" href="/EmployeeView/EmployeeBoardroomBooking/index.html">Book Space</a>
-            <a role="menuitem" href="#">My Bookings</a>
-            <a role="menuitem" href="#">Available Spaces</a>
-          </nav>
-        </div>
-      </div>
-
-      <!-- Right: Settings -->
-      <div class="settings-nav">
-        <button class="nav-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-         
-          <span class="hide-sm">Settings</span>
-        </button>
-        <nav class="nav-popover" id="settings-menu" role="menu" hidden>
-          <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
-          <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
-          <div class="menu-sep" role="separator"></div>
-                        <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
-                            <button type="submit" class="danger">Sign out</button>
-                        </form>            
-        </nav>
-      </div>
-    </div>
-  </header>
-
-  <main class="container">
-    <div class="booking-form">
-      <p class="form-subtitle">Reserve a boardroom or office space for your meetings</p>
-      
-      <form id="bookingForm">
-        <!-- Space type selection -->
-        <div class="form-group">
-          <label class="form-label">Space Type</label>
-          <div class="space-selector">
-            <div class="space-option" data-type="boardroom">
-              <div class="space-name">Boardroom</div>
-              <div class="space-desc">Formal meeting space for larger groups</div>
+    <!-- Header -->
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <!-- Left: Brand -->
+            <div class="brand">
+                <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
+                <div class="divider"></div>
+                <div class="page-title">Boardroom Booking</div>
             </div>
-            <div class="space-option" data-type="office">
-              <div class="space-name">Office Space</div>
-              <div class="space-desc">Smaller space for individual or small group work</div>
+
+            <!-- Center: Navigation -->
+            <div class="center-nav">
+                <!-- Appointments Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="appointments-btn" aria-haspopup="menu" aria-expanded="false">
+
+                        <span>Appointments</span>
+                    </button>
+                    <nav class="nav-popover" id="appointments-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeAppointmentTracker/Index.html">My Appointments</a>
+                        <a role="menuitem" href="appointment-list.html">Upcoming Appointments</a>
+                        <a role="menuitem" href="#">Schedule New</a>
+                    </nav>
+                </div>
+
+                <!-- Inquiries Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="inquiries-btn" aria-haspopup="menu" aria-expanded="false">
+
+                        <span>Inquiries</span>
+                    </button>
+                    <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeInquiryTracker/index.html">Track Inquiries</a>
+                        <a role="menuitem" href="inquiry-list.html">Recent Inquiries</a>
+                        <a role="menuitem" href="#">New Inquiry</a>
+                    </nav>
+                </div>
+
+                <!-- Spaces Navigation -->
+                <div style="position: relative;">
+                    <button class="nav-btn" id="spaces-btn" aria-haspopup="menu" aria-expanded="false">
+
+                        <span>Spaces</span>
+                    </button>
+                    <nav class="nav-popover" id="spaces-menu" role="menu" hidden>
+                        <a role="menuitem" href="/EmployeeView/EmployeeBoardroomBooking/index.html">Book Space</a>
+                        <a role="menuitem" href="#">My Bookings</a>
+                        <a role="menuitem" href="#">Available Spaces</a>
+                    </nav>
+                </div>
             </div>
-          </div>
-          <input type="hidden" id="spaceType" name="spaceType" required>
-        </div>
-        
-        <div class="form-grid">
-          <!-- Meeting details -->
-          <div class="form-group">
-            <label for="meetingTitle" class="form-label">Meeting Title</label>
-            <input type="text" id="meetingTitle" class="form-input" name="meetingTitle" placeholder="e.g., Quarterly Review Meeting" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="organizerName" class="form-label">Your Name</label>
-            <input type="text" id="organizerName" class="form-input" name="organizerName" required>
-          </div>
-        </div>
-        
-        <!-- Meeting description -->
-        <div class="form-group">
-          <label for="meetingDescription" class="form-label">Meeting Description</label>
-          <textarea id="meetingDescription" class="form-textarea" name="meetingDescription" placeholder="Brief description of the meeting purpose..."></textarea>
-        </div>
-        
-        <!-- Expected attendees -->
-        <div class="form-group">
-          <label for="attendeeCount" class="form-label">Expected Attendees</label>
-          <input type="number" id="attendeeCount" class="form-input" name="attendeeCount" min="1" max="50" required>
-        </div>
-      </form>
-    </div>
-    
-    <!-- Calendar section -->
-    <div class="calendar-section">
-      <div class="calendar-header">
-        <h3 class="calendar-title">Select a Date</h3>
-        <div class="calendar-nav">
-          <button class="calendar-nav-btn" id="prevMonth">← Previous</button>
-          <span id="currentMonth" style="font-weight: 700; padding: 8px 12px"></span>
-          <button class="calendar-nav-btn" id="nextMonth">Next →</button>
-        </div>
-      </div>
-      
-      <table class="calendar" id="calendar">
-        <thead>
-          <tr>
-            <th>Sun</th>
-            <th>Mon</th>
-            <th>Tue</th>
-            <th>Wed</th>
-            <th>Thu</th>
-            <th>Fri</th>
-            <th>Sat</th>
-          </tr>
-        </thead>
-        <tbody id="calendarBody">
-          <!-- Calendar will be generated by JavaScript -->
-        </tbody>
-      </table>
-    </div>
-    
-    <!-- Available spaces section -->
-    <div class="spaces-section">
-      <h3 class="spaces-title">Available Spaces for <span id="selectedDateDisplay">Select a date</span></h3>
-      <div class="spaces-grid" id="spacesGrid">
-        <!-- Available spaces will be populated by JavaScript -->
-      </div>
-    </div>
-    
-    <div class="form-actions">
-      <button type="button" class="submit-btn" id="submitBooking" disabled>Book Space</button>
-    </div>
-  </main>
 
-  <!-- Confirmation Modal -->
-  <div class="modal" id="confirmationModal">
-    <div class="modal-content">
-      <h3 class="modal-title" id="modalTitle">Booking Confirmed</h3>
-      <p class="modal-message" id="modalMessage">Your space has been successfully booked.</p>
-      <div class="modal-actions">
-        <button class="modal-btn confirm" id="modalConfirm">OK</button>
-      </div>
-    </div>
-  </div>
+            <!-- Right: Settings -->
+            <div class="settings-nav">
+                <button class="nav-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
 
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-band"><div class="gold-box"></div></div>
-  </footer>
-  <script src="~/Content/EmployeeView/js/BoardroomBooking.js"></script>
+                    <span class="hide-sm">Settings</span>
+                </button>
+                <nav class="nav-popover" id="settings-menu" role="menu" hidden>
+                    <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
+                    <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
+                    <div class="menu-sep" role="separator"></div>
+                    <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
+                        <button type="submit" class="danger">Sign out</button>
+                    </form>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="booking-form">
+            <p class="form-subtitle">Reserve a boardroom or office space for your meetings</p>
+
+            <form id="bookingForm">
+                <!-- Space type selection -->
+                <div class="form-group">
+                    <label class="form-label">Space Type</label>
+                    <div class="space-selector">
+                        <div class="space-option" data-type="boardroom">
+                            <div class="space-name">Boardroom</div>
+                            <div class="space-desc">Formal meeting space for larger groups</div>
+                        </div>
+                        <div class="space-option" data-type="officeSpace">
+                            <div class="space-name">Office Space</div>
+                            <div class="space-desc">Smaller space for individual or small group work</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="spaceType" name="spaceType" required>
+                </div>
+
+                <div class="form-grid">
+                    <!-- Meeting details -->
+                    <div class="form-group">
+                        <label for="meetingTitle" class="form-label">Meeting Title</label>
+                        <input type="text" id="meetingTitle" class="form-input" name="meetingTitle" placeholder="e.g., Quarterly Review Meeting" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="organizerName" class="form-label">Your Name</label>
+                        <input type="text" id="organizerName" class="form-input" name="organizerName" required>
+                    </div>
+                </div>
+
+                <!-- Meeting description -->
+                <div class="form-group">
+                    <label for="meetingDescription" class="form-label">Meeting Description</label>
+                    <textarea id="meetingDescription" class="form-textarea" name="meetingDescription" placeholder="Brief description of the meeting purpose..."></textarea>
+                </div>
+
+                <!-- Expected attendees -->
+                <div class="form-group">
+                    <label for="attendeeCount" class="form-label">Expected Attendees</label>
+                    <input type="number" id="attendeeCount" class="form-input" name="attendeeCount" min="1" max="50" required>
+                </div>
+            </form>
+        </div>
+
+        <!-- Calendar section -->
+        <div class="calendar-section">
+            <div class="calendar-header">
+                <h3 class="calendar-title">Select a Date</h3>
+                <div class="calendar-nav">
+                    <button class="calendar-nav-btn" id="prevMonth">← Previous</button>
+                    <span id="currentMonth" style="font-weight: 700; padding: 8px 12px"></span>
+                    <button class="calendar-nav-btn" id="nextMonth">Next →</button>
+                </div>
+            </div>
+
+            <table class="calendar" id="calendar">
+                <thead>
+                    <tr>
+                        <th>Sun</th>
+                        <th>Mon</th>
+                        <th>Tue</th>
+                        <th>Wed</th>
+                        <th>Thu</th>
+                        <th>Fri</th>
+                        <th>Sat</th>
+                    </tr>
+                </thead>
+                <tbody id="calendarBody">
+                    <!-- Calendar will be generated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Available spaces section -->
+        <div class="spaces-section">
+            <h3 class="spaces-title">Available Spaces for <span id="selectedDateDisplay">Select a date</span></h3>
+            <div class="spaces-grid" id="spacesGrid">
+                <!-- Available spaces will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="submit-btn" id="submitBooking" disabled>Book Space</button>
+        </div>
+    </main>
+
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmationModal">
+        <div class="modal-content">
+            <h3 class="modal-title" id="modalTitle">Booking Confirmed</h3>
+            <p class="modal-message" id="modalMessage">Your space has been successfully booked.</p>
+            <div class="modal-actions">
+                <button class="modal-btn confirm" id="modalConfirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-band"><div class="gold-box"></div></div>
+    </footer>
+    <script>
+        // Pass user info from server to JavaScript
+        window.currentUserId = '@User.Identity.Name';
+        window.currentUserDisplayName = '@(User.Identity.IsAuthenticated ? User.Identity.Name : "")';
+    </script>
+    <script src="~/Content/EmployeeView/js/BoardroomBooking.js"></script>
 </body>
 </html>

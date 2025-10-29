@@ -310,7 +310,7 @@ namespace Staekholder_CHIETA_X.Controllers
         }
         #endregion
 
-        #region API: Stakeholder – My Inquiries
+        #region API: Stakeholder – My Inquiries (FIXED)
         [HttpGet]
         [Authorize] // stakeholder must be signed in 
         [Route("api/inquiry/stakeholder")]
@@ -369,15 +369,49 @@ namespace Staekholder_CHIETA_X.Controllers
                             if (last != null && last.TryGetValue("status", out var s)) status = s?.ToString() ?? status;
                         }
 
+                        // FIXED: Include description and updates array
+                        var description = data.TryGetValue("description", out var desc) ? desc?.ToString() ?? "" : "";
+
+                        // Parse updates array and filter out internal-only notes
+                        var updatesList = new List<object>();
+                        if (data.TryGetValue("updates", out var upd) && upd is IEnumerable<object> updatesArray)
+                        {
+                            foreach (var update in updatesArray)
+                            {
+                                if (update is Dictionary<string, object> updateDict)
+                                {
+                                    // Only include updates that have meaningful messages for stakeholders
+                                    var notes = updateDict.TryGetValue("notes", out var n) ? n?.ToString() ?? "" : "";
+
+                                    // Skip system-generated or empty updates
+                                    if (string.IsNullOrWhiteSpace(notes) ||
+                                        notes == "Inquiry submitted via website")
+                                        continue;
+
+                                    var updateObj = new Dictionary<string, object>
+                            {
+                                { "Message", notes },
+                                { "Timestamp", updateDict.TryGetValue("timestamp", out var ts) ? ts : null },
+                                { "Author", updateDict.TryGetValue("updatedBy", out var by) ? by?.ToString() ?? "CHIETA Support" : "CHIETA Support" },
+                                { "Status", updateDict.TryGetValue("status", out var st) ? st?.ToString() ?? "" : "" }
+                            };
+
+                                    updatesList.Add(updateObj);
+                                }
+                            }
+                        }
+
                         items.Add(new
                         {
                             id = doc.Id,
                             reference = GenerateReferenceNumber(doc.Id),
                             subject = data.TryGetValue("subject", out var subj) ? subj?.ToString() ?? "N/A" : "N/A",
                             inquiryType = data.TryGetValue("inquiryType", out var it) ? it?.ToString() ?? "N/A" : "N/A",
+                            description = description, // FIXED: Now included
                             status,
                             date = createdAt,
                             assignedTo = data.TryGetValue("assignedAdvisor", out var aa) ? aa?.ToString() ?? "" : "",
+                            updates = updatesList // FIXED: Now included with filtered updates
                         });
                     }
                 }
@@ -396,8 +430,7 @@ namespace Staekholder_CHIETA_X.Controllers
         }
         #endregion
 
-        #region API: Update Inquiry (Status/Assignment + Email)
-        // PUT: Update inquiry status
+        #region API: Update Inquiry (FIXED - Proper Array Handling)
         [HttpPut]
         [Authorize(Roles = "Advisor,Admin")]
         [Route("api/inquiry/{reference}")]
@@ -408,13 +441,23 @@ namespace Staekholder_CHIETA_X.Controllers
                 var advisorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 var advisorName = User.Identity?.Name ?? "Advisor";
 
+                Console.WriteLine($"=== UPDATE INQUIRY START ===");
+                Console.WriteLine($"Reference: {reference}");
+                Console.WriteLine($"Advisor: {advisorName} ({advisorId})");
+                Console.WriteLine($"Update Data: {System.Text.Json.JsonSerializer.Serialize(updateData)}");
+
                 // Find the inquiry by scanning for matching reference
                 var allInquiries = await _db.Collection("inquiries").GetSnapshotAsync();
                 var doc = allInquiries.Documents.FirstOrDefault(d =>
                     GenerateReferenceNumber(d.Id) == reference);
 
                 if (doc == null)
+                {
+                    Console.WriteLine($"ERROR: Inquiry not found for reference {reference}");
                     return NotFound(new { error = "Inquiry not found" });
+                }
+
+                Console.WriteLine($"Found inquiry: {doc.Id}");
 
                 var docRef = _db.Collection("inquiries").Document(doc.Id);
                 var inquiry = doc.ToDictionary();
@@ -428,13 +471,35 @@ namespace Staekholder_CHIETA_X.Controllers
                         : "";
 
                     if (assignedAdvisorId != advisorId)
+                    {
+                        Console.WriteLine($"ERROR: Access denied. Assigned to {assignedAdvisorId}, user is {advisorId}");
                         return Forbid();
+                    }
                 }
 
-                // Prepare update
-                var updates = inquiry.ContainsKey("updates")
-                    ? ((List<object>)inquiry["updates"]).ToList()
-                    : new List<object>();
+                // Get existing updates array - CRITICAL: Handle Firestore types correctly
+                List<object> updates;
+                if (inquiry.ContainsKey("updates") && inquiry["updates"] != null)
+                {
+                    // Firestore returns IEnumerable<object>, convert to List
+                    var existingUpdates = inquiry["updates"];
+                    if (existingUpdates is IEnumerable<object> enumerable)
+                    {
+                        updates = enumerable.ToList();
+                    }
+                    else
+                    {
+                        Console.WriteLine($"WARNING: updates field exists but is not IEnumerable. Type: {existingUpdates.GetType()}");
+                        updates = new List<object>();
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No existing updates field found, creating new list");
+                    updates = new List<object>();
+                }
+
+                Console.WriteLine($"Existing updates count: {updates.Count}");
 
                 var newStatus = updateData.ContainsKey("status")
                     ? updateData["status"]?.ToString()
@@ -444,28 +509,35 @@ namespace Staekholder_CHIETA_X.Controllers
                     ? updateData["internalNotes"]?.ToString()
                     : "";
 
-                updates.Add(new Dictionary<string, object>
-                {
-                    { "status", newStatus },
-                    { "updatedBy", advisorName },
-                    { "timestamp", Timestamp.GetCurrentTimestamp() },
-                    { "notes", notes }
-                });
+                Console.WriteLine($"New Status: {newStatus}");
+                Console.WriteLine($"Notes: {notes}");
+
+                // Create new update entry
+                var newUpdate = new Dictionary<string, object>
+        {
+            { "status", newStatus ?? "Pending" },
+            { "updatedBy", advisorName },
+            { "timestamp", Timestamp.GetCurrentTimestamp() },
+            { "notes", notes ?? "" }
+        };
+
+                // Add to updates list
+                updates.Add(newUpdate);
+                Console.WriteLine($"New updates count: {updates.Count}");
 
                 var updateDict = new Dictionary<string, object>
-                {
-                    { "status", newStatus },
-                    { "updates", updates },
-                    { "updatedAt", Timestamp.GetCurrentTimestamp() }
-                };
+        {
+            { "status", newStatus ?? "Pending" },
+            { "updates", updates }, // This is the critical field
+            { "updatedAt", Timestamp.GetCurrentTimestamp() }
+        };
 
-                // Update assignedTo if provided (admin only or reassignment)
+                // Handle reassignment
                 if (updateData.ContainsKey("assignedTo"))
                 {
                     var newAssignedId = updateData["assignedTo"]?.ToString() ?? "";
                     if (!string.IsNullOrEmpty(newAssignedId))
                     {
-                        // If reassigning, get the new advisor's name
                         var advisorDoc = await _db.Collection("Users").Document(newAssignedId).GetSnapshotAsync();
                         if (advisorDoc.Exists)
                         {
@@ -476,18 +548,31 @@ namespace Staekholder_CHIETA_X.Controllers
 
                             updateDict["assignedAdvisorId"] = newAssignedId;
                             updateDict["assignedAdvisor"] = newAdvisorName;
+
+                            Console.WriteLine($"Reassigning to: {newAdvisorName} ({newAssignedId})");
                         }
                     }
                 }
 
+                // Perform the update
+                Console.WriteLine("Performing Firestore update...");
                 await docRef.UpdateAsync(updateDict);
+                Console.WriteLine("Update successful!");
+
+                // Verify the update was saved
+                var verifySnap = await docRef.GetSnapshotAsync();
+                var verifyData = verifySnap.ToDictionary();
+                var verifyUpdatesCount = verifyData.ContainsKey("updates") && verifyData["updates"] is IEnumerable<object> vu
+                    ? vu.Count()
+                    : 0;
+                Console.WriteLine($"Verification: Document now has {verifyUpdatesCount} updates");
 
                 // Send confirmation email if status is Accepted
                 if (string.Equals(newStatus, "Accepted", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Try to get requester email and name
                     string requesterEmail = null;
                     string requesterName = null;
+
                     if (inquiry.TryGetValue("createdBy", out var createdByObj) && createdByObj is Dictionary<string, object> createdByDict)
                     {
                         if (createdByDict.TryGetValue("email", out var emailObj))
@@ -499,6 +584,7 @@ namespace Staekholder_CHIETA_X.Controllers
                     {
                         requesterEmail = emailLowerObj?.ToString();
                     }
+
                     if (string.IsNullOrWhiteSpace(requesterName) && inquiry.TryGetValue("name", out var nameFallback))
                         requesterName = nameFallback?.ToString();
 
@@ -508,22 +594,25 @@ namespace Staekholder_CHIETA_X.Controllers
                         var subject = inquiry.TryGetValue("subject", out var subjObj) ? subjObj?.ToString() : "Your Appointment Request";
                         var advisor = inquiry.TryGetValue("assignedAdvisor", out var advObj) ? advObj?.ToString() : advisorName;
                         var inquiryType = inquiry.TryGetValue("inquiryType", out var typeObj) ? typeObj?.ToString() : "";
+
                         var htmlBody = $@"
-                            <h2>Appointment Confirmed</h2>
-                            <p>Dear {requesterName},</p>
-                            <p>Your appointment request has been <b>accepted</b> by advisor <b>{advisor}</b>.</p>
-                            <ul>
-                                <li><strong>Reference Number:</strong> {referenceNumber}</li>
-                                <li><strong>Subject:</strong> {subject}</li>
-                                <li><strong>Type:</strong> {inquiryType}</li>
-                                <li><strong>Status:</strong> Accepted</li>
-                                <li><strong>Advisor:</strong> {advisor}</li>
-                            </ul>
-                            <p>You will be contacted soon with further details.</p>
-                            <p>Best regards,<br>CHIETA Team</p>";
+                    <h2>Appointment Confirmed</h2>
+                    <p>Dear {requesterName},</p>
+                    <p>Your appointment request has been <b>accepted</b> by advisor <b>{advisor}</b>.</p>
+                    <ul>
+                        <li><strong>Reference Number:</strong> {referenceNumber}</li>
+                        <li><strong>Subject:</strong> {subject}</li>
+                        <li><strong>Type:</strong> {inquiryType}</li>
+                        <li><strong>Status:</strong> Accepted</li>
+                        <li><strong>Advisor:</strong> {advisor}</li>
+                    </ul>
+                    <p>You will be contacted soon with further details.</p>
+                    <p>Best regards,<br>CHIETA Team</p>";
+
                         try
                         {
                             await _emailService.SendEmailAsync(requesterEmail, "Your Appointment Has Been Accepted", htmlBody);
+                            Console.WriteLine($"Email sent to {requesterEmail}");
                         }
                         catch (Exception ex)
                         {
@@ -532,12 +621,19 @@ namespace Staekholder_CHIETA_X.Controllers
                     }
                 }
 
-                return Ok(new { message = "Inquiry updated successfully" });
+                Console.WriteLine("=== UPDATE INQUIRY END ===");
+                return Ok(new
+                {
+                    message = "Inquiry updated successfully",
+                    updatesCount = updates.Count,
+                    reference = reference
+                });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"ERROR in UpdateInquiry: {ex.Message}");
-                return StatusCode(500, new { error = ex.Message });
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, new { error = ex.Message, details = ex.StackTrace });
             }
         }
         #endregion

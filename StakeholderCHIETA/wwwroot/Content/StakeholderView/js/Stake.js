@@ -1,4 +1,4 @@
-ï»¿document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     console.log('=== Stakeholder Landing Page Initialized ===');
 
     // ---- Load Stakeholder's Upcoming Appointments ----
@@ -6,7 +6,7 @@
         const list = document.getElementById("upcoming-list");
         if (!list) return;
 
-        list.innerHTML = "<li class='muted'>Loadingâ€¦</li>";
+        list.innerHTML = "<li class='muted'>Loading…</li>";
 
         try {
             console.log('Fetching stakeholder appointments...');
@@ -65,7 +65,7 @@
                 const advisorName = appt.AdvisorName || 'Advisor';
 
                 li.innerHTML = `
-                    <span>${escapeHTML(dateStr)} â€¢ ${escapeHTML(timeStr)}</span>
+                    <span>${escapeHTML(dateStr)} • ${escapeHTML(timeStr)}</span>
                     <span>with ${escapeHTML(advisorName)}</span>
                 `;
                 list.appendChild(li);
@@ -77,11 +77,12 @@
     }
 
     // ---- Load Stakeholder's Recent Inquiries ----
+    // ---- Load My Inquiries (Stakeholder) ----
     async function loadMyStakeholderInquiries() {
         const list = document.getElementById("inquiries-list");
         if (!list) return;
 
-        list.innerHTML = "<li class='muted'>Loadingâ€¦</li>";
+        list.innerHTML = "<li class='muted'>Loading…</li>";
 
         try {
             console.log('Fetching stakeholder inquiries...');
@@ -100,7 +101,7 @@
             const inquiries = await res.json();
             console.log('Received stakeholder inquiries:', Array.isArray(inquiries) ? inquiries.length : '(not an array)');
 
-            // Sort newest first if server didn't already (safe either way)
+            // Sort newest first if server didn’t already (safe either way)
             const sorted = (Array.isArray(inquiries) ? inquiries : [])
                 .slice()
                 .sort((a, b) => {
@@ -122,9 +123,9 @@
                 const subj = inq.subject || 'No Subject';
                 const li = document.createElement("li");
                 li.innerHTML = `
-                    <span>${escapeHTML(ref)}</span>
-                    <span>${escapeHTML(subj)}</span>
-                `;
+        <span>${escapeHTML(ref)}</span>
+        <span>${escapeHTML(subj)}</span>
+      `;
                 list.appendChild(li);
             });
         } catch (err) {
@@ -133,7 +134,7 @@
         }
     }
 
-    // Fallback reference if server didn't include one
+    // Fallback reference if server didn’t include one
     function generateReferenceNumber(docId) {
         const now = new Date();
         const yy = String(now.getFullYear()).slice(-2);
@@ -142,6 +143,13 @@
         const shortId = (docId || '').slice(-4).toUpperCase();
         return `INQ-${yy}${mm}${dd}-${shortId}`;
     }
+
+    function escapeHTML(s) {
+        return String(s).replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+
 
     // ---- Helper Functions ----
     function formatTime(timeString) {
@@ -167,10 +175,21 @@
         }[c]));
     }
 
-    // ---- Navigation Functionality ----
-    function initializeNavigation() {
-        console.log('Initializing navigation...');
+    // ---- Load data when page is ready ----
+    loadUpcomingAppointments();
+    loadMyStakeholderInquiries();
 
+    // Auto-refresh every 60 seconds
+    setInterval(() => {
+        console.log('Auto-refreshing dashboard data...');
+        loadUpcomingAppointments();
+        loadRecentInquiries();
+    }, 60000);
+
+
+
+    // Navigation functionality
+    document.addEventListener('DOMContentLoaded', function () {
         // Get all navigation buttons and menus
         const navButtons = [
             { btn: 'appointments-btn', menu: 'appointments-menu' },
@@ -185,41 +204,31 @@
             const menuElement = document.getElementById(menu);
 
             if (button && menuElement) {
-                console.log(`Found: ${btn} and ${menu}`);
-
                 button.addEventListener('click', (e) => {
-                    e.preventDefault();
                     e.stopPropagation();
-                    console.log(`Clicked ${btn}`);
 
-                    // Toggle current menu
-                    const isHidden = menuElement.hidden;
-
-                    // Close all other menus first
+                    // Close all other menus
                     navButtons.forEach(({ menu: otherMenu }) => {
-                        const otherMenuElement = document.getElementById(otherMenu);
-                        const otherButton = document.getElementById(otherMenu.replace('-menu', '-btn'));
-                        if (otherMenuElement && otherMenuElement !== menuElement) {
-                            otherMenuElement.hidden = true;
-                        }
-                        if (otherButton && otherButton !== button) {
-                            otherButton.setAttribute('aria-expanded', 'false');
+                        if (otherMenu !== menu) {
+                            const otherMenuElement = document.getElementById(otherMenu);
+                            const otherButton = document.getElementById(otherMenu.replace('-menu', '-btn'));
+                            if (otherMenuElement) otherMenuElement.hidden = true;
+                            if (otherButton) otherButton.setAttribute('aria-expanded', 'false');
                         }
                     });
 
                     // Toggle current menu
-                    menuElement.hidden = !isHidden;
-                    button.setAttribute('aria-expanded', !isHidden);
+                    const isExpanded = button.getAttribute('aria-expanded') === 'true';
+                    button.setAttribute('aria-expanded', !isExpanded);
+                    menuElement.hidden = isExpanded;
 
-                    // Position menu below button
-                    if (!isHidden) {
+                    // Position the menu below the button
+                    if (!isExpanded) {
                         const rect = button.getBoundingClientRect();
-                        menuElement.style.top = `${rect.bottom}px`;
-                        menuElement.style.left = `${rect.left}px`;
+                        menuElement.style.left = '50%';
+                        menuElement.style.transform = 'translateX(-50%)';
                     }
                 });
-            } else {
-                console.log(`NOT FOUND: ${btn} or ${menu}`, { button, menuElement });
             }
         });
 
@@ -255,18 +264,17 @@
             });
         });
 
-        console.log('Navigation initialization complete');
-    }
-
-    // ---- Load data when page is ready ----
-    loadUpcomingAppointments();
-    loadMyStakeholderInquiries();
-    initializeNavigation(); // Make sure this is called!
-
-    // Auto-refresh every 60 seconds
-    setInterval(() => {
-        console.log('Auto-refreshing dashboard data...');
-        loadUpcomingAppointments();
-        loadMyStakeholderInquiries();
-    }, 60000);
+        // Position menus on window resize
+        window.addEventListener('resize', () => {
+            navButtons.forEach(({ btn, menu }) => {
+                const button = document.getElementById(btn);
+                const menuElement = document.getElementById(menu);
+                if (button && menuElement && !menuElement.hidden) {
+                    const rect = button.getBoundingClientRect();
+                    menuElement.style.left = '50%';
+                    menuElement.style.transform = 'translateX(-50%)';
+                }
+            });
+        });
+    });
 });
