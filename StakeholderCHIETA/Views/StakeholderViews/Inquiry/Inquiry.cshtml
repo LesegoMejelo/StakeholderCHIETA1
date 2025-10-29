@@ -9,15 +9,14 @@
     <link rel="stylesheet" href="~/Content/StakeholderView/LogAnInquiry.css" />
 </head>
 <body>
-   <!-- Header -->
+    <!-- Header -->
     <header class="topbar">
         <div class="container topbar-inner">
             <!-- Left: Brand -->
-            <div class="brand">
-                <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
-                <div class="divider"></div>
-                <div class="page-title">Log an Inquiry</div>
-            </div>
+            <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
+                <a role="menuitem" href="@Url.Action("InquiryTracking", "Inquiry")">Track Inquiries</a>
+                <a role="menuitem" href="@Url.Action("Inquiry", "Inquiry")">New Inquiry</a>
+            </nav>
 
             <!-- Center: Navigation -->
             <div class="center-nav">
@@ -38,8 +37,8 @@
                         <span>Inquiries</span>
                     </button>
                     <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
-                        <a role="menuitem" href="/EmployeeView/EmployeeInquiryTracker/index.html">Track Inquiries</a>
-                        <a role="menuitem" href="#">New Inquiry</a>
+                        <a role="menuitem" href="@Url.Action("InquiryTracking", "Inquiry")">Track Inquiries</a>
+                        <a role="menuitem" href="@Url.Action("Inquiry", "Inquiry")">New Inquiry</a>
                     </nav>
                 </div>
 
@@ -136,9 +135,9 @@
                         <div id="tagChips" class="chip-row"></div>
                     </div>
 
-              <!--      <div class="actions">
-                        <button type="button" class="btn" data-next="2">Next</button>
-                    </div> -->
+                    <!--      <div class="actions">
+                              <button type="button" class="btn" data-next="2">Next</button>
+                          </div> -->
                 </div>
             </section>
 
@@ -205,9 +204,7 @@
                     <div id="successSummary" class="muted"></div>
                     <div class="success-actions">
                         <a class="btn ghost" id="newInquiry" href="#">Log another</a>
-                        <a class="btn">
-                        <a asp-controller="Inquiry" asp-action="InquiryTracking"> Track an Inquiry </a>
-                        </a>
+                        <a class="btn" href="@Url.Action("InquiryTracking", "Inquiry")">Track an Inquiry</a>
                     </div>
                 </div>
             </div>
