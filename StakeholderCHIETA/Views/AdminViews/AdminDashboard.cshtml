@@ -2,7 +2,8 @@
     Layout = null;
 }
 
-<html >
+<!DOCTYPE html>
+<html>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -17,7 +18,7 @@
             <div class="brand">
                 <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
                 <div class="divider"></div>
-                <div class="page-title">Log an Inquiry</div>
+                <div class="page-title">Admin Dashboard</div>
             </div>
 
             <button class="icon-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
@@ -46,50 +47,6 @@
             </div>
         </section>
 
-        <!-- KPI Cards 
-        <section class="kpis container">
-            <article class="card kpi">
-                <div class="kpi__label">Total Users</div>
-                <div class="kpi__value" id="kpi-users">—</div>
-                <div class="kpi__delta up" id="kpi-users-delta">+0 this week</div>
-            </article>
-            <article class="card kpi">
-                <div class="kpi__label">Active Appointments</div>
-                <div class="kpi__value" id="kpi-appointments">—</div>
-                <div class="kpi__delta up" id="kpi-appointments-delta">+0 today</div>
-            </article>
-            <article class="card kpi">
-                <div class="kpi__label">Open Inquiries</div>
-                <div class="kpi__value" id="kpi-inquiries">—</div>
-                <div class="kpi__delta down" id="kpi-inquiries-delta">0 resolved</div>
-            </article>
-            <article class="card kpi">
-                <div class="kpi__label">User Growth Rate</div>
-                <div class="kpi__value" id="kpi-growth">—</div>
-                <div class="kpi__delta up" id="kpi-growth-delta">vs last month</div>
-            </article>
-        </section>  -->
-
-        <!-- Charts 
-        <section class="charts container">
-            <article class="card chart-card">
-                <header class="card__title-row">
-                    <h2>User Engagement Analysis</h2>
-                    <div class="chart-actions">
-                        <select id="rangeSelect" class="select">
-                            <option value="5" selected>Last 5 months</option>
-                            <option value="12">Last 12 months</option>
-                        </select>
-                    </div>
-                </header>
-                <canvas id="lineChart" width="980" height="320" aria-label="Engagement chart"></canvas>
-                <footer class="chart-legend">
-                    <span class="dot dot--1"></span>Appointments
-                    <span class="dot dot--2"></span>Inquiries
-                </footer>
-            </article>
-        </section> -->
-
         <!-- User Management -->
         <section class="container">
             <article class="card">
@@ -106,7 +63,8 @@
                             <tr>
                                 <th>Name</th>
                                 <th>Email</th>
-                                <th>Role</th>                               
+                                <th>Role</th>
+                                <th>Province</th>
                                 <th style="text-align:right;">Actions</th>
                             </tr>
                         </thead>
@@ -119,6 +77,7 @@
             </article>
         </section>
 
+        <!-- User Modal -->
         <div class="modal" id="userModal" aria-hidden="true" role="dialog">
             <div class="modal__dialog">
                 <header class="modal__header">
@@ -146,6 +105,7 @@
                             <option value="Limpopo">Limpopo</option>
                             <option value="KZN">KZN</option>
                             <option value="Free State">Free State</option>
+                        </select>
                     </div>
 
                     <div class="form__row">
@@ -174,61 +134,46 @@
                 </form>
             </div>
         </div>
+
         <!-- Footer -->
         <footer class="footer">
             <div class="container footer__inner">
                 <button class="cta">Primary Action</button>
             </div>
         </footer>
-        <div class="modal" id="userModal" aria-hidden="true" role="dialog">
-            <div class="modal__dialog">
-                <header class="modal__header">
-                    <h3 id="modalTitle">Add User</h3>
-                    <button class="icon-btn dark" id="closeModal" aria-label="Close">✕</button>
-                </header>
-
-                <form id="userForm" class="form">
-                    <input type="hidden" id="userId" />
-
-                    <div class="form__row">
-                        <label for="Name">Name</label>
-                        <input id="Name" class="input" required />
-                    </div>
-
-                    <div class="form__row">
-                        <label for="email">Email</label>
-                        <input id="email" type="email" class="input" required />
-                    </div>
-
-                    <div class="form__row">
-                        <label for="password">Password</label>
-                        <input id="password" type="password" class="input" required />
-                    </div>
-
-                    <div class="form__row">
-                        <label for="Role">Role</label>
-                        <select id="Role" class="select" required>
-                            <option value="Client">Client</option>
-                            <option value="Advisor">Advisor</option>
-                            <option value="Admin">Admin</option>
-                        </select>
-                    </div>
-
-                    <div class="form__actions">
-                        <button type="button" class="btn ghost" id="cancelModal">Cancel</button>
-                        <button type="submit" class="cta small">Save</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </main>
-
-       
     </main>
 
     <!-- Scripts -->
     <script>
         document.addEventListener("DOMContentLoaded", () => {
+            // Settings menu functionality
+            const settingsBtn = document.getElementById('settings-btn');
+            const settingsMenu = document.getElementById('settings-menu');
+            
+            if (settingsBtn && settingsMenu) {
+                const closeMenu = () => { 
+                    settingsMenu.hidden = true; 
+                    settingsBtn.setAttribute('aria-expanded', 'false'); 
+                };
+                const openMenu = () => { 
+                    settingsMenu.hidden = false; 
+                    settingsBtn.setAttribute('aria-expanded', 'true'); 
+                };
+                
+                settingsBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const expanded = settingsBtn.getAttribute('aria-expanded') === 'true';
+                    expanded ? closeMenu() : openMenu();
+                });
+                
+                document.addEventListener('click', (e) => {
+                    if (!settingsMenu.hidden && !settingsMenu.contains(e.target) && e.target !== settingsBtn) {
+                        closeMenu();
+                    }
+                });
+            }
+
+            // Modal functionality
             const modal = document.getElementById("userModal");
             const addBtn = document.getElementById("addUserBtn");
             const closeBtn = document.getElementById("closeModal");
@@ -240,97 +185,204 @@
                 modal.setAttribute("aria-hidden", "false");
                 modal.classList.add("open");
             }
+
             function hideModal() {
                 modal.setAttribute("aria-hidden", "true");
                 modal.classList.remove("open");
             }
 
-            addBtn.addEventListener("click", () => {
-                userForm.reset();
-                document.getElementById("userId").value = "";
-                showModal();
-            });
-            closeBtn.addEventListener("click", hideModal);
-            cancelBtn.addEventListener("click", hideModal);
+            // User management variables
+            let usersCache = [];
+            let currentPage = 1;
+            const pageSize = 6;
+            let searchQuery = "";
 
             // Load Users
             async function loadUsers() {
                 try {
                     const res = await fetch("/Auth/GetUsers");
-                    if (!res.ok) throw new Error("Failed to load");
-                    const users = await res.json();
-                    usersBody.innerHTML = "";
-
-                    users.forEach(u => {
-                        const row = document.createElement("tr");
-                        row.innerHTML = `
-                            <td>${u.name}</td>
-                            <td>${u.email}</td>
-                            <td>${u.role}</td>                            
-                            <td style="text-align:right;">
-                                <button class="btn small danger" type="button">Delete</button>
-                            </td>
-                        `;
-                        usersBody.appendChild(row);
-                    });
-
-                    document.getElementById("kpi-users").textContent = users.length;
+                    if (!res.ok) throw new Error("Failed to load users");
+                    usersCache = await res.json();
+                    console.log('Users loaded:', usersCache);
+                    renderUsers();
                 } catch (err) {
                     console.error("Failed to fetch users", err);
+                    alert("Failed to load users");
                 }
             }
 
-                            // Save User
-        userForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
+            function filteredUsers() {
+                if (!searchQuery.trim()) return usersCache;
+                const q = searchQuery.toLowerCase();
+                return usersCache.filter(u =>
+                    (u.name || "").toLowerCase().includes(q) ||
+                    (u.email || "").toLowerCase().includes(q) ||
+                    (u.role || "").toLowerCase().includes(q) ||
+                    (u.province || "").toLowerCase().includes(q)
+                );
+            }
 
-            const user = {
-                Name: document.getElementById("Name").value,
-                Email: document.getElementById("email").value,
-                Password: document.getElementById("password").value,
-                Role: document.getElementById("Role").value
-            };
+            function renderUsers() {
+                const rows = filteredUsers();
+                const start = (currentPage - 1) * pageSize;
+                const pageRows = rows.slice(start, start + pageSize);
 
-            try {
-                const res = await fetch("/Auth/RegisterUser", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(user)
-                });
-                const data = await res.json();
+                const bodyHtml = pageRows.map(u => `
+                    <tr>
+                        <td>${escapeHtml(u.name || '')}</td>
+                        <td>${escapeHtml(u.email || '')}</td>
+                        <td>${escapeHtml(u.role || '')}</td>
+                        <td>${escapeHtml(u.province || '')}</td>
+                        <td style="text-align:right;">
+                            <button class="btn small" data-action="edit" data-id="${u.id || u.Id}">Edit</button>
+                            <button class="btn small danger" data-action="delete" data-id="${u.id || u.Id}">Delete</button>
+                        </td>
+                    </tr>`).join("");
+                
+                usersBody.innerHTML = bodyHtml;
 
-                if (res.ok) {
-                    alert("✅ " + (data.message || "User saved"));
-                    hideModal();
-                    await loadUsers();
+                // Render pagination
+                const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+                currentPage = Math.min(currentPage, totalPages);
+                
+                const pagerButtons = [];
+                for (let i = 1; i <= totalPages; i++) {
+                    pagerButtons.push(`<button class="page-btn" ${i === currentPage ? 'aria-current="page"' : ''} data-page="${i}">${i}</button>`);
+                }
+                document.getElementById("pager").innerHTML = pagerButtons.join("");
+            }
+
+            // Event delegation for user actions
+            usersBody.addEventListener("click", (e) => {
+                const btn = e.target.closest("button[data-action]");
+                if (!btn) return;
+                
+                const id = btn.dataset.id;
+                const action = btn.dataset.action;
+                
+                if (action === "edit") {
+                    const user = usersCache.find(x => String(x.id || x.Id) === String(id));
+                    if (user) {
+                        openModal(user);
+                    }
+                } else if (action === "delete") {
+                    deleteUser(id);
+                }
+            });
+
+            // Pagination event listener
+            document.getElementById("pager").addEventListener("click", (e) => {
+                const btn = e.target.closest("button[data-page]");
+                if (!btn) return;
+                currentPage = Number(btn.dataset.page);
+                renderUsers();
+            });
+
+            // Search functionality
+            document.getElementById("userSearch").addEventListener("input", (e) => {
+                searchQuery = e.target.value || "";
+                currentPage = 1;
+                renderUsers();
+            });
+
+            // Delete user function
+            async function deleteUser(id) {
+                if (!confirm("Are you sure you want to delete this user?")) return;
+                
+                try {
+                    const res = await fetch(`/Auth/DeleteUser/${encodeURIComponent(id)}`, {
+                        method: "DELETE"
+                    });
+                    
+                    const data = await res.json().catch(() => ({}));
+                    
+                    if (res.ok) {
+                        alert(data.message || "User deleted successfully");
+                        await loadUsers();
+                    } else {
+                        alert(data.message || `Error: ${res.status}`);
+                    }
+                } catch (err) {
+                    console.error("Error deleting user:", err);
+                    alert("Failed to delete user - network error");
+                }
+            }
+
+            function escapeHtml(v) {
+                if (v === null || v === undefined) return '';
+                return String(v)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            function openModal(user) {
+                const modalTitle = document.getElementById("modalTitle");
+                
+                if (user) {
+                    modalTitle.textContent = "Edit User";
+                    document.getElementById("userId").value = user.id || user.Id || "";
+                    document.getElementById("Name").value = user.name || "";
+                    document.getElementById("email").value = user.email || "";
+                    document.getElementById("password").value = "";
+                    document.getElementById("Role").value = user.role || "Client";
+                    document.getElementById("Province").value = user.province || "Gauteng";
                 } else {
-                    alert("❌ " + (data.message || "Error saving user"));
+                    modalTitle.textContent = "Add User";
+                    userForm.reset();
+                    document.getElementById("userId").value = "";
                 }
-            } catch (err) {
-                console.error("Error saving user:", err);
-                alert("❌ Failed to save user");
+                showModal();
             }
-        });
 
-        // Delete User
-        async function deleteUser(id) {
-            if (!confirm("Are you sure you want to delete this user?")) return;
+            // Event listeners for modal
+            addBtn.addEventListener("click", () => openModal(null));
+            closeBtn.addEventListener("click", hideModal);
+            cancelBtn.addEventListener("click", hideModal);
+            modal.addEventListener("click", (e) => { 
+                if (e.target === modal) hideModal(); 
+            });
 
-            try {
-                const res = await fetch(`/Auth/DeleteUser/${id}`, { method: "DELETE" });
-                const data = await res.json();
+            // Save User
+            userForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
 
-                if (res.ok) {
-                    alert("" + (data.message || "User deleted"));
-                    await loadUsers();
-                } else {
-                    alert("" + (data.message || "Error deleting user"));
+                const userId = document.getElementById("userId").value;
+                const user = {
+                    Name: document.getElementById("Name").value,
+                    Email: document.getElementById("email").value,
+                    Password: document.getElementById("password").value,
+                    Role: document.getElementById("Role").value,
+                    Province: document.getElementById("Province").value
+                };
+
+                // Only include ID if editing
+                if (userId) {
+                    user.Id = userId;
                 }
-            } catch (err) {
-                console.error("Error deleting user:", err);
-                alert(" Failed to delete user");
-            }
-        }
+
+                try {
+                    const res = await fetch("/Auth/RegisterUser", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(user)
+                    });
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        alert("✅ " + (data.message || "User saved"));
+                        hideModal();
+                        await loadUsers();
+                    } else {
+                        alert("❌ " + (data.message || "Error saving user"));
+                    }
+                } catch (err) {
+                    console.error("Error saving user:", err);
+                    alert("❌ Failed to save user");
+                }
+            });
 
             // Initial load
             loadUsers();
