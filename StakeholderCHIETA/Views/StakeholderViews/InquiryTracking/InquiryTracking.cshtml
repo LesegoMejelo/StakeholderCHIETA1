@@ -19,9 +19,11 @@
         <div class="container topbar-inner">
             <!-- Left: Brand -->
             <div class="brand">
-                <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
-                <div class="divider"></div>
-                <div class="page-title">Track Inquiries</div>
+                <a href="@Url.Action("Index", "Stakeholder")" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+                    <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" style="cursor: pointer;" />
+                    <div class="divider"></div>
+                    <div class="page-title">Track Inquiries</div>
+                </a>
             </div>
 
             <!-- Center: Navigation -->
@@ -43,8 +45,8 @@
                         <span>Inquiries</span>
                     </button>
                     <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
-                        <a role="menuitem" href="/EmployeeView/EmployeeInquiryTracker/index.html">Track Inquiries</a>
-                        <a role="menuitem" href="#">New Inquiry</a>
+                        <a role="menuitem" href="@Url.Action("InquiryTracking", "Inquiry")">Track Inquiries</a>
+                        <a role="menuitem" href="@Url.Action("Inquiry", "Inquiry")">New Inquiry</a>
                     </nav>
                 </div>
 

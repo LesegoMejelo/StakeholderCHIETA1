@@ -14,11 +14,13 @@
     <!-- Header -->
     <header class="topbar">
         <div class="container topbar-inner">
-            <!-- Left: Brand -->
+            <!-- Left: Brand (Clickable to return home) -->
             <div class="brand">
-                <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
-                <div class="divider"></div>
-                <div class="page-title">Home</div>
+                <a href="@Url.Action("Index", "Stakeholder")" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+                    <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" style="cursor: pointer;" />
+                    <div class="divider"></div>
+                    <div class="page-title">Home</div>
+                </a>
             </div>
 
             <!-- Center: Navigation -->
@@ -29,8 +31,8 @@
                         <span>Appointments</span>
                     </button>
                     <nav class="nav-popover" id="appointments-menu" role="menu" hidden>
-                        <a role="menuitem" href="/Inquiry/TrackAppointment">My Appointments</a>
-                        <a role="menuitem" href="/Appointment/Index">Schedule New</a>
+                        <a role="menuitem" href="@Url.Action("TrackAppointment", "Inquiry")">My Appointments</a>
+                        <a role="menuitem" href="@Url.Action("Index", "Appointment")">Schedule New</a>
                     </nav>
                 </div>
 
@@ -40,19 +42,8 @@
                         <span>Inquiries</span>
                     </button>
                     <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
-                        <a role="menuitem" href="/EmployeeView/EmployeeInquiryTracker/index.html">Track Inquiries</a>
-                        <a role="menuitem" href="#">New Inquiry</a>
-                    </nav>
-                </div>
-
-                <!-- Spaces Navigation -->
-                <div class="nav-dropdown">
-                    <button class="nav-btn" id="spaces-btn" aria-haspopup="menu" aria-expanded="false">
-                        <span>Spaces</span>
-                    </button>
-                    <nav class="nav-popover" id="spaces-menu" role="menu" hidden>
-                        <a role="menuitem" href="/EmployeeView/EmployeeBoardroomBooking/index.html">Book Space</a>
-                        <a role="menuitem" href="#">My Bookings</a>
+                        <a role="menuitem" href="@Url.Action("InquiryTracking", "Inquiry")">Track Inquiries</a>
+                        <a role="menuitem" href="@Url.Action("Inquiry", "Inquiry")">New Inquiry</a>
                     </nav>
                 </div>
             </div>
@@ -76,12 +67,12 @@
 
     <main class="container page">
 
-       <!--- Decorative shapes -->
+        <!--- Decorative shapes -->
         <div class="decor blob-right"></div>
         <div class="decor arc-left"></div>
         <div class="decor arc-right-bottom"></div>
 
-       <!--  Welcome -->
+        <!--  Welcome -->
         <section class="welcome">
             <h1>Welcome @User.Identity.Name</h1>
             <p class="tagline">This is your personalised landing page, equipped for your every need</p>
@@ -92,7 +83,7 @@
                     <ul id="upcoming-list" class="mini-list"><li class="muted">Loading..</li></ul>
                 </a>
 
-                <a id="link-inquiries" class="summary-card" href="@Url.Action("Tracking", "Inquiry")">
+                <a id="link-inquiries" class="summary-card" href="@Url.Action("InquiryTracking", "Inquiry")">
                     <h3>Recent Inquiries</h3>
                     <ul id="inquiries-list" class="mini-list"><li class="muted">Loading…</li></ul>
                 </a>
@@ -119,7 +110,7 @@
                     </div>
                 </div>
 
-                 <!--Track Appointments-->
+                <!--Track Appointments-->
                 <div class="action-card">
                     <div class="card-hero appointment-track-hero" aria-hidden="true"></div>
                     <div class="action-card-content">
@@ -143,9 +134,8 @@
                 <div class="action-card">
                     <div class="card-hero inquiry-track-hero" aria-hidden="true"></div>
                     <div class="action-card-content">
-                        <h3><a href="@Url.Action("Tracking", "Inquiry")">Track an Inquiry</a></h3>
-                        <p>If you have logged an inquiry, you can now track its progress and status updates.</p>
-                        <button class="btn" data-nav="@Url.Action("Tracking", "Inquiry")">Track</button>
+                        <h3><a href="@Url.Action("InquiryTracking", "Inquiry")">Track an Inquiry</a></h3>                        <p>If you have logged an inquiry, you can now track its progress and status updates.</p>
+                        <button class="btn" data-nav="@Url.Action("InquiryTracking", "Inquiry")">Track</button>
                     </div>
                 </div>
             </div>

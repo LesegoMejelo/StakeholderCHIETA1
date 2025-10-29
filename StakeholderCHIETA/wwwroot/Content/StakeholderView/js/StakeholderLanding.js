@@ -171,11 +171,10 @@
     function initializeNavigation() {
         console.log('Initializing navigation...');
 
-        // Get all navigation buttons and menus
+        // Get all navigation buttons and menus (removed spaces)
         const navButtons = [
             { btn: 'appointments-btn', menu: 'appointments-menu' },
             { btn: 'inquiries-btn', menu: 'inquiries-menu' },
-            { btn: 'spaces-btn', menu: 'spaces-menu' },
             { btn: 'settings-btn', menu: 'settings-menu' }
         ];
 
@@ -261,7 +260,7 @@
     // ---- Load data when page is ready ----
     loadUpcomingAppointments();
     loadMyStakeholderInquiries();
-    initializeNavigation(); // Make sure this is called!
+    initializeNavigation();
 
     // Auto-refresh every 60 seconds
     setInterval(() => {
