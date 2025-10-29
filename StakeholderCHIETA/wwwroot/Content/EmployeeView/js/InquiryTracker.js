@@ -475,29 +475,14 @@
 
     // ==================== EVENT LISTENERS ====================
     function setupEventListeners() {
-        // Existing inquiry tracking event listeners
-        document.addEventListener("click", (e) => {
-            const settingsBtn = e.target.closest("#settings-btn");
-            if (settingsBtn) {
-                const menu = $("#settings-menu");
-                const expanded = settingsBtn.getAttribute("aria-expanded") === "true";
-                settingsBtn.setAttribute("aria-expanded", String(!expanded));
-                menu.hidden = expanded;
-                return;
-            }
+        // Remove conflicting settings button handler from inquiry tracking
+        // The navigation code now handles all navigation buttons including settings
 
-            const closeBtn = e.target.closest("[data-close-modal]");
-            if (closeBtn) {
-                closeModal("#detailModal");
-                return;
-            }
-
-            const outsideMenu = !$("#settings-menu")?.contains(e.target) && e.target !== $("#settings-btn");
-            if (outsideMenu) {
-                $("#settings-menu")?.setAttribute("hidden", "");
-                $("#settings-btn")?.setAttribute("aria-expanded", "false");
-            }
-        });
+        const closeBtn = e.target.closest("[data-close-modal]");
+        if (closeBtn) {
+            closeModal("#detailModal");
+            return;
+        }
 
         // Filter event listeners
         const statusFilter = $("#statusFilter");
@@ -554,7 +539,7 @@
     function init() {
         console.log('Initializing InquiryTracker with Navigation...');
         
-        // Initialize navigation
+        // Initialize navigation FIRST
         initializeNavigation();
         
         // Initialize inquiry tracking

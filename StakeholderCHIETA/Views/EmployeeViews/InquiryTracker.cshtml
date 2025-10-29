@@ -14,7 +14,7 @@
     <div class="container topbar-inner">
       <!-- Left: Brand -->
       <div class="brand">
-        <img class="logo" src="/logo.p" alt="CHIETA logo" />
+        <img class="logo" src="/logo.png" alt="CHIETA logo" />
         <div class="divider"></div>
         <div class="page-title">Inquiry Tracker</div>
       </div>
@@ -22,9 +22,8 @@
       <!-- Center: Navigation -->
       <div class="center-nav">
         <!-- Appointments Navigation -->
-        <div style="position: relative;">
+        <div class="nav-dropdown">
           <button class="nav-btn" id="appointments-btn" aria-haspopup="menu" aria-expanded="false">
-       
             <span>Appointments</span>
           </button>
           <nav class="nav-popover" id="appointments-menu" role="menu" hidden>
@@ -35,9 +34,8 @@
         </div>
 
         <!-- Inquiries Navigation -->
-        <div style="position: relative;">
+        <div class="nav-dropdown">
           <button class="nav-btn" id="inquiries-btn" aria-haspopup="menu" aria-expanded="false">
-        
             <span>Inquiries</span>
           </button>
           <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
@@ -48,9 +46,8 @@
         </div>
 
         <!-- Spaces Navigation -->
-        <div style="position: relative;">
+        <div class="nav-dropdown">
           <button class="nav-btn" id="spaces-btn" aria-haspopup="menu" aria-expanded="false">
- 
             <span>Spaces</span>
           </button>
           <nav class="nav-popover" id="spaces-menu" role="menu" hidden>
@@ -62,18 +59,17 @@
       </div>
 
       <!-- Right: Settings -->
-      <div class="settings-nav">
+      <div class="settings-nav nav-dropdown">
         <button class="nav-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-         
           <span class="hide-sm">Settings</span>
         </button>
         <nav class="nav-popover" id="settings-menu" role="menu" hidden>
           <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
           <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
           <div class="menu-sep" role="separator"></div>
-                        <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
-                            <button type="submit" class="danger">Sign out</button>
-                        </form>            
+          <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
+            <button type="submit" class="danger">Sign out</button>
+          </form>            
         </nav>
       </div>
     </div>
