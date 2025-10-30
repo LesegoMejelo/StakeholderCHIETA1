@@ -14,40 +14,34 @@
   <div class="decor arc-left" aria-hidden="true"></div>
   <div class="decor arc-right-bottom" aria-hidden="true"></div>
 
-    <!-- Updated Header for Inquiry.cshtml -->
-    <header class="topbar">
-        <div class="container topbar-inner">
-            <!-- Left: Brand -->
-            <div class="brand">
-                <a href="@Url.Action("Index", "Stakeholder")" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
-                    <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" style="cursor: pointer;" />
-                </a>
-            </div>
+   <header class="topbar">
+  <div class="container topbar-inner">
+    <!-- Left: Brand -->
+    <div class="brand">
+      <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
+      <div class="divider"></div>
+      <div class="page-title">Track your Appointment</div>
+    </div>
 
-            <!-- Center: Navigation - Single Home Button -->
-            <div class="center-nav">
-                <a href="@Url.Action("Index", "Inquiry")" class="nav-btn" style="text-decoration: none; display: flex; align-items: center; padding: 0.5rem 1.5rem;">
-                    <span>Home</span>
-                </a>
-            </div>
+    <!-- Center: Empty (for balance) -->
+    <div class="center-nav"></div>
 
-            <!-- Right: Settings -->
-            <div class="settings-nav" style="position: relative;">
-                <button class="nav-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-                    <span class="hide-sm">Settings</span>
-                </button>
-                <nav class="nav-popover" id="settings-menu" role="menu" hidden>
-                    <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
-                    <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
-                    <div class="menu-sep" role="separator"></div>
-                    <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
-                        <button type="submit" class="danger">Sign out</button>
-                    </form>
-                </nav>
-            </div>
-        </div>
-    </header>
-
+    <!-- Right: Buttons -->
+    <div class="settings-nav">
+      <!-- Home Button -->
+      <button class="nav-btn" onclick="window.location.href='@Url.Action("Index", "Home")'">
+        <span>Home</span>
+      </button>
+      
+      <!-- Sign Out Button -->
+      <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline; margin-left: 10px;">
+        <button type="submit" class="nav-btn danger">
+          <span>Sign Out</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</header>
   <main class="container">
     <div class="dashboard-header">
       <h1>My Appointments</h1>

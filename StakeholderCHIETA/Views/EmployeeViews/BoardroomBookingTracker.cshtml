@@ -14,69 +14,34 @@
     <div class="decor arc-left" aria-hidden="true"></div>
     <div class="decor arc-right-bottom" aria-hidden="true"></div>
 
-    <!-- Header -->
     <header class="topbar">
-        <div class="container topbar-inner">
-            <!-- Left: Brand -->
-            <div class="brand">
-                <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
-                <div class="divider"></div>
-                <div class="page-title">Track your Boardroom Bookings</div>
-            </div>
+  <div class="container topbar-inner">
+    <!-- Left: Brand -->
+    <div class="brand">
+      <img class="logo" src="/Content/StakeholderView/StakeholderLandingImages/Logo.png" alt="CHIETA logo" />
+      <div class="divider"></div>
+      <div class="page-title">Boardroom Booking Tracker</div>
+    </div>
 
-            <!-- Center: Navigation -->
-            <div class="center-nav">
-                <!-- Appointments Navigation -->
-                <div style="position: relative;">
-                    <button class="nav-btn" id="appointments-btn" aria-haspopup="menu" aria-expanded="false">
+    <!-- Center: Empty (for balance) -->
+    <div class="center-nav"></div>
 
-                        <span>Appointments</span>
-                    </button>
-                    <nav class="nav-popover" id="appointments-menu" role="menu" hidden>
-                        <a role="menuitem" href="/EmployeeView/EmployeeAppointmentTracker/Index.html">My Appointments</a>
-                        <a role="menuitem" href="appointment-list.html">Upcoming Appointments</a>
-                        <a role="menuitem" href="#">Schedule New</a>
-                    </nav>
-                </div>
-
-                <!-- Inquiries Navigation -->
-                <div style="position: relative;">
-                    <button class="nav-btn" id="inquiries-btn" aria-haspopup="menu" aria-expanded="false">
-
-                        <span>Inquiries</span>
-                    </button>
-                    <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
-                        <a role="menuitem" href="/EmployeeView/EmployeeInquiryTracker/index.html">Track Inquiries</a>
-                        <a role="menuitem" href="inquiry-list.html">Recent Inquiries</a>
-                        <a role="menuitem" href="#">New Inquiry</a>
-                    </nav>
-                </div>
-
-                <!-- Spaces Navigation -->
-                <div style="position: relative;">
-                    <button class="nav-btn" id="spaces-btn" aria-haspopup="menu" aria-expanded="false">
-
-                        <span>Spaces</span>
-                    </button>
-                    <nav class="nav-popover" id="spaces-menu" role="menu" hidden>
-                        <a role="menuitem" href="/EmployeeView/EmployeeBoardroomBooking/index.html">Book Space</a>
-                        <a role="menuitem" href="#">My Bookings</a>
-                        <a role="menuitem" href="#">Available Spaces</a>
-                    </nav>
-                </div>
-            </div>
-
-            <!-- Right: Settings -->
-            <div class="settings-nav">
-                <button class="nav-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-
-                    <span class="hide-sm">Settings</span>
-                </button>
-                
-            </div>
-        </div>
-    </header>
-
+    <!-- Right: Buttons -->
+    <div class="settings-nav">
+      <!-- Home Button -->
+      <button class="nav-btn" onclick="window.location.href='@Url.Action("Index", "Home")'">
+        <span>Home</span>
+      </button>
+      
+      <!-- Sign Out Button -->
+      <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline; margin-left: 10px;">
+        <button type="submit" class="nav-btn danger">
+          <span>Sign Out</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</header>
     <main class="container">
         <div class="dashboard-header">
             <h1>My Space Bookings</h1>
