@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
+using StakeholderCHIETA.Models;
 
 namespace Staekholder_CHIETA_X.Controllers
 {
@@ -953,7 +954,7 @@ namespace Staekholder_CHIETA_X.Controllers
         #endregion
 
         #region Views
-        public IActionResult Index() => View();
+        public IActionResult Index() => View("~/Views/StakeholderViews/Home/Home.cshtml");
         public IActionResult Inquiry() => View("~/Views/StakeholderViews/Inquiry/Inquiry.cshtml");
         public IActionResult InquiryTracking() => View("~/Views/StakeholderViews/InquiryTracking/InquiryTracking.cshtml");
         public IActionResult Tracking() => View("~/Views/EmployeeViews/InquiryTracker.cshtml");
