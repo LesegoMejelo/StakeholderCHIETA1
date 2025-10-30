@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Book Space — CHIETA</title>
-    <link rel="stylesheet" href="~/Content/EmployeeView/BoardroomBooking.css" />
+    <link rel="stylesheet" href="~/Content/EmployeeView/BoardroomBooking.css" asp-append-version="true"/>
 </head>
 <body>
     <!-- Header -->
@@ -22,9 +22,8 @@
             <!-- Center: Navigation -->
             <div class="center-nav">
                 <!-- Appointments Navigation -->
-                <div style="position: relative;">
+                <div class="nav-dropdown">
                     <button class="nav-btn" id="appointments-btn" aria-haspopup="menu" aria-expanded="false">
-
                         <span>Appointments</span>
                     </button>
                     <nav class="nav-popover" id="appointments-menu" role="menu" hidden>
@@ -35,9 +34,8 @@
                 </div>
 
                 <!-- Inquiries Navigation -->
-                <div style="position: relative;">
+                <div class="nav-dropdown">
                     <button class="nav-btn" id="inquiries-btn" aria-haspopup="menu" aria-expanded="false">
-
                         <span>Inquiries</span>
                     </button>
                     <nav class="nav-popover" id="inquiries-menu" role="menu" hidden>
@@ -48,9 +46,8 @@
                 </div>
 
                 <!-- Spaces Navigation -->
-                <div style="position: relative;">
+                <div class="nav-dropdown">
                     <button class="nav-btn" id="spaces-btn" aria-haspopup="menu" aria-expanded="false">
-
                         <span>Spaces</span>
                     </button>
                     <nav class="nav-popover" id="spaces-menu" role="menu" hidden>
@@ -64,7 +61,6 @@
             <!-- Right: Settings -->
             <div class="settings-nav">
                 <button class="nav-btn" id="settings-btn" aria-haspopup="menu" aria-expanded="false">
-
                     <span class="hide-sm">Settings</span>
                 </button>
                 <nav class="nav-popover" id="settings-menu" role="menu" hidden>
