@@ -17,15 +17,139 @@
 * { box-sizing: border-box }
 html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial; color: var(--ink); background: var(--bg) }
 
+/* ==================== HEADER STYLES ==================== */
 /* Header */
-.topbar { background: var(--panel); position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--line) }
-.container { width: min(1100px, 92vw); margin: 0 auto; padding: 16px }
-.topbar-inner { display: flex; align-items: center; justify-content: space-between }
-.brand { display: flex; align-items: center; gap: 10px }
-.logo { font-weight: 900; color: var(--purple-900); letter-spacing: .5px }
-.divider { width: 2px; height: 20px; background: var(--line) }
-.page-title { font-weight: 800; color: var(--purple-900) }
+.topbar { 
+    background: var(--panel); 
+    position: sticky; 
+    top: 0; 
+    z-index: 1000; 
+    border-bottom: 1px solid var(--line);
+    box-shadow: var(--shadow);
+}
 
+.container { 
+    width: min(1100px, 92vw); 
+    margin: 0 auto; 
+    padding: 16px 
+}
+
+.topbar-inner { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
+    height: 86px;
+}
+
+/* Brand section on left */
+.brand { 
+    display: flex; 
+    align-items: center; 
+    gap: 10px;
+}
+
+.logo { 
+    font-weight: 900; 
+    color: var(--purple-900); 
+    letter-spacing: .5px;
+    height: 46px;
+    width: auto;
+}
+
+.divider { 
+    width: 2px; 
+    height: 20px; 
+    background: var(--line) 
+}
+
+.page-title { 
+    font-weight: 800; 
+    color: var(--purple-900) 
+}
+
+/* Header button styles */
+.nav-btn {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #3b2458;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    font-family: inherit;
+    text-decoration: none;
+}
+
+.nav-btn:hover {
+    background: #f8f6ff;
+    border-color: #3b2458;
+}
+
+/* Sign Out button styles */
+.nav-btn.danger {
+    background: #dc2626;
+    color: white;
+    border: 1px solid #dc2626;
+}
+
+.nav-btn.danger:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+}
+
+/* Keep empty containers for layout balance */
+.center-nav {
+    flex: 1;
+}
+
+.settings-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Responsive Header */
+@media (max-width: 768px) {
+  .brand .page-title {
+      display: none;
+  }
+  
+  .brand .divider:first-of-type {
+      display: none;
+  }
+  
+  .nav-btn {
+      padding: 6px 12px;
+      font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar-inner {
+      padding: 0 12px;
+  }
+  
+  .settings-nav {
+      gap: 6px;
+  }
+  
+  .nav-btn {
+      padding: 6px 10px;
+      font-size: 0.85rem;
+  }
+  
+  .page-title {
+      display: none;
+  }
+}
+
+/* ==================== MAIN CONTENT STYLES ==================== */
 /* Main content */
 main { padding: 20px 0 60px }
 
