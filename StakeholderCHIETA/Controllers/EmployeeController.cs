@@ -35,7 +35,9 @@ namespace StakeholderCHIETA.Controllers
         public IActionResult EmployeeLanding()
         {
             // Looks for Views/Employee/EmployeeLanding.cshtml
-            return View();
+           // return View();
+            return View("~/Views/EmployeeViews/EmployeeLanding.cshtml");
+
         }
         #endregion
     }

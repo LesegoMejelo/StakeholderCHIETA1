@@ -29,9 +29,9 @@
     <!-- Right: Buttons -->
     <div class="settings-nav">
       <!-- Home Button -->
-      <button class="nav-btn" onclick="window.location.href='@Url.Action("Index", "Home")'">
-        <span>Home</span>
-      </button>
+                <button class="nav-btn" onclick="window.location.href='@Url.Action("EmployeeLanding", "Employee")'">
+                    Home
+                </button>
       
       <!-- Sign Out Button -->
       <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline; margin-left: 10px;">
