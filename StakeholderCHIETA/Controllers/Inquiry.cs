@@ -46,7 +46,6 @@ namespace Staekholder_CHIETA_X.Controllers
                     name = doc.ContainsField("Name") ? doc.GetValue<string>("Name") : "Unknown"
                 }).ToList();
 
-                // Add logging to see what's being returned
                 Console.WriteLine($"Found {advisors.Count} advisors:");
                 foreach (var adv in advisors)
                 {
@@ -105,7 +104,7 @@ namespace Staekholder_CHIETA_X.Controllers
                     ? Array.Empty<string>()
                     : tags.Split(',').Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).ToArray();
 
-                // ---- Resolve advisor email/name from Users ----
+                // Resolve advisor email/name from Users
                 string assignedAdvisorEmail = "";
                 assignedAdvisorId = (assignedAdvisorId ?? "").Trim();
                 assignedAdvisorName = (assignedAdvisorName ?? "").Trim();
@@ -125,7 +124,6 @@ namespace Staekholder_CHIETA_X.Controllers
                 }
                 else if (!string.IsNullOrEmpty(assignedAdvisorName))
                 {
-                    // Optional fallback: if only name is provided, try to find the user by Name to get Id/Email
                     var byNameSnap = await _db.Collection("Users")
                                               .WhereEqualTo("Name", assignedAdvisorName)
                                               .Limit(1)
@@ -153,7 +151,7 @@ namespace Staekholder_CHIETA_X.Controllers
                         { "name", displayName },
                         { "email", userEmail }
                     }},
-                    { "createdByEmailLower", userEmailLower }, // flat field for easy querying
+                    { "createdByEmailLower", userEmailLower },
 
                     { "subject", subject.Trim() },
                     { "description", description.Trim() },
@@ -163,7 +161,6 @@ namespace Staekholder_CHIETA_X.Controllers
                     { "tags", tagArray },
                     { "followUpCall", followUpCall },
 
-                    // Advisor fields (now with email too)
                     { "assignedAdvisorId", assignedAdvisorId },
                     { "assignedAdvisor", assignedAdvisorName },
                     { "assignedAdvisorEmail", assignedAdvisorEmail },
@@ -171,7 +168,7 @@ namespace Staekholder_CHIETA_X.Controllers
                     { "status", "Pending" },
                     { "createdAt", nowTs },
                     { "updatedAt", nowTs },
-                    { "updates", new List<object> {
+                    { "updates", new object[] {
                         new Dictionary<string, object> {
                             { "status", "Pending" },
                             { "updatedBy", isAuthed ? (displayName ?? "User") : "System" },
@@ -216,7 +213,6 @@ namespace Staekholder_CHIETA_X.Controllers
         {
             try
             {
-                // Collect possible advisor identifiers from claims
                 var advisorId = User.FindFirstValue(ClaimTypes.NameIdentifier)?.Trim();
                 var advisorEmail = User.FindFirstValue(ClaimTypes.Email)?.Trim()?.ToLowerInvariant();
                 var advisorName = (User.Identity?.Name ?? "").Trim();
@@ -226,18 +222,14 @@ namespace Staekholder_CHIETA_X.Controllers
 
                 var col = _db.Collection("inquiries");
 
-                // Run up to three queries (Firestore has no OR), then merge & dedupe
                 var tasks = new List<Task<QuerySnapshot>>();
 
-                // 1) By stored advisorId
                 if (!string.IsNullOrEmpty(advisorId))
                     tasks.Add(col.WhereEqualTo("assignedAdvisorId", advisorId).Limit(200).GetSnapshotAsync());
 
-                // 2) By stored advisor email (normalize lowercase)
                 if (!string.IsNullOrEmpty(advisorEmail))
                     tasks.Add(col.WhereEqualTo("assignedAdvisorEmail", advisorEmail).Limit(200).GetSnapshotAsync());
 
-                // 3) By display name (only if present)
                 if (!string.IsNullOrEmpty(advisorName))
                     tasks.Add(col.WhereEqualTo("assignedAdvisor", advisorName).Limit(200).GetSnapshotAsync());
 
@@ -254,7 +246,6 @@ namespace Staekholder_CHIETA_X.Controllers
 
                         var data = doc.ToDictionary();
 
-                        // createdAt -> DateTime?
                         DateTime? createdAt = null;
                         if (data.TryGetValue("createdAt", out var ca))
                         {
@@ -262,7 +253,6 @@ namespace Staekholder_CHIETA_X.Controllers
                             else if (ca is DateTime dt) createdAt = dt;
                         }
 
-                        // status: prefer last update
                         string status = "Pending";
                         if (data.TryGetValue("updates", out var u) && u is IEnumerable<object> arr)
                         {
@@ -296,7 +286,6 @@ namespace Staekholder_CHIETA_X.Controllers
                     }
                 }
 
-                // Sort newest first server-side (no Firestore index needed)
                 var ordered = items.OrderByDescending(x => (DateTime?)(x.date) ?? DateTime.MinValue)
                                    .Take(50)
                                    .ToList();
@@ -313,7 +302,7 @@ namespace Staekholder_CHIETA_X.Controllers
 
         #region API: Stakeholder – My Inquiries (FIXED)
         [HttpGet]
-        [Authorize] // stakeholder must be signed in 
+        [Authorize]
         [Route("api/inquiry/stakeholder")]
         public async Task<IActionResult> GetMyStakeholderInquiries()
         {
@@ -330,15 +319,12 @@ namespace Staekholder_CHIETA_X.Controllers
                 var col = _db.Collection("inquiries");
                 var jobs = new List<Task<QuerySnapshot>>();
 
-                // 1) Prefer normalized email
                 if (!string.IsNullOrEmpty(stakeEmailLow))
                     jobs.Add(col.WhereEqualTo("createdByEmailLower", stakeEmailLow).Limit(200).GetSnapshotAsync());
 
-                // 2) Fallback: createdBy.userId (nested)
                 if (!string.IsNullOrEmpty(stakeUserId))
                     jobs.Add(col.WhereEqualTo(new FieldPath("createdBy", "userId"), stakeUserId).Limit(200).GetSnapshotAsync());
 
-                // 3) Fallback: top-level 'name' (legacy)
                 if (!string.IsNullOrEmpty(stakeName))
                     jobs.Add(col.WhereEqualTo("name", stakeName).Limit(200).GetSnapshotAsync());
 
@@ -361,7 +347,6 @@ namespace Staekholder_CHIETA_X.Controllers
                             else if (ca is DateTime dt) createdAt = dt;
                         }
 
-                        // status: prefer last update
                         string status = data.TryGetValue("status", out var stTop) ? stTop?.ToString() ?? "Pending" : "Pending";
                         if (data.TryGetValue("updates", out var u) && u is IEnumerable<object> arr)
                         {
@@ -370,10 +355,8 @@ namespace Staekholder_CHIETA_X.Controllers
                             if (last != null && last.TryGetValue("status", out var s)) status = s?.ToString() ?? status;
                         }
 
-                        // FIXED: Include description and updates array
                         var description = data.TryGetValue("description", out var desc) ? desc?.ToString() ?? "" : "";
 
-                        // Parse updates array and filter out internal-only notes
                         var updatesList = new List<object>();
                         if (data.TryGetValue("updates", out var upd) && upd is IEnumerable<object> updatesArray)
                         {
@@ -381,21 +364,19 @@ namespace Staekholder_CHIETA_X.Controllers
                             {
                                 if (update is Dictionary<string, object> updateDict)
                                 {
-                                    // Only include updates that have meaningful messages for stakeholders
                                     var notes = updateDict.TryGetValue("notes", out var n) ? n?.ToString() ?? "" : "";
 
-                                    // Skip system-generated or empty updates
                                     if (string.IsNullOrWhiteSpace(notes) ||
                                         notes == "Inquiry submitted via website")
                                         continue;
 
                                     var updateObj = new Dictionary<string, object>
-                            {
-                                { "Message", notes },
-                                { "Timestamp", updateDict.TryGetValue("timestamp", out var ts) ? ts : null },
-                                { "Author", updateDict.TryGetValue("updatedBy", out var by) ? by?.ToString() ?? "CHIETA Support" : "CHIETA Support" },
-                                { "Status", updateDict.TryGetValue("status", out var st) ? st?.ToString() ?? "" : "" }
-                            };
+                                    {
+                                        { "Message", notes },
+                                        { "Timestamp", updateDict.TryGetValue("timestamp", out var ts) ? ts : null },
+                                        { "Author", updateDict.TryGetValue("updatedBy", out var by) ? by?.ToString() ?? "CHIETA Support" : "CHIETA Support" },
+                                        { "Status", updateDict.TryGetValue("status", out var st) ? st?.ToString() ?? "" : "" }
+                                    };
 
                                     updatesList.Add(updateObj);
                                 }
@@ -408,11 +389,11 @@ namespace Staekholder_CHIETA_X.Controllers
                             reference = GenerateReferenceNumber(doc.Id),
                             subject = data.TryGetValue("subject", out var subj) ? subj?.ToString() ?? "N/A" : "N/A",
                             inquiryType = data.TryGetValue("inquiryType", out var it) ? it?.ToString() ?? "N/A" : "N/A",
-                            description = description, // FIXED: Now included
+                            description = description,
                             status,
                             date = createdAt,
                             assignedTo = data.TryGetValue("assignedAdvisor", out var aa) ? aa?.ToString() ?? "" : "",
-                            updates = updatesList // FIXED: Now included with filtered updates
+                            updates = updatesList
                         });
                     }
                 }
@@ -478,30 +459,35 @@ namespace Staekholder_CHIETA_X.Controllers
                     }
                 }
 
-                // Get existing updates array - CRITICAL: Handle Firestore types correctly
-                List<object> updates;
+                // Get existing updates array - Convert to a mutable list
+                var existingUpdatesList = new List<Dictionary<string, object>>();
+
                 if (inquiry.ContainsKey("updates") && inquiry["updates"] != null)
                 {
-                    // Firestore returns IEnumerable<object>, convert to List
                     var existingUpdates = inquiry["updates"];
+                    Console.WriteLine($"Existing updates type: {existingUpdates.GetType()}");
+
                     if (existingUpdates is IEnumerable<object> enumerable)
                     {
-                        updates = enumerable.ToList();
-                    }
-                    else
-                    {
-                        Console.WriteLine($"WARNING: updates field exists but is not IEnumerable. Type: {existingUpdates.GetType()}");
-                        updates = new List<object>();
+                        foreach (var item in enumerable)
+                        {
+                            if (item is Dictionary<string, object> dict)
+                            {
+                                // Create a new dictionary to ensure it's mutable
+                                var newDict = new Dictionary<string, object>();
+                                foreach (var kvp in dict)
+                                {
+                                    newDict[kvp.Key] = kvp.Value;
+                                }
+                                existingUpdatesList.Add(newDict);
+                            }
+                        }
                     }
                 }
-                else
-                {
-                    Console.WriteLine("No existing updates field found, creating new list");
-                    updates = new List<object>();
-                }
 
-                Console.WriteLine($"Existing updates count: {updates.Count}");
+                Console.WriteLine($"Existing updates count: {existingUpdatesList.Count}");
 
+                // Get new status and notes from request
                 var newStatus = updateData.ContainsKey("status")
                     ? updateData["status"]?.ToString()
                     : inquiry.ContainsKey("status") ? inquiry["status"]?.ToString() : "Pending";
@@ -513,25 +499,28 @@ namespace Staekholder_CHIETA_X.Controllers
                 Console.WriteLine($"New Status: {newStatus}");
                 Console.WriteLine($"Notes: {notes}");
 
-                // Create new update entry
+                // Create new update entry as a fresh Dictionary
                 var newUpdate = new Dictionary<string, object>
-        {
-            { "status", newStatus ?? "Pending" },
-            { "updatedBy", advisorName },
-            { "timestamp", Timestamp.GetCurrentTimestamp() },
-            { "notes", notes ?? "" }
-        };
+                {
+                    { "status", newStatus ?? "Pending" },
+                    { "updatedBy", advisorName },
+                    { "timestamp", Timestamp.GetCurrentTimestamp() },
+                    { "notes", notes ?? "" }
+                };
 
                 // Add to updates list
-                updates.Add(newUpdate);
-                Console.WriteLine($"New updates count: {updates.Count}");
+                existingUpdatesList.Add(newUpdate);
+                Console.WriteLine($"New updates count: {existingUpdatesList.Count}");
 
+                // Create the update dictionary with the updates array
                 var updateDict = new Dictionary<string, object>
-        {
-            { "status", newStatus ?? "Pending" },
-            { "updates", updates }, // This is the critical field
-            { "updatedAt", Timestamp.GetCurrentTimestamp() }
-        };
+                {
+                    { "status", newStatus ?? "Pending" },
+                    { "updatedAt", Timestamp.GetCurrentTimestamp() }
+                };
+
+                // Convert list to array for Firestore
+                updateDict["updates"] = existingUpdatesList.ToArray();
 
                 // Handle reassignment
                 if (updateData.ContainsKey("assignedTo"))
@@ -547,8 +536,13 @@ namespace Staekholder_CHIETA_X.Controllers
                                 ? advisorData["Name"]?.ToString()
                                 : "Unknown Advisor";
 
+                            var newAdvisorEmail = advisorData.ContainsKey("email")
+                                ? advisorData["email"]?.ToString()
+                                : "";
+
                             updateDict["assignedAdvisorId"] = newAssignedId;
                             updateDict["assignedAdvisor"] = newAdvisorName;
+                            updateDict["assignedAdvisorEmail"] = newAdvisorEmail?.ToLowerInvariant() ?? "";
 
                             Console.WriteLine($"Reassigning to: {newAdvisorName} ({newAssignedId})");
                         }
@@ -557,6 +551,9 @@ namespace Staekholder_CHIETA_X.Controllers
 
                 // Perform the update
                 Console.WriteLine("Performing Firestore update...");
+                Console.WriteLine($"Update dict keys: {string.Join(", ", updateDict.Keys)}");
+                Console.WriteLine($"Updates array length: {((object[])updateDict["updates"]).Length}");
+
                 await docRef.UpdateAsync(updateDict);
                 Console.WriteLine("Update successful!");
 
@@ -626,7 +623,7 @@ namespace Staekholder_CHIETA_X.Controllers
                 return Ok(new
                 {
                     message = "Inquiry updated successfully",
-                    updatesCount = updates.Count,
+                    updatesCount = existingUpdatesList.Count,
                     reference = reference
                 });
             }
@@ -640,7 +637,6 @@ namespace Staekholder_CHIETA_X.Controllers
         #endregion
 
         #region API: Advisor – Filtered & Test endpoints
-        // Other existing methods remain the same...
         [HttpGet]
         [Authorize(Roles = "Advisor")]
         [Route("api/inquiry/advisor/{advisorId}")]
@@ -683,7 +679,7 @@ namespace Staekholder_CHIETA_X.Controllers
         [HttpGet]
         [Authorize]
         [Route("api/inquiry/test-advisor")]
-        public async Task<IActionResult> TestAdvisorInquiries()
+        public async Task<IActionResult> TestAdvisorInquries()
         {
             try
             {
