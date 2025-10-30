@@ -72,14 +72,7 @@
 
                     <span class="hide-sm">Settings</span>
                 </button>
-                <nav class="nav-popover" id="settings-menu" role="menu" hidden>
-                    <a role="menuitem" href="@Url.Action("Profile", "Account")">Profile</a>
-                    <a role="menuitem" href="@Url.Action("Notifications", "Account")">Notifications</a>
-                    <div class="menu-sep" role="separator"></div>
-                    <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline;">
-                        <button type="submit" class="danger">Sign out</button>
-                    </form>
-                </nav>
+                
             </div>
         </div>
     </header>
