@@ -1,23 +1,24 @@
-﻿using StakeholderCHIETA.Models;
-using Microsoft.EntityFrameworkCore;
-using Google.Cloud.Firestore;
-using FirebaseAdmin;
-using Google.Apis.Auth.OAuth2;
-using Microsoft.AspNetCore.Identity;
+﻿using FirebaseAdmin;
 using FirebaseAdmin.Auth;
+using Google.Apis.Auth.OAuth2;
+using Google.Cloud.Firestore;
+using Google.Cloud.Firestore.V1;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using StakeholderCHIETA.Models;
 using StakeholderCHIETA.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔹 Get path from environment variable instead of hardcoding
-var serviceAccountPath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
+// 🔹 Read Firebase JSON directly from environment variable
+var firebaseJson = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS_JSON");
 
-if (string.IsNullOrEmpty(serviceAccountPath) || !File.Exists(serviceAccountPath))
+if (string.IsNullOrEmpty(firebaseJson))
 {
-    throw new FileNotFoundException(
-        "Firebase service account key file not found. " +
-        "Set the GOOGLE_APPLICATION_CREDENTIALS environment variable to a valid path."
+    throw new Exception(
+        "Firebase credentials not found. " +
+        "Set the GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable in Azure App Service."
     );
 }
 
@@ -27,7 +28,7 @@ if (FirebaseApp.DefaultInstance == null)
 {
     app = FirebaseApp.Create(new AppOptions()
     {
-        Credential = GoogleCredential.FromFile(serviceAccountPath)
+        Credential = GoogleCredential.FromJson(firebaseJson)
     });
 }
 else
@@ -38,7 +39,17 @@ else
 // 🔹 Register FirestoreDb for Dependency Injection
 builder.Services.AddSingleton(provider =>
 {
-    return FirestoreDb.Create("stakeholder-app-57ed0"); // your project ID
+   //Get the FirebaseApp instance you initialized
+    var app = FirebaseApp.DefaultInstance;
+
+    // Build Firestore client using the same credential
+    var firestoreClient = new FirestoreClientBuilder
+    {
+        // Use the credential from FirebaseApp
+        Credential = (GoogleCredential)app.Options.Credential
+    }.Build();
+
+    return FirestoreDb.Create("stakeholder-app-57ed0", firestoreClient);
 });
 
 // Register FirebaseAuth for Dependency Injection
@@ -46,12 +57,10 @@ builder.Services.AddSingleton(FirebaseAuth.GetAuth(app));
 
 // Add services to the container
 builder.Services.AddControllersWithViews();
-
 builder.Services.AddMemoryCache();
 
 builder.Services.AddScoped<IAppointmentQRService, AppointmentQRService>();
 builder.Services.AddScoped<IQRCodeGenerator, QRCodeService>();
-
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 
@@ -67,7 +76,6 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("EmployeeOnly", policy =>
         policy.RequireRole("Admin", "Advisor"));
-
     options.AddPolicy("AdminOnly", policy =>
         policy.RequireRole("Admin"));
 });
@@ -88,9 +96,7 @@ if (!appInstance.Environment.IsDevelopment())
 
 appInstance.UseHttpsRedirection();
 appInstance.UseStaticFiles();
-
 appInstance.UseRouting();
-
 appInstance.UseAuthentication();
 appInstance.UseAuthorization();
 
